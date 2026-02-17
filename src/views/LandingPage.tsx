@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import GradientButton from '@/components/ui/gradiant-button';
 import { ArrowRight, Sparkles, TrendingUp, Users, Shield, Palette, BarChart3 } from 'lucide-react';
 
@@ -60,7 +59,7 @@ export default function LandingPage() {
             >
               <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </GradientButton>
-            <GradientButton variant="purple" onClick={() => router.push('/auth?mode=artist')} label='Join as Artist'>
+            <GradientButton variant="secondary" onClick={() => router.push('/auth?mode=artist')} label='Join as Artist'>
 
             </GradientButton>
           </div>
@@ -156,7 +155,7 @@ export default function LandingPage() {
 
       <div className="flex justify-center pb-24 bg-background transition-colors duration-300">
         <GradientButton
-          variant="emerald"
+          variant="primary"
           onClick={() => router.push('/explore')}
           label="Explore Entire Collection"
           className="px-8"
@@ -302,7 +301,7 @@ export default function LandingPage() {
 
               <div className="mt-8">
                 <GradientButton
-                  variant="purple"
+                  variant="secondary"
                   onClick={() => router.push('/auth?mode=artist')}
                   label="Apply as Artist"
                 />
@@ -330,7 +329,7 @@ export default function LandingPage() {
             </Button> */}
 
             <GradientButton
-              variant="purple"
+              variant="secondary"
               onClick={() => router.push('/app')}
               label="Explore Marketplace"
             />

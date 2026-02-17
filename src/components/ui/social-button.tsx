@@ -53,7 +53,7 @@ export default function SocialButton({
                 >
                     <span className="flex items-center gap-2 font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
                         <Link className="h-4 w-4" />
-                        Hover me
+                        Social media
                     </span>
                 </Button>
             </motion.div>
