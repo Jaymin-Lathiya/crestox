@@ -1,0 +1,180 @@
+"use client"
+
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/ThemeToggle"
+
+import ProfileDropdown from "../ui/profile"
+import { Activity, Compass, Component, HomeIcon, Info, Mail, Map, Moon, Package, ScrollText, Sun, SunMoon, WandSparkles } from "lucide-react"
+import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock"
+import { useTheme } from "next-themes"
+import { useThemeToggle } from "@/components/ui/skiper/skiper26"
+
+
+
+export function Header() {
+    const router = useRouter()
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = React.useState(false)
+    const { toggleTheme } = useThemeToggle({
+        variant: "circle",
+        start: "top-left",
+        blur: true,
+    })
+
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
+
+
+    const data = [
+        {
+            title: 'Explore',
+            icon: (
+                <Compass className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+            ),
+            href: '/app',
+        },
+        {
+            title: 'Products',
+            icon: (
+                <WandSparkles className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+            ),
+            href: '/ai-curator',
+        },
+        {
+            title: 'Components',
+            icon: (
+                <Info className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+            ),
+            href: '/about-us',
+        },
+        {
+            title: "Theme",
+            icon: mounted ? (
+                theme === "dark" ? (
+                    <Moon className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+                ) : (
+                    <Sun className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+                )
+            ) : (
+                <SunMoon className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+            ),
+            type: "theme",
+        }
+
+    ];
+
+
+    return (
+        <>
+
+            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-5 bg-background/80 backdrop-blur-sm border-b border-border/50">
+                <div className="flex justify-between items-center max-w-7xl mx-auto">
+                    <div
+                        className="flex-shrink-0 cursor-pointer"
+                        onClick={() => router.push('/')}
+                    >
+                        <h1 className="text-foreground text-xl font-bold tracking-[0.3em] font-mono">
+                            CRESTOX
+                        </h1>
+                    </div>
+
+                    {/* <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+                    <Link
+                        href="/app"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Explore
+                    </Link>
+                    <Link
+                        href="/ai-curator"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        AI Curator
+                    </Link>
+                    <Link
+                        href="/about"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        About Us
+                    </Link>
+                </div> */}
+
+                    <div className='absolute bottom-2 left-1/2 max-w-full -translate-x-1/2 hidden lg:flex'>
+                        <Dock className='items-end pb-3'>
+                            {data.map((item, idx) => (
+                                <DockItem
+                                    key={idx}
+                                    className="aspect-square rounded-full bg-gray-200 dark:bg-neutral-800"
+                                    onClick={() => {
+                                        if (item.type === "theme") {
+                                            toggleTheme()
+
+                                        } else if (item.href) {
+                                            router.push(item.href)
+                                        }
+                                    }}
+                                >
+                                    <DockLabel>{item.title}</DockLabel>
+                                    {/* <DockIcon className="text-[10px] font-medium">{item.title}</DockIcon> */}
+                                    <DockIcon>{item.icon}</DockIcon>
+                                    
+                                </DockItem>
+                            ))}
+                        </Dock>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        {/* <ThemeToggle /> */}
+
+                        {isLoggedIn ? (
+                            <ProfileDropdown logout={() => setIsLoggedIn(false)} />
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" onClick={() => router.push('/login')}>
+                                    Sign In
+                                </Button>
+                                <Button variant="default" onClick={() => router.push('/signup')}>
+                                    Sign Up
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hidden lg:flex text-xs h-12 px-2"
+                                    onClick={() => setIsLoggedIn(true)}
+                                >
+                                    Test Login
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </nav>
+            <div className="lg:hidden fixed bottom-2 left-1/2 max-w-full -translate-x-1/2 z-50">
+                <Dock className='items-end pb-3'>
+                    {data.map((item, idx) => (
+                        <DockItem
+                            key={idx}
+                            className="aspect-square rounded-full bg-gray-200 dark:bg-neutral-800"
+                            onClick={() => {
+                                if (item.type === "theme") {
+                                    toggleTheme()
+                                } else if (item.href) {
+                                    router.push(item.href)
+                                }
+                            }}
+                        >
+                            <DockLabel>{item.title}</DockLabel>
+                            <DockIcon>{item.icon}</DockIcon>
+                        </DockItem>
+                    ))}
+                </Dock>
+            </div>
+        </>
+    )
+}
