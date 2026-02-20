@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, useAnimation, useMotionValue } from 'framer-motion';
 import { ArtworkCard } from './ArtworkCard';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const ARTWORKS = [
     { id: 1, title: 'The Liquid Abstract', artist: 'Elena V.', price: '₹18,284.75', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=1000&auto=format&fit=crop', aspectRatio: 'aspect-[3/4]' },
@@ -46,11 +47,11 @@ const InfiniteColumn = ({
                 className="flex flex-col"
             >
                 {[...artworks, ...artworks].map((art, idx) => (
-                    <div key={`${art.id}-${idx}`} className="mb-10">
+                    <Link href="/art" key={`${art.id}-${idx}`} className="mb-10 block">
                         <ArtworkCard
                             {...art}
                         />
-                    </div>
+                    </Link>
                 ))}
             </motion.div>
         </div>

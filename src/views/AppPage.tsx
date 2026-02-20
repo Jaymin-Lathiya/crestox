@@ -162,9 +162,9 @@ export default function AppPage() {
       <Navigation />
 
       {currentView === 'home' && <HomeView />}
-      {currentView === 'marketplace' && <MarketplaceView />}
-      {currentView === 'vault' && <VaultView />}
-      {currentView === 'detail' && <DetailView />}
+      {/* {currentView === 'marketplace' && <MarketplaceView />} */}
+      {/* {currentView === 'vault' && <VaultView />}
+      {currentView === 'detail' && <DetailView />} */}
     </main>
   );
 }

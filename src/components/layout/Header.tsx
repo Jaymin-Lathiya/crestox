@@ -141,7 +141,7 @@ export function Header() {
                                 </GradientButton>
                                 <GradientButton
                                     variant="secondary"
-                                    className="hidden lg:flex text-xs h-12 px-3"
+                                    className="flex text-xs h-12 px-3"
                                     onClick={() => setIsLoggedIn(true)}
                                     label="Test Login"
                                 >

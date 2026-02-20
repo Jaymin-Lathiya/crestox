@@ -1,6 +1,7 @@
 
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
 import { useRef } from "react";
+import Link from 'next/link';
 
 const ARTWORK_IMAGES = [
     "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
@@ -78,18 +79,20 @@ function GridCard({
     const borderRadius = useTransform(scrollYProgress, [0, 0.55], [14, 4]);
 
     return (
-        <motion.div
-            className="relative overflow-hidden bg-card aspect-square"
-            style={{ y, scale, borderRadius }}
-        >
-            <img
-                src={src}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="lazy"
-                draggable={false}
-            />
-        </motion.div>
+        <Link href="/art" className="block relative aspect-square">
+            <motion.div
+                className="relative overflow-hidden bg-card w-full h-full"
+                style={{ y, scale, borderRadius }}
+            >
+                <img
+                    src={src}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    draggable={false}
+                />
+            </motion.div>
+        </Link>
     );
 }
 
