@@ -46,8 +46,8 @@ const ListedGrid: React.FC<ListedGridProps> = ({ items }) => {
             className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-card/50 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <img src={item.artworkUrl} alt={item.artistName} className="w-10 h-10 object-cover rounded-sm grayscale-[50%] group-hover:grayscale-0 transition-all" />
-              <span className="font-editorial italic text-foreground/90">{item.artistName}</span>
+              <img src={item.artworkUrl} alt={item.artistName} className="w-10 h-10 object-cover rounded-sm group-hover:scale-110 transition-all duration-500" />
+              <span className="font-editorial italic text-foreground">{item.artistName}</span>
             </div>
             <span className="font-mono text-sm text-foreground">{formatCurrency(item.listedPrice)}</span>
             <span className="font-mono text-sm text-muted-foreground">{item.quantity}</span>

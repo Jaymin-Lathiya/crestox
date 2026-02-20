@@ -6,6 +6,7 @@ import { MasonryGrid } from '@/components/explore/MasonryGrid';
 import { CosmosArtworkCard } from '@/components/explore/CosmosArtworkCard';
 import { FeaturedCreators } from '@/components/explore/FeaturedCreators';
 import { Header } from '@/components/layout/Header';
+import ScrollRevealGrid from '@/components/ScrollRevealGrid/ScrollRevealGrid';
 
 const generateArtworks = (count: number) => {
     return Array.from({ length: count }).map((_, i) => ({
@@ -44,14 +45,17 @@ export default function ExplorePage() {
                 </div>
 
                 <div className="mt-8 px-4">
-                    <MasonryGrid>
+                    {/* <MasonryGrid>
                         {ARTWORKS.map((art) => (
                             <CosmosArtworkCard
                                 key={art.id}
                                 {...art}
                             />
                         ))}
-                    </MasonryGrid>
+                            
+                    </MasonryGrid> */}
+                    <ScrollRevealGrid />
+
                 </div>
             </main>
         </div>

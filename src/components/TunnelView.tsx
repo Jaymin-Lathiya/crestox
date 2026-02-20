@@ -46,15 +46,15 @@ const TunnelCard: React.FC<{
 
           {/* Targeting Reticle SVG */}
           <svg className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" viewBox="0 0 300 300">
-            <line x1="0" y1="150" x2="300" y2="150" stroke="hsl(0 0% 90%)" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle" />
-            <line x1="150" y1="0" x2="150" y2="300" stroke="hsl(0 0% 90%)" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle" />
-            <circle cx="150" cy="150" r="60" fill="none" stroke="hsl(0 0% 90%)" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle" />
-            <rect x="80" y="80" width="140" height="140" fill="none" stroke="hsl(0 0% 90%)" strokeWidth="0.5" className="animate-reticle" />
+            <line x1="0" y1="150" x2="300" y2="150" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle text-muted-foreground/30" />
+            <line x1="150" y1="0" x2="150" y2="300" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle text-muted-foreground/30" />
+            <circle cx="150" cy="150" r="60" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 8" className="animate-reticle text-muted-foreground/30" />
+            <rect x="80" y="80" width="140" height="140" fill="none" stroke="currentColor" strokeWidth="0.5" className="animate-reticle text-muted-foreground/30" />
           </svg>
 
           {/* Artist Name */}
           <div className="absolute bottom-4 left-4 z-10">
-            <h3 className="font-editorial italic text-3xl text-foreground/90 leading-none mix-blend-difference">
+            <h3 className="font-editorial italic text-3xl text-foreground leading-none drop-shadow-lg">
               {item.artistName}
             </h3>
           </div>
@@ -67,7 +67,7 @@ const TunnelCard: React.FC<{
           <div className="grid grid-cols-3 gap-4 font-mono text-[10px] text-muted-foreground">
             <div>
               <span className="block tracking-widest uppercase mb-1">YIELD</span>
-              <span className="text-verdigris text-sm font-semibold">{item.yieldPercent.toFixed(1)}%</span>
+              <span className="text-primary text-sm font-semibold">{item.yieldPercent.toFixed(1)}%</span>
             </div>
             <div>
               <span className="block tracking-widest uppercase mb-1">FLOOR</span>

@@ -14,6 +14,7 @@ import ArtistSpotlight from '@/components/home/ArtistSpotlight';
 import TrustMatrix from '@/components/home/TrustMatrix';
 import { HowItWorksTimeline } from '@/components/timeline/TimelineItem';
 import ProcessConstellation from '@/components/ProcessConstellation';
+import ScrollRevealGrid from '@/components/ScrollRevealGrid/ScrollRevealGrid';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -89,36 +90,85 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-background/50 border border-border p-8 group hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
-                <Palette className="w-6 h-6 text-primary" />
+
+            {/* Card 1 */}
+            <div className="group [perspective:1000px]">
+              <div className="relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+
+                {/* Front */}
+                <div className="absolute inset-0 bg-background/50 border border-border p-8 hover:border-primary/50 transition-colors [backface-visibility:hidden]">
+                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
+                    <Palette className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-serif text-xl mb-3">Original Artwork</h3>
+                  <p className="text-muted-foreground font-sans text-sm leading-relaxed">
+                    A physical masterpiece valued at ₹50 lakhs is authenticated and securely stored in a vault.
+                  </p>
+                </div>
+
+                {/* Back */}
+                <div className="absolute inset-0 bg-background border border-primary/30 p-8 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                  <h3 className="font-serif text-xl mb-3">Secure Storage</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Vault-grade protection, insured asset, and blockchain verification ensure authenticity.
+                  </p>
+                </div>
+
               </div>
-              <h3 className="font-serif text-xl mb-3">Original Artwork</h3>
-              <p className="text-muted-foreground font-sans text-sm leading-relaxed">
-                A physical masterpiece valued at ₹50 lakhs is authenticated and securely stored in a vault.
-              </p>
             </div>
 
-            <div className="bg-background/50 border border-border p-8 group hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
-                <Sparkles className="w-6 h-6 text-primary" />
+
+            {/* Card 2 */}
+            <div className="group [perspective:1000px]">
+              <div className="relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+
+                <div className="absolute inset-0 bg-background/50 border border-border p-8 hover:border-primary/50 transition-colors [backface-visibility:hidden]">
+                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-serif text-xl mb-3">Fractionalized</h3>
+                  <p className="text-muted-foreground font-sans text-sm leading-relaxed">
+                    The artwork is divided into 5,000 digital "fractals" representing verified ownership.
+                  </p>
+                </div>
+
+                <div className="absolute inset-0 bg-background border border-primary/30 p-8 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                  <h3 className="font-serif text-xl mb-3">Digital Ownership</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Each fractal is recorded transparently and securely on-chain.
+                  </p>
+                </div>
+
               </div>
-              <h3 className="font-serif text-xl mb-3">Fractionalized</h3>
-              <p className="text-muted-foreground font-sans text-sm leading-relaxed">
-                The artwork is divided into 5,000 digital "fractals" - each representing verified ownership of a piece.
-              </p>
             </div>
 
-            <div className="bg-background/50 border border-border p-8 group hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
-                <TrendingUp className="w-6 h-6 text-primary" />
+
+            {/* Card 3 */}
+            <div className="group [perspective:1000px]">
+              <div className="relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+
+                <div className="absolute inset-0 bg-background/50 border border-border p-8 hover:border-primary/50 transition-colors [backface-visibility:hidden]">
+                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center mb-6">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-serif text-xl mb-3">Trade & Profit</h3>
+                  <p className="text-muted-foreground font-sans text-sm leading-relaxed">
+                    Buy fractals starting at ₹1,000 and trade as the artwork appreciates.
+                  </p>
+                </div>
+
+                <div className="absolute inset-0 bg-background border border-primary/30 p-8 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                  <h3 className="font-serif text-xl mb-3">Marketplace</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Seamless trading experience with transparent price discovery.
+                  </p>
+                </div>
+
               </div>
-              <h3 className="font-serif text-xl mb-3">Trade & Profit</h3>
-              <p className="text-muted-foreground font-sans text-sm leading-relaxed">
-                Buy fractals starting at ₹1,000. Trade on our marketplace. Profit as the artwork appreciates.
-              </p>
             </div>
+
           </div>
+
         </div>
       </section>
 
@@ -148,11 +198,6 @@ export default function LandingPage() {
 
 
       <GallerySection />
-
-      <ArtistSpotlight />
-
-      <TrustMatrix />
-
       <div className="flex justify-center pb-24 bg-background transition-colors duration-300">
         <GradientButton
           variant="primary"
@@ -161,6 +206,11 @@ export default function LandingPage() {
           className="px-8"
         />
       </div>
+
+
+      <ArtistSpotlight />
+
+      <TrustMatrix />
 
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">

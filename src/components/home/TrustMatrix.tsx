@@ -161,27 +161,58 @@ const TrustMatrix = () => {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-muted rounded-lg p-6 border border-border group hover:border-primary/30 transition-all duration-500"
+              className="group [perspective:1000px]"
             >
-              {/* Icon */}
-              <div className="w-14 h-14 rounded-lg bg-secondary flex items-center justify-center text-primary mb-4 group-hover:bg-primary/10 transition-colors duration-300">
-                {feature.icon}
-              </div>
+              <div className="relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
 
-              {/* Content */}
-              <h3 className="font-display text-lg italic text-foreground mb-2">{feature.title}</h3>
-              <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-4">
-                {feature.description}
-              </p>
+                {/* FRONT */}
+                <div className="absolute inset-0 bg-muted rounded-lg p-6 border border-border group-hover:border-primary/30 transition-all duration-500 [backface-visibility:hidden]">
 
-              {/* Stat */}
-              <div className="pt-4 border-t border-border">
-                <p className="font-display text-2xl italic text-gradient-gold">{feature.stat}</p>
-                <p className="terminal-text text-muted-foreground text-[10px]">{feature.statLabel}</p>
+                  {/* Icon */}
+                  <div className="w-14 h-14 rounded-lg bg-secondary flex items-center justify-center text-primary mb-4 group-hover:bg-primary/10 transition-colors duration-300">
+                    {feature.icon}
+                  </div>
+
+                  <h3 className="font-display text-lg italic text-foreground mb-2">
+                    {feature.title}
+                  </h3>
+
+                  <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-4">
+                    {feature.description}
+                  </p>
+
+                  <div className="pt-4 border-t border-border">
+                    <p className="font-display text-2xl italic text-gradient-gold">
+                      {feature.stat}
+                    </p>
+                    <p className="terminal-text text-muted-foreground text-[10px]">
+                      {feature.statLabel}
+                    </p>
+                  </div>
+                </div>
+
+                {/* BACK */}
+                <div className="absolute inset-0 bg-background rounded-lg p-6 border border-primary/30 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+
+                  <h3 className="font-display text-lg italic text-foreground mb-4">
+                    Why It Matters
+                  </h3>
+
+                  <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-6">
+                    Institutional-grade infrastructure ensuring maximum protection,
+                    compliance, and transparency for investors.
+                  </p>
+
+                  <div className="text-gradient-gold font-display text-2xl italic">
+                    {feature.stat}
+                  </div>
+                </div>
+
               </div>
             </motion.div>
           ))}
         </div>
+
 
         {/* Trust badges */}
         <motion.div

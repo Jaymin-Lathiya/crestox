@@ -104,7 +104,7 @@ const HistoryTab: React.FC = () => {
             style={{
               borderRadius: '12px',
             }}
-            className='flex flex-col overflow-hidden border border-zinc-950/10 bg-white dark:border-zinc-50/10 dark:bg-zinc-900'
+            className='flex flex-col overflow-hidden !rounded-lg border border-zinc-950/10 bg-white dark:border-zinc-50/10 dark:bg-zinc-900'
           >
             <MorphingDialogImage
               src={event.image}

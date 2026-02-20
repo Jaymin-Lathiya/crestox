@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GradientButton from '../ui/gradiant-button';
 
 interface ArtPiece {
   id: string;
@@ -84,7 +85,7 @@ const artPieces: ArtPiece[] = [
 
 const TickerItem = ({ piece, onHover }: { piece: ArtPiece; onHover: (piece: ArtPiece | null) => void }) => {
   const isPositive = piece.change24h >= 0;
-  
+
   return (
     <motion.div
       className="flex items-center gap-4 px-6 py-3 cursor-pointer group"
@@ -94,20 +95,20 @@ const TickerItem = ({ piece, onHover }: { piece: ArtPiece; onHover: (piece: ArtP
     >
       {/* Thumbnail */}
       <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
-        <img 
-          src={piece.thumbnail} 
+        <img
+          src={piece.thumbnail}
           alt={piece.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
       </div>
-      
+
       {/* Info */}
       <div className="flex flex-col min-w-0">
         <span className="font-display text-sm text-foreground truncate">{piece.title}</span>
         <span className="terminal-text text-muted-foreground text-[10px]">{piece.artist}</span>
       </div>
-      
+
       {/* Price */}
       <div className="flex flex-col items-end ml-4">
         <span className="font-mono text-sm text-foreground">${piece.fractalPrice.toFixed(2)}</span>
@@ -115,7 +116,7 @@ const TickerItem = ({ piece, onHover }: { piece: ArtPiece; onHover: (piece: ArtP
           {isPositive ? '+' : ''}{piece.change24h.toFixed(1)}%
         </span>
       </div>
-      
+
       {/* Separator */}
       <div className="w-px h-8 bg-border ml-4" />
     </motion.div>
@@ -124,7 +125,7 @@ const TickerItem = ({ piece, onHover }: { piece: ArtPiece; onHover: (piece: ArtP
 
 const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
   const isPositive = piece.change24h >= 0;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -134,13 +135,13 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
     >
       {/* Image */}
       <div className="relative w-full h-40 rounded overflow-hidden mb-4">
-        <img 
-          src={piece.thumbnail} 
+        <img
+          src={piece.thumbnail}
           alt={piece.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        
+
         {/* Scarcity badge */}
         <div className="absolute top-3 right-3 px-2 py-1 bg-destructive/90 rounded">
           <span className="font-mono text-xs text-foreground">
@@ -148,16 +149,16 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
           </span>
         </div>
       </div>
-      
+
       {/* Title & Artist */}
       <h3 className="font-display text-xl italic text-foreground mb-1">{piece.title}</h3>
       <p className="terminal-text text-primary mb-3">{piece.artist}</p>
-      
+
       {/* Bio */}
       <p className="font-mono text-xs text-muted-foreground leading-relaxed mb-4">
         {piece.bio}
       </p>
-      
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 p-3 bg-secondary/50 rounded">
         <div className="text-center">
@@ -175,11 +176,10 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
           <p className="font-mono text-sm text-foreground">{piece.totalValue}</p>
         </div>
       </div>
-      
+
       {/* Action */}
-      <button className="w-full mt-4 py-2 bg-gradient-gold text-primary-foreground font-mono text-xs font-bold tracking-wider uppercase rounded">
-        View Fractals
-      </button>
+      <GradientButton label='View Fractals' className="w-full mt-2">
+      </GradientButton>
     </motion.div>
   );
 };
@@ -187,7 +187,7 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
 const TickerStream = () => {
   const [hoveredPiece, setHoveredPiece] = useState<ArtPiece | null>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
-  
+
   // Duplicate items for seamless loop
   const duplicatedPieces = [...artPieces, ...artPieces];
 
@@ -199,26 +199,26 @@ const TickerStream = () => {
           LIVE MARKET
         </span>
       </div>
-      
+
       {/* Gradient masks */}
       <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
-      
+
       {/* Ticker */}
-      <div 
+      <div
         ref={tickerRef}
         className="relative flex animate-ticker hover:pause-animation ml-16"
         style={{ width: 'max-content' }}
       >
         {duplicatedPieces.map((piece, index) => (
-          <TickerItem 
+          <TickerItem
             key={`${piece.id}-${index}`}
             piece={piece}
             onHover={setHoveredPiece}
           />
         ))}
       </div>
-      
+
       {/* Holographic card on hover */}
       <AnimatePresence>
         {hoveredPiece && (

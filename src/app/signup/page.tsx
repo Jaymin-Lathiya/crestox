@@ -37,6 +37,7 @@ import {
     StepperPanel
 } from "@/components/reui/stepper"
 import { CheckIcon, LoaderCircleIcon } from "lucide-react"
+import GradientButton from "@/components/ui/gradiant-button"
 
 const formSchema = z.object({
     firstName: z.string().min(1, { message: "First name is required." }),
@@ -212,26 +213,28 @@ export default function SignupPage() {
                                             variant="outline"
                                             onClick={prevStep}
                                             disabled={activeStep === 1}
-                                            className={activeStep === 1 ? "opacity-0" : ""}
+                                            className={`rounded-lg ${activeStep === 1 ? "opacity-0" : ""}`}
                                         >
                                             Back
                                         </Button>
 
                                         {activeStep < 3 ? (
-                                            <Button
+                                            <GradientButton
                                                 type="button"
                                                 onClick={nextStep}
+
                                                 className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                label="Next"
                                             >
-                                                Next
-                                            </Button>
+                                            </GradientButton>
                                         ) : (
-                                            <Button
+                                            <GradientButton
                                                 type="submit"
                                                 className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                label="Create Account"
                                             >
-                                                Create Account
-                                            </Button>
+
+                                            </GradientButton>
                                         )}
                                     </div>
                                 </form>

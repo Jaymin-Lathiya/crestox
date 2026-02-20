@@ -11,6 +11,7 @@ import { Activity, Compass, Component, HomeIcon, Info, Mail, Map, Moon, Package,
 import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock"
 import { useTheme } from "next-themes"
 import { useThemeToggle } from "@/components/ui/skiper/skiper26"
+import GradientButton from "../ui/gradiant-button"
 
 
 
@@ -123,7 +124,7 @@ export function Header() {
                                     <DockLabel>{item.title}</DockLabel>
                                     {/* <DockIcon className="text-[10px] font-medium">{item.title}</DockIcon> */}
                                     <DockIcon>{item.icon}</DockIcon>
-                                    
+
                                 </DockItem>
                             ))}
                         </Dock>
@@ -136,20 +137,15 @@ export function Header() {
                             <ProfileDropdown logout={() => setIsLoggedIn(false)} />
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" onClick={() => router.push('/login')}>
-                                    Sign In
-                                </Button>
-                                <Button variant="default" onClick={() => router.push('/signup')}>
-                                    Sign Up
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="hidden lg:flex text-xs h-12 px-2"
+                                <GradientButton label="Sign In" variant="primary" onClick={() => router.push('/login')}>
+                                </GradientButton>
+                                <GradientButton
+                                    variant="secondary"
+                                    className="hidden lg:flex text-xs h-12 px-3"
                                     onClick={() => setIsLoggedIn(true)}
+                                    label="Test Login"
                                 >
-                                    Test Login
-                                </Button>
+                                </GradientButton>
                             </div>
                         )}
                     </div>

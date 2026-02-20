@@ -37,6 +37,7 @@ import {
     StepperPanel
 } from "@/components/reui/stepper"
 import { CheckIcon, LoaderCircleIcon } from "lucide-react"
+import GradientButton from "@/components/ui/gradiant-button"
 
 const formSchema = z.object({
     email: z.string().email({
@@ -171,26 +172,25 @@ export default function LoginPage() {
                                             variant="outline"
                                             onClick={prevStep}
                                             disabled={activeStep === 1}
-                                            className={activeStep === 1 ? "opacity-0" : ""}
+                                            className={`rounded-lg ${activeStep === 1 ? "opacity-0" : ""}`}
                                         >
                                             Back
                                         </Button>
 
                                         {activeStep < 2 ? (
-                                            <Button
+                                            <GradientButton
                                                 type="button"
                                                 onClick={nextStep}
-                                                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
-                                            >
-                                                Next
-                                            </Button>
+                                                label="Next"
+                                            />
                                         ) : (
-                                            <Button
+                                            <GradientButton
                                                 type="submit"
                                                 className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                label="Login"
                                             >
-                                                Login
-                                            </Button>
+
+                                            </GradientButton>
                                         )}
                                     </div>
                                 </form>

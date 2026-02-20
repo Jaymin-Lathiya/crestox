@@ -566,7 +566,7 @@ const MOCK_WATCHLIST = [
   { id: 'w6', artistName: 'Arpita Singh', artworkUrl: art6, yieldPercent: 9.8, floorPrice: 28000, provenance: 'Pundole\'s 2024' },
 ];
 
- const mockHoldings: any= [
+const mockHoldings: any = [
   {
     id: '1',
     artistName: 'Aria Celestine',
@@ -609,12 +609,12 @@ const MOCK_WATCHLIST = [
   },
 ];
 
-export default function CollectionPage()  {
+export default function CollectionPage() {
   const [activeTab, setActiveTab] = useState('My Holdings');
   const [selectedHolding, setSelectedHolding] = useState<any>(null);
   const [resaleTarget, setResaleTarget] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-   const portfolio = useMemo(() => {
+  const portfolio = useMemo(() => {
     const totalValue = mockHoldings.reduce((sum, h) => sum + h.currentValue, 0);
     const totalInvested = mockHoldings.reduce((sum, h) => sum + h.investedAmount, 0);
     const gainLossAbs = totalValue - totalInvested;
@@ -634,64 +634,89 @@ export default function CollectionPage()  {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PortfolioHUD
-        metrics={{ totalValue, invested: totalInvested, gainLoss, gainLossPercent }}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+    <div className="min-h-screen relative bg-background text-foreground">
+      {/* Fixed Noise Overlay */}
+      <div className="fixed inset-0 z-0 pointer-events-none noise-overlay" />
 
-      <main className="py-8">
-        {activeTab === 'My Holdings' && (
-          // <DriftGrid holdings={MOCK_HOLDINGS} onSellClick={handleSell} />
-            <motion.div
-            key="holdings"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col gap-6"
-          >
-            {mockHoldings.map((holding, index) => (
+      {/* Background Gradient */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-void opacity-80" />
+
+      <div className="relative z-10">
+        <PortfolioHUD
+          metrics={{ totalValue, invested: totalInvested, gainLoss, gainLossPercent }}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        <main className="py-8 container mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatePresence mode="wait">
+            {activeTab === 'My Holdings' && (
               <motion.div
-                key={holding.id}
-                initial={{ opacity: 0, y: 20 }}
+                key="holdings"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col gap-6"
               >
-                <MonolithCard
-                  artistName={holding.artistName}
-                  artworkUrl={holding.artworkUrl}
-                  totalFractals={holding.totalFractals}
-                  investedAmount={holding.investedAmount}
-                  currentValue={holding.currentValue}
-                  gainLossPerc={holding.gainLossPerc}
-                  onSell={() => setResaleTarget(holding)}
-                  onCertificate={() => toast.success(`Certificate for ${holding.artistName} generated`)}
-                />
+                {mockHoldings.map((holding, index) => (
+                  <motion.div
+                    key={holding.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <MonolithCard
+                      artistName={holding.artistName}
+                      artworkUrl={holding.artworkUrl}
+                      totalFractals={holding.totalFractals}
+                      investedAmount={holding.investedAmount}
+                      currentValue={holding.currentValue}
+                      gainLossPerc={holding.gainLossPerc}
+                      onSell={() => setResaleTarget(holding)}
+                      onCertificate={() => toast.success(`Certificate for ${holding.artistName} generated`)}
+                    />
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
-        )}
-        {activeTab === 'Listed for Sale' && (
-          <ListedGrid items={MOCK_LISTED} />
-        )}
-        {activeTab === 'Watchlist' && (
-          <TunnelView items={MOCK_WATCHLIST} />
-        )}
-      </main>
+            )}
+            {activeTab === 'Listed for Sale' && (
+              <motion.div
+                key="listed"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ListedGrid items={MOCK_LISTED} />
+              </motion.div>
+            )}
+            {activeTab === 'Watchlist' && (
+              <motion.div
+                key="watchlist"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TunnelView items={MOCK_WATCHLIST} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
 
-      <ResaleModal
-        isOpen={!!resaleTarget}
-        onClose={() => setResaleTarget(null)}
-        artistName={resaleTarget?.artistName ?? ''}
-        maxQuantity={resaleTarget?.totalFractals ?? 0}
-        royaltyRate={resaleTarget?.royaltyRate ?? 5}
-        onSubmit={(data) => {
-          toast.success(`Listed ${data.quantity} fractals at ₹${data.price.toLocaleString()} each`);
-          setResaleTarget(null);
-        }}
-      />
+        <ResaleModal
+          isOpen={!!resaleTarget}
+          onClose={() => setResaleTarget(null)}
+          artistName={resaleTarget?.artistName ?? ''}
+          maxQuantity={resaleTarget?.totalFractals ?? 0}
+          royaltyRate={resaleTarget?.royaltyRate ?? 5}
+          onSubmit={(data) => {
+            toast.success(`Listed ${data.quantity} fractals at ₹${data.price.toLocaleString()} each`);
+            setResaleTarget(null);
+          }}
+        />
+      </div>
     </div>
   );
 };

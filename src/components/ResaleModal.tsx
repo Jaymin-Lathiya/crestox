@@ -59,7 +59,7 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-void-black/80 backdrop-blur-md"
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-md"
           />
 
           {/* Modal */}
@@ -70,7 +70,7 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
           >
-            <div className="pointer-events-auto w-full max-w-lg bg-[#0A0A0C]/90 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden relative backdrop-blur-2xl">
+            <div className="pointer-events-auto w-full max-w-lg bg-card/95 border border-border shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-2xl">
               {/* Top accent line */}
               <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyber-lime to-transparent opacity-50" />
 
@@ -130,9 +130,8 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                     onChange={(e) => setQuantity(e.target.value)}
                     min="1"
                     max={maxQuantity}
-                    className={`holographic-input pl-5 w-full h-10 ${
-                      isOverMax ? '!border-alert-crimson !text-alert-crimson' : ''
-                    }`}
+                    className={`holographic-input pl-5 w-full h-10 ${isOverMax ? '!border-alert-crimson !text-alert-crimson' : ''
+                      }`}
                   />
                 </div>
 
@@ -170,7 +169,7 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                 <button
                   onClick={handleSubmit}
                   disabled={calculations.net <= 0 || isOverMax}
-                  className="w-full group relative px-6 py-4 bg-cyber-lime hover:brightness-90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200"
+                  className="w-full group relative px-6 py-4 rounded-lg bg-primary/50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="font-cyber text-primary-foreground font-bold tracking-widest uppercase">
