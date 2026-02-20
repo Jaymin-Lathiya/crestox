@@ -15,6 +15,9 @@ import TrustMatrix from '@/components/home/TrustMatrix';
 import { HowItWorksTimeline } from '@/components/timeline/TimelineItem';
 import ProcessConstellation from '@/components/ProcessConstellation';
 import ScrollRevealGrid from '@/components/ScrollRevealGrid/ScrollRevealGrid';
+import PhotoScrollSection from '@/components/Photoscrollsection';
+import ScrollImageRevealSection from '@/components/Photoscrollsection';
+import Scroll3DImageReveal from '@/components/Photoscrollsection';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -195,7 +198,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-
+      <PhotoScrollSection />
 
       <GallerySection />
       <div className="flex justify-center pb-24 bg-background transition-colors duration-300">

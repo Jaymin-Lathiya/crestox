@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const formatCurrency = (val: number) => 
+const formatCurrency = (val: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
 const formatNumber = (val: number) =>
@@ -32,7 +32,7 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
 
   const handleCollectClick = async () => {
     if (stock <= 0) return;
-    
+
     setIsCollecting(true);
     setStock((prev) => Math.max(0, prev - 1));
 
@@ -54,10 +54,10 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
       initial={{ x: 50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
-      className="fixed bottom-0 left-0 right-0 md:left-auto md:right-8 md:bottom-8 md:top-auto z-50 w-full md:w-[340px]"
+      className="relative lg:fixed lg:left-auto lg:right-8 lg:bottom-8 lg:top-auto z-50 w-full lg:w-[340px]"
     >
-      <div 
-        className="glass-panel p-6 md:rounded-none shadow-2xl relative overflow-hidden group"
+      <div
+        className="glass-panel p-6 shadow-2xl relative overflow-hidden group border bg-background/80"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -65,7 +65,7 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
         <div className={`absolute top-0 right-0 w-32 h-32 bg-acid blur-[100px] opacity-0 transition-opacity duration-700 pointer-events-none ${isHovered ? 'opacity-10' : ''}`} />
 
         <div className="flex flex-col gap-6 relative z-10">
-          
+
           {/* Valuation & Price */}
           <div className="flex justify-between items-end border-b border-border pb-4">
             <div className="flex flex-col gap-1">
@@ -89,10 +89,10 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
                 {formatNumber(stock)} / {formatNumber(totalFractals)} Fractals
               </span>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="h-[2px] w-full bg-secondary relative overflow-hidden">
-              <motion.div 
+              <motion.div
                 className={`absolute top-0 left-0 h-full ${isSoldOut ? 'bg-destructive' : 'bg-acid'}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
@@ -116,9 +116,9 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
                   exit={{ opacity: 0 }}
                   className="flex items-center gap-2"
                 >
-                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0s' }}/>
-                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0.1s' }}/>
-                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0.2s' }}/>
+                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0s' }} />
+                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="block w-2 h-2 bg-current animate-bounce" style={{ animationDelay: '0.2s' }} />
                 </motion.div>
               ) : (
                 <motion.span
@@ -133,7 +133,7 @@ const FinancialHUD: React.FC<FinancialHUDProps> = ({
               )}
             </AnimatePresence>
           </button>
-          
+
           {/* Terms Link */}
           <div className="text-center">
             <a href="#" className="font-mono text-[9px] text-ghost hover:text-muted-foreground underline decoration-from-font underline-offset-2 transition-colors">

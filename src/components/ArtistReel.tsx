@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import Image from 'next/image';
 
 interface Artwork {
   id: string;
@@ -25,7 +26,7 @@ const ArtworkCard: React.FC<{ artwork: Artwork }> = ({ artwork }) => {
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       {/* Image */}
-      <img
+      <Image
         src={artwork.imageUrl}
         alt={artwork.title}
         className="w-full h-full object-cover grayscale-[80%] contrast-[120%] group-hover:grayscale-0 transition-all duration-500"

@@ -3,7 +3,7 @@ import HeroImmersive from "@/components/HeroImmersive";
 import ExplodedCanvas from "@/components/canvas/ExplodedCanvas";
 import { useState } from "react";
 import FinancialHUD from "@/components/FinancialHUD";
-import AssetPerformanceChart from "@/components/AssetPerformanceChart";
+import AnalyticsTab from '@/components/artist/AnalyticsTab';
 import ManifestoBlock from "@/components/ManifestoBlock";
 import TechSpecs from "@/components/TechSpecs";
 import ArtistReel from "@/components/ArtistReel";
@@ -17,18 +17,6 @@ import gallery3 from "@/assets/gallery-3.jpg";
 import gallery4 from "@/assets/gallery-4.jpg";
 
 // Mock Data
-const priceHistory = [
-    { timestamp: "Jan '24", price: 85000 },
-    { timestamp: "Feb '24", price: 87500 },
-    { timestamp: "Mar '24", price: 92000 },
-    { timestamp: "Apr '24", price: 88000 },
-    { timestamp: "May '24", price: 95000 },
-    { timestamp: "Jun '24", price: 102000 },
-    { timestamp: "Jul '24", price: 98000 },
-    { timestamp: "Aug '24", price: 115000 },
-    { timestamp: "Sep '24", price: 125000 },
-];
-
 const artistStatement = `The genesis of this work began in the liminal space between computation and consciousness. I sought to capture the moment when pure mathematics crosses the threshold into aesthetic experience—when the algorithm becomes the artist. Each fractal is a fingerprint of infinity, a proof that beauty can emerge from the coldest logic. In an age where attention is currency, I offer you a meditation on permanence.`;
 
 const metadata = [
@@ -91,7 +79,7 @@ const Index = () => {
 
                     <TabsContent value="analytics" className="mt-0">
                         {/* Price History Chart */}
-                        <AssetPerformanceChart historyData={priceHistory} className="mb-24" />
+                        <AnalyticsTab />
                     </TabsContent>
 
                     <TabsContent value="about" className="mt-0">
