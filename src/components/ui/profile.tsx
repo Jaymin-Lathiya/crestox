@@ -60,9 +60,9 @@ export default function ProfileDropdown({
                     <DropdownMenuTrigger asChild>
                         <button
                             type="button"
-                            className="flex items-center gap-16 px-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 hover:shadow-sm transition-all duration-200 focus:outline-none"
+                            className="flex items-center gap-3 md:gap-16 p-1.5 md:px-3 rounded-full md:rounded-2xl bg-transparent md:bg-white md:dark:bg-zinc-900 md:border md:border-zinc-200/60 md:dark:border-zinc-800/60 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-all duration-200 focus:outline-none"
                         >
-                            <div className="text-left flex-1">
+                            <div className="text-left flex-1 hidden md:block">
                                 <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                                     {data.name}
                                 </div>

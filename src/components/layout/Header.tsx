@@ -137,11 +137,11 @@ export function Header() {
                             <ProfileDropdown logout={() => setIsLoggedIn(false)} />
                         ) : (
                             <div className="flex items-center gap-2">
-                                <GradientButton label="Sign In" variant="primary" onClick={() => router.push('/login')}>
+                                <GradientButton label="Sign In" variant="primary" className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm" onClick={() => router.push('/login')}>
                                 </GradientButton>
                                 <GradientButton
                                     variant="secondary"
-                                    className="hidden lg:flex text-xs h-12 px-3"
+                                    className="flex text-[10px] md:text-xs h-10 px-2 md:h-12 md:px-3 whitespace-nowrap"
                                     onClick={() => setIsLoggedIn(true)}
                                     label="Test Login"
                                 >
