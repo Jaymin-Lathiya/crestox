@@ -36,7 +36,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
 
   return (
     <motion.div
-      className="relative max-w-7xl mx-auto px-6 h-[180px] overflow-hidden border border-border/50 group cursor-pointer"
+      className="relative max-w-7xl mx-auto px-4 md:px-6 h-auto min-h-[180px] md:h-[180px] overflow-hidden border border-border/50 group cursor-pointer"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{
@@ -58,9 +58,9 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
       <div className="absolute inset-0 z-10 bg-gradient-to-r from-background via-background/90 to-transparent pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-20 h-full flex flex-row justify-between items-center px-8 py-6">
+      <div className="relative z-20 h-full flex flex-col md:flex-row justify-between items-start md:items-center px-4 md:px-8 py-6 gap-6 md:gap-0">
         {/* Left Section */}
-        <div className="flex flex-col justify-between h-full max-w-[60%]">
+        <div className="flex flex-col justify-between h-full w-full md:max-w-[60%]">
           <div className="space-y-1">
             <h2 className="font-renaissance text-2xl md:text-3xl text-foreground tracking-wide font-bold">
               {artistName}
@@ -72,7 +72,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-end gap-8 md:gap-12 mt-4">
+          <div className="flex flex-wrap items-end gap-6 md:gap-8 lg:gap-12 mt-6 md:mt-4">
             <div className="flex flex-col">
               <span className="font-cyber text-[10px] uppercase text-muted-foreground mb-1">Invested</span>
               <span className="font-cyber text-base md:text-lg text-foreground/90">
@@ -99,7 +99,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
         </div>
 
         {/* Right Section: Actions */}
-        <div className="flex flex-col items-end justify-center gap-4 h-full border-l border-border/10 pl-8">
+        <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 w-full md:w-auto h-full border-t md:border-t-0 md:border-l border-border/10 pt-4 md:pt-0 pl-0 md:pl-8">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}

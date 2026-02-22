@@ -2,16 +2,12 @@
 
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
-
-import ProfileDropdown from "../ui/profile"
-import { Activity, Compass, Component, HomeIcon, Info, Mail, Map, Moon, Package, ScrollText, Sun, SunMoon, WandSparkles } from "lucide-react"
+import { Compass, Info, Mail, Map, Moon, Package, ScrollText, Sun, SunMoon, WandSparkles } from "lucide-react"
 import { Dock, DockIcon, DockItem, DockLabel } from "../ui/dock"
 import { useTheme } from "next-themes"
 import { useThemeToggle } from "@/components/ui/skiper/skiper26"
 import GradientButton from "../ui/gradiant-button"
+import ProfileDropdown from "../ui/profile"
 
 
 

@@ -1,7 +1,7 @@
-
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
 import { useRef } from "react";
 import Link from 'next/link';
+import ScrollImagesReveal from "../ScrollImagesReveal";
 
 const ARTWORK_IMAGES = [
     "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
@@ -135,30 +135,34 @@ export default function ScrollRevealGrid() {
     const items = ARTWORK_IMAGES.slice(0, TOTAL);
 
     return (
-        <div ref={containerRef} className="relative h-[300vh] bg-background">
-            {/* Sticky wrapper keeps the grid on-screen while the container scrolls */}
-            <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
-                <ScrollTitle scrollYProgress={scrollYProgress} />
+        <>
+            <div ref={containerRef} className="relative h-[300vh] bg-background">
+                {/* Sticky wrapper keeps the grid on-screen while the container scrolls */}
+                <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
+                    {/* <ScrollTitle scrollYProgress={scrollYProgress} /> */}
 
-                <div
-                    className="grid gap-2.5 px-3 w-full max-w-7xl"
-                    style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
-                >
-                    {items.map((src, i) => {
-                        const col = i % COLS;
-                        const row = Math.floor(i / COLS);
-                        return (
-                            <GridCard
-                                key={i}
-                                src={src}
-                                col={col}
-                                row={row}
-                                scrollYProgress={scrollYProgress}
-                            />
-                        );
-                    })}
+                    <div
+                        className="grid gap-2.5 px-3 w-full max-w-7xl"
+                        style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+                    >
+                        {items.map((src, i) => {
+                            const col = i % COLS;
+                            const row = Math.floor(i / COLS);
+                            return (
+                                <GridCard
+                                    key={i}
+                                    src={src}
+                                    col={col}
+                                    row={row}
+                                    scrollYProgress={scrollYProgress}
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
-        </div >
+            {/* GSAP reveal rendered seamlessly after Framer Motion scroll unpins */}
+            <ScrollImagesReveal />
+        </>
     );
 }

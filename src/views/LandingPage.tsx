@@ -18,6 +18,17 @@ import ScrollRevealGrid from '@/components/ScrollRevealGrid/ScrollRevealGrid';
 import PhotoScrollSection from '@/components/Photoscrollsection';
 import ScrollImageRevealSection from '@/components/Photoscrollsection';
 import Scroll3DImageReveal from '@/components/Photoscrollsection';
+import ImageTrail from '@/components/ui/image-trail';
+import ScrollImagesReveal from '@/components/ScrollImagesReveal';
+
+const TRAIL_IMAGES = [
+  "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
+  "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=400&fit=crop",
+  "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&fit=crop",
+  "https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=400&fit=crop",
+  "https://images.unsplash.com/photo-1579783902614-a3fb392796a5?q=80&w=400&fit=crop",
+  "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop"
+];
 
 export default function LandingPage() {
   const router = useRouter();
@@ -31,59 +42,63 @@ export default function LandingPage() {
         }}
       />
 
+      <div className="relative min-h-screen w-full">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-card pointer-events-none z-0" />
+        <div className="relative z-10 w-full h-full">
+          <ImageTrail images={TRAIL_IMAGES} renderDistance={60}>
+            <section className="relative min-h-screen flex items-center justify-center px-6 pt-20">
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px]" />
 
+              <div className="relative z-10 max-w-5xl mx-auto text-center mt-5 pointer-events-auto">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-in-up">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-primary font-mono text-sm tracking-widest">FRACTIONAL ART INVESTMENT</span>
+                </div>
 
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-card" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px]" />
+                <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-medium mb-6 animate-fade-in-up delay-100">
+                  Own a Piece of
+                  <span className="block italic text-primary">Art History</span>
+                </h1>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center mt-5">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-in-up">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-primary font-mono text-sm tracking-widest">FRACTIONAL ART INVESTMENT</span>
-          </div>
+                <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 font-sans animate-fade-in-up delay-200">
+                  Invest in masterpieces by owning fractional shares.
+                  Crestox democratizes fine art collecting through blockchain-powered fractionalization.
+                </p>
 
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-medium mb-6 animate-fade-in-up delay-100">
-            Own a Piece of
-            <span className="block italic text-primary">Art History</span>
-          </h1>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
+                  <GradientButton
+                    variant="primary"
+                    className="group h-12"
+                    onClick={() => router.push('/app')}
+                    label="Create Collector Account"
+                  >
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </GradientButton>
+                  <GradientButton variant="secondary" onClick={() => router.push('/auth?mode=artist')} label='Join as Artist'>
 
-          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 font-sans animate-fade-in-up delay-200">
-            Invest in masterpieces by owning fractional shares.
-            Crestox democratizes fine art collecting through blockchain-powered fractionalization.
-          </p>
+                  </GradientButton>
+                </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
-            <GradientButton
-              variant="primary"
-              className="group h-12"
-              onClick={() => router.push('/app')}
-              label="Create Collector Account"
-            >
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </GradientButton>
-            <GradientButton variant="secondary" onClick={() => router.push('/auth?mode=artist')} label='Join as Artist'>
-
-            </GradientButton>
-          </div>
-
-          <div className="grid grid-cols-3 gap-8 mt-20 pt-10 border-t border-border/30 animate-fade-in-up delay-400">
-            <div>
-              <p className="text-3xl md:text-4xl font-mono font-bold text-primary">₹2.5Cr+</p>
-              <p className="text-muted-foreground font-mono text-sm mt-1">Trading Volume</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">1,200+</p>
-              <p className="text-muted-foreground font-mono text-sm mt-1">Collectors</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">85+</p>
-              <p className="text-muted-foreground font-mono text-sm mt-1">Artists</p>
-            </div>
-          </div>
+                <div className="grid grid-cols-3 gap-8 mt-20 pt-10 border-t border-border/30 animate-fade-in-up delay-400">
+                  <div>
+                    <p className="text-3xl md:text-4xl font-mono font-bold text-primary">₹2.5Cr+</p>
+                    <p className="text-muted-foreground font-mono text-sm mt-1">Trading Volume</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">1,200+</p>
+                    <p className="text-muted-foreground font-mono text-sm mt-1">Collectors</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">85+</p>
+                    <p className="text-muted-foreground font-mono text-sm mt-1">Artists</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </ImageTrail>
         </div>
-      </section>
+      </div>
 
       <section className="py-24 px-6 bg-card">
         <div className="max-w-6xl mx-auto">
@@ -199,6 +214,8 @@ export default function LandingPage() {
       </section>
 
       <PhotoScrollSection />
+
+      <ScrollImagesReveal bgClass="bg-[#0a0a0a]" />
 
       <GallerySection />
       <div className="flex justify-center pb-24 bg-background transition-colors duration-300">
