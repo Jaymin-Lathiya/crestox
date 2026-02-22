@@ -110,76 +110,80 @@ export default function GradientButton({
   return (
     <Button
       variant="ghost"
+      asChild
       className={cn(
         "group relative h-12 px-6 rounded-xl overflow-hidden transition-all duration-500",
         className
       )}
       {...props}
     >
-      {/* Gradient Border */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-xl bg-gradient-to-r p-[1.5px]",
-          colors.light.border,
-          `dark:bg-gradient-to-r ${colors.dark.border}`
-        )}
-      >
-        <div className="absolute inset-0 rounded-xl bg-white dark:bg-[#0F172A]" />
+      <div className="flex items-center justify-center cursor-pointer">
+        {/* Gradient Border */}
+        <div
+          className={cn(
+            "absolute inset-0 rounded-xl bg-gradient-to-r p-[1.5px]",
+            colors.light.border,
+            `dark:bg-gradient-to-r ${colors.dark.border}`
+          )}
+        >
+          <div className="absolute inset-0 rounded-xl bg-white dark:bg-[#0F172A]" />
+        </div>
+
+        {/* Button Base */}
+        <div
+          className={cn(
+            "absolute inset-[1.5px] rounded-xl bg-gradient-to-r",
+            colors.light.base,
+            `dark:bg-gradient-to-r ${colors.dark.base}`
+          )}
+        />
+
+        {/* Soft Overlay */}
+        <div
+          className={cn(
+            "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-90",
+            colors.light.overlay,
+            `dark:bg-gradient-to-r ${colors.dark.overlay}`
+          )}
+        />
+
+        {/* Glow Effect */}
+        <div
+          className="absolute inset-[1.5px] rounded-xl"
+          style={{
+            boxShadow: `inset 0 0 20px ${colors.light.glow}`,
+          }}
+        />
+
+        <div
+          className="absolute inset-[1.5px] rounded-xl dark:block hidden"
+          style={{
+            boxShadow: `inset 0 0 25px ${colors.dark.glow}`,
+          }}
+        />
+
+        {/* Text */}
+        <span
+          className={cn(
+            "relative z-10 bg-gradient-to-b flex items-center bg-clip-text text-transparent font-light tracking-wide",
+            colors.light.text,
+            `dark:bg-gradient-to-b ${colors.dark.text}`,
+            `dark:drop-shadow-[0_0_10px_${colors.dark.textGlow}]`
+          )}
+        >
+          {label}
+          {props.children}
+        </span>
+
+        {/* Hover Layer */}
+        <div
+          className={cn(
+            "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+            colors.light.hover,
+            `dark:bg-gradient-to-r ${colors.dark.hover}`
+          )}
+        />
       </div>
-
-      {/* Button Base */}
-      <div
-        className={cn(
-          "absolute inset-[1.5px] rounded-xl bg-gradient-to-r",
-          colors.light.base,
-          `dark:bg-gradient-to-r ${colors.dark.base}`
-        )}
-      />
-
-      {/* Soft Overlay */}
-      <div
-        className={cn(
-          "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-90",
-          colors.light.overlay,
-          `dark:bg-gradient-to-r ${colors.dark.overlay}`
-        )}
-      />
-
-      {/* Glow Effect */}
-      <div
-        className="absolute inset-[1.5px] rounded-xl"
-        style={{
-          boxShadow: `inset 0 0 20px ${colors.light.glow}`,
-        }}
-      />
-
-      <div
-        className="absolute inset-[1.5px] rounded-xl dark:block hidden"
-        style={{
-          boxShadow: `inset 0 0 25px ${colors.dark.glow}`,
-        }}
-      />
-
-      {/* Text */}
-      <span
-        className={cn(
-          "relative z-10 bg-gradient-to-b bg-clip-text text-transparent font-light tracking-wide",
-          colors.light.text,
-          `dark:bg-gradient-to-b ${colors.dark.text}`,
-          `dark:drop-shadow-[0_0_10px_${colors.dark.textGlow}]`
-        )}
-      >
-        {label}
-      </span>
-
-      {/* Hover Layer */}
-      <div
-        className={cn(
-          "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-          colors.light.hover,
-          `dark:bg-gradient-to-r ${colors.dark.hover}`
-        )}
-      />
     </Button>
   )
 }
