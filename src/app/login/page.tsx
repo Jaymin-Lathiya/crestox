@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -15,7 +14,6 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { PasswordInput } from "@/components/ui/password-input"
 import {
     Form,
     FormControl,
@@ -24,60 +22,41 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Stepper,
-    StepperContent,
-    StepperItem,
-    StepperNav,
-    StepperTrigger,
-    StepperIndicator,
-    StepperTitle,
-    StepperDescription,
-    StepperSeparator,
-    StepperPanel
-} from "@/components/reui/stepper"
-import { CheckIcon, LoaderCircleIcon } from "lucide-react"
 import GradientButton from "@/components/ui/gradiant-button"
+import { useAuthStore } from "@/store/useAuthStore"
+import { CheckCircle2 } from "lucide-react"
 
 const formSchema = z.object({
     email: z.string().email({
         message: "Please enter a valid email address.",
     }),
-    password: z.string().min(1, {
-        message: "Password is required.",
-    }),
 })
 
 export default function LoginPage() {
-    const [activeStep, setActiveStep] = useState(1);
+    const { requestMagicLink, isLoading, isSuccess, error } = useAuthStore()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: "",
-            password: "",
         },
         mode: "onChange"
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log("Form submitted:", values)
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (!values.email || values.email.trim() === "") {
+            form.setError("email", { type: "manual", message: "Email is required" });
+            return;
+        }
+
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(values.email)) {
+            form.setError("email", { type: "manual", message: "Please enter a valid email address." });
+            return;
+        }
+
+        await requestMagicLink(values.email)
     }
-
-    const nextStep = async () => {
-        let isValid = false;
-        if (activeStep === 1) {
-            isValid = await form.trigger("email");
-        }
-
-        if (isValid) {
-            setActiveStep((prev) => Math.min(prev + 1, 2));
-        }
-    };
-
-    const prevStep = () => {
-        setActiveStep((prev) => Math.max(prev - 1, 1));
-    };
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
@@ -85,135 +64,78 @@ export default function LoginPage() {
                 <CardHeader className="space-y-1 text-center pb-6">
                     <CardTitle className="text-2xl font-serif">Login</CardTitle>
                     <CardDescription className="font-sans">
-                        Enter your email below to login to your account
+                        {isSuccess
+                            ? "Check your email for the magic link."
+                            : "Enter your email below to login to your account"
+                        }
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Stepper
-                        value={activeStep}
-                        onValueChange={setActiveStep}
-                        orientation="vertical"
-                        className="flex flex-col items-center justify-center gap-10"
-                        indicators={{
-                            completed: (
-                                <CheckIcon className="size-3.5" />
-                            ),
-                            loading: (
-                                <LoaderCircleIcon className="size-3.5 animate-spin" />
-                            ),
-                        }}
-                    >
-
-
-                        <StepperPanel className="flex">
-                            <StepperNav className="justify-center items-center mt-5 gap-2 me-3">
-                                <StepperItem step={1} completed={activeStep > 1}>
-                                    <StepperTrigger onClick={() => { if (activeStep > 1) setActiveStep(1) }}>
-                                        <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-white">
-                                            1
-                                        </StepperIndicator>
-                                    </StepperTrigger>
-                                    <StepperSeparator className="group-data-[state=completed]/step:bg-primary" />
-                                </StepperItem>
-
-                                <StepperItem step={2}>
-                                    <StepperTrigger className="cursor-default">
-                                        <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-white">
-                                            2
-                                        </StepperIndicator>
-                                    </StepperTrigger>
-                                </StepperItem>
-                            </StepperNav>
+                    {isSuccess ? (
+                        <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                            <CheckCircle2 className="h-16 w-16 text-primary" />
+                            <p className="text-center text-muted-foreground">
+                                We've sent a secure login link to <strong>{form.getValues("email")}</strong>.
+                                Please check your inbox.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 min-h-[150px] flex flex-col justify-between w-full">
-                                    <StepperContent value={1} className="space-y-4 data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-right-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Email</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="m@example.com" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </StepperContent>
-
-                                    <StepperContent value={2} className="space-y-4 data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:slide-in-from-right-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="password"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex items-center justify-between">
-                                                        <FormLabel>Password</FormLabel>
-                                                        <Link
-                                                            href="/forgot-password"
-                                                            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-                                                        >
-                                                            Forgot your password?
-                                                        </Link>
-                                                    </div>
-                                                    <FormControl>
-                                                        <PasswordInput {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </StepperContent>
-
-                                    <div className="flex justify-between pt-8">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={prevStep}
-                                            disabled={activeStep === 1}
-                                            className={`rounded-lg ${activeStep === 1 ? "opacity-0" : ""}`}
-                                        >
-                                            Back
-                                        </Button>
-
-                                        {activeStep < 2 ? (
-                                            <GradientButton
-                                                type="button"
-                                                onClick={nextStep}
-                                                label="Next"
-                                            />
-                                        ) : (
-                                            <GradientButton
-                                                type="submit"
-                                                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
-                                                label="Login"
-                                            >
-
-                                            </GradientButton>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="email"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="m@example.com" {...field} disabled={isLoading} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
                                         )}
+                                    />
+
+                                    {error && (
+                                        <div className="text-sm font-medium text-destructive mt-2">
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end pt-4">
+                                        <GradientButton
+                                            type="submit"
+                                            className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                            label={isLoading ? "Sending..." : "Continue with Email"}
+                                            onClick={() => {
+                                                onSubmit(form.getValues())
+                                            }}
+                                            disabled={isLoading}
+                                        />
                                     </div>
                                 </form>
                             </Form>
-                        </StepperPanel>
-                    </Stepper>
 
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            {/* Separator */}
-                        </div>
-                    </div>
+                            <div className="relative my-8">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-card px-2 text-muted-foreground">
+                                        Or continue with
+                                    </span>
+                                </div>
+                            </div>
 
-                    <Button variant="outline" className="w-full" type="button">
-                        <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                            <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                        </svg>
-                        Login with Google
-                    </Button>
-
+                            <Button variant="outline" className="w-full" type="button" disabled={isLoading}>
+                                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                                    <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                                </svg>
+                                Login with Google
+                            </Button>
+                        </>
+                    )}
                 </CardContent>
                 <CardFooter className="justify-center pb-6 border-t pt-6 bg-muted/20">
                     <div className="text-sm text-muted-foreground font-sans">
@@ -227,3 +149,4 @@ export default function LoginPage() {
         </div>
     )
 }
+

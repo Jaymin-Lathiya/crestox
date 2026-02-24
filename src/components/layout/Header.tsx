@@ -8,6 +8,8 @@ import { useTheme } from "next-themes"
 import { useThemeToggle } from "@/components/ui/skiper/skiper26"
 import GradientButton from "../ui/gradiant-button"
 import ProfileDropdown from "../ui/profile"
+import { clearCookie, getCookie } from "@/utils/cookieUtils"
+import { useUserStore } from "@/store/useUserStore"
 
 
 
@@ -21,6 +23,16 @@ export function Header() {
         start: "top-left",
         blur: true,
     })
+
+    const token = getCookie("token")
+    const { fetchProfile, user } = useUserStore()
+
+    React.useEffect(() => {
+        if (token !== undefined && token !== "") {
+            setIsLoggedIn(true)
+            fetchProfile()
+        }
+    }, [token, fetchProfile])
 
 
     React.useEffect(() => {
@@ -130,7 +142,10 @@ export function Header() {
                         {/* <ThemeToggle /> */}
 
                         {isLoggedIn ? (
-                            <ProfileDropdown logout={() => setIsLoggedIn(false)} />
+                            <ProfileDropdown logout={() => {
+                                clearCookie("token")
+                                setIsLoggedIn(false)
+                            }} />
                         ) : (
                             <div className="flex items-center gap-2">
                                 <GradientButton label="Sign In" variant="primary" className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm" onClick={() => router.push('/login')}>

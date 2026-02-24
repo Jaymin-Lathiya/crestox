@@ -24,34 +24,22 @@ import {
 
 
 
-interface Profile {
-    name: string
-    email: string
-    avatar?: string
-}
-
-
-
-const SAMPLE_PROFILE_DATA: Profile = {
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "",
-}
-
+import { useUserStore } from "@/store/useUserStore"
 
 interface ProfileDropdownProps extends React.HTMLAttributes<HTMLDivElement> {
-    data?: Profile
     logout: () => void
 }
 
 export default function ProfileDropdown({
-    data = SAMPLE_PROFILE_DATA,
     className,
     logout,
     ...props
 }: ProfileDropdownProps) {
     const router = useRouter()
     const [isOpen, setIsOpen] = React.useState(false)
+    const { user } = useUserStore()
+
+    if (!user) return null;
 
     return (
         <div className={cn("relative", className)} {...props}>
@@ -64,10 +52,10 @@ export default function ProfileDropdown({
                         >
                             <div className="text-left flex-1 hidden md:block">
                                 <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                                    {data.name}
+                                    {user.name}
                                 </div>
                                 {/* <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                                    {data.email}
+                                    {user.email}
                                 </div> */}
                             </div>
 
@@ -75,17 +63,7 @@ export default function ProfileDropdown({
                             <div className="relative">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-0.5">
                                     <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-zinc-900 flex items-center justify-center text-xs font-semibold">
-                                        {data.avatar ? (
-                                            <Image
-                                                src={data.avatar}
-                                                alt={data.name}
-                                                width={36}
-                                                height={36}
-                                                className="w-full h-full object-cover rounded-full"
-                                            />
-                                        ) : (
-                                            <span>{data.name.slice(0, 2).toUpperCase()}</span>
-                                        )}
+                                        <span>{user.name.slice(0, 2).toUpperCase()}</span>
                                     </div>
                                 </div>
                             </div>
@@ -128,8 +106,8 @@ export default function ProfileDropdown({
                     >
                         {/* User Info */}
                         <div className="px-3 py-2">
-                            <p className="text-sm font-medium">{data.name}</p>
-                            <p className="text-xs text-muted-foreground">{data.email}</p>
+                            <p className="text-sm font-medium">{user.name}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
 
                         <DropdownMenuSeparator />
