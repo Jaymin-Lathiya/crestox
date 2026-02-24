@@ -23,7 +23,7 @@ function VerifyContent() {
 
                 if (accessToken) {
                     setCookie("token", accessToken, 30);
-                    router.push("/")
+                    window.location.href = "/"
                 } else {
                     setTimeout(() => {
                         clearStore()

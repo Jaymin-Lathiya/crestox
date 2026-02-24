@@ -150,13 +150,13 @@ export function Header() {
                             <div className="flex items-center gap-2">
                                 <GradientButton label="Sign In" variant="primary" className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm" onClick={() => router.push('/login')}>
                                 </GradientButton>
-                                <GradientButton
+                                {/* <GradientButton
                                     variant="secondary"
                                     className="flex text-[10px] md:text-xs h-10 px-2 md:h-12 md:px-3 whitespace-nowrap"
                                     onClick={() => setIsLoggedIn(true)}
                                     label="Test Login"
                                 >
-                                </GradientButton>
+                                </GradientButton> */}
                             </div>
                         )}
                     </div>

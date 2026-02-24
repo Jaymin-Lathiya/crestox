@@ -11,7 +11,7 @@ interface AuthState {
     setError: (error: string | null) => void;
     isSuccess: boolean;
     setIsSuccess: (isSuccess: boolean) => void;
-    requestMagicLink: (email: string) => Promise<void>;
+    requestMagicLink: (email: string, name?: string) => Promise<void>;
     verifyMagicLinkToken: (token: string) => Promise<string | null>;
     fetchUserToken: (accessToken: string) => Promise<boolean>;
     clearStore: () => void;
@@ -27,10 +27,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     isSuccess: false,
     setIsSuccess: (isSuccess) => set({ isSuccess }),
 
-    requestMagicLink: async (email: string) => {
+    requestMagicLink: async (email: string, name?: string) => {
         set({ isLoading: true, error: null, isSuccess: false });
         try {
-            const action = getMagicLink({ email });
+            const action = getMagicLink({ email, name });
             await action();
             set({ isSuccess: true });
         } catch (err: any) {
