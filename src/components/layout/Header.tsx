@@ -82,8 +82,8 @@ export function Header() {
     return (
         <>
 
-            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-5 bg-background/80 backdrop-blur-sm border-b border-border/50">
-                <div className="flex justify-between items-center max-w-7xl mx-auto">
+            <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 px-6 py-3 md:py-4 bg-background/80 backdrop-blur-lg border border-border/50 rounded-2xl shadow-sm">
+                <div className="flex justify-between items-center w-full">
                     <div
                         className="flex-shrink-0 cursor-pointer"
                         onClick={() => router.push('/')}
@@ -112,10 +112,10 @@ export function Header() {
                     >
                         About Us
                     </Link>
-                </div> */}
+                    </div> */}
 
-                    <div className='absolute bottom-2 left-1/2 max-w-full -translate-x-1/2 hidden lg:flex'>
-                        <Dock className='items-end pb-3'>
+                    <div className='absolute top-1/2 left-1/2 max-w-full -translate-x-1/2 -translate-y-1/2 hidden lg:flex'>
+                        <Dock direction="middle" className='items-center'>
                             {data.map((item, idx) => (
                                 <DockItem
                                     key={idx}

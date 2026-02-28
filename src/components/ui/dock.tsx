@@ -33,6 +33,7 @@ export type DockProps = {
     panelHeight?: number;
     magnification?: number;
     spring?: SpringOptions;
+    direction?: 'top' | 'middle' | 'bottom';
 };
 
 export type DockItemProps = {
@@ -56,6 +57,7 @@ export type DocContextType = {
     spring: SpringOptions;
     magnification: number;
     distance: number;
+    direction: 'top' | 'middle' | 'bottom';
 };
 
 export type DockProviderProps = {
@@ -84,6 +86,7 @@ function Dock({
     magnification = DEFAULT_MAGNIFICATION,
     distance = DEFAULT_DISTANCE,
     panelHeight = DEFAULT_PANEL_HEIGHT,
+    direction = 'bottom',
 }: DockProps) {
     const mouseX = useMotionValue(Infinity);
     const isHovered = useMotionValue(0);
@@ -101,7 +104,10 @@ function Dock({
                 height: height,
                 scrollbarWidth: 'none',
             }}
-            className='mx-2 flex max-w-full items-end overflow-x-auto'
+            className={cn(
+                'mx-2 flex max-w-full overflow-x-auto',
+                direction === 'top' ? 'items-start' : direction === 'middle' ? 'items-center' : 'items-end'
+            )}
         >
             <motion.div
                 onMouseMove={({ pageX }) => {
@@ -120,7 +126,7 @@ function Dock({
                 role='toolbar'
                 aria-label='Application dock'
             >
-                <DockProvider value={{ mouseX, spring, distance, magnification }}>
+                <DockProvider value={{ mouseX, spring, distance, magnification, direction }}>
                     {children}
                 </DockProvider>
             </motion.div>
@@ -173,6 +179,7 @@ function DockItem({ children, className, onClick }: DockItemProps) {
 }
 
 function DockLabel({ children, className, ...rest }: DockLabelProps) {
+    const { direction } = useDock();
     const restProps = rest as Record<string, unknown>;
     const isHovered = restProps['isHovered'] as MotionValue<number>;
     const [isVisible, setIsVisible] = useState(false);
@@ -190,11 +197,12 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
             {isVisible && (
                 <motion.div
                     initial={{ opacity: 0, y: 0 }}
-                    animate={{ opacity: 1, y: -10 }}
+                    animate={{ opacity: 1, y: direction === 'top' ? 5 : -5 }}
                     exit={{ opacity: 0, y: 0 }}
                     transition={{ duration: 0.2 }}
                     className={cn(
-                        'absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white',
+                        'absolute left-1/2 w-fit whitespace-pre rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white',
+                        direction === 'top' ? '-bottom-4' : '-top-4',
                         className
                     )}
                     role='tooltip'

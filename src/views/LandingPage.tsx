@@ -30,6 +30,29 @@ const TRAIL_IMAGES = [
   "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop"
 ];
 
+export const IMAGES = [
+  { src: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=400&fit=crop", alt: "Fashion 1" },
+  { src: "https://images.unsplash.com/photo-1488716820095-cbe80883c496?w=600&h=400&fit=crop", alt: "Portrait 1" },
+  { src: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600&h=400&fit=crop", alt: "Stars" },
+  { src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop", alt: "Portrait 2" },
+  { src: "https://images.unsplash.com/photo-1553545204-4f7d339aa06a?w=600&h=400&fit=crop", alt: "Horses" },
+  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop", alt: "Shopping" },
+  { src: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&h=400&fit=crop", alt: "Porsche" },
+  { src: "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&h=400&fit=crop", alt: "Eye close" },
+  { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=400&fit=crop", alt: "Fashion 2" },
+  { src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=400&fit=crop", alt: "Portrait 3" },
+  { src: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&h=400&fit=crop", alt: "Eye macro" },
+  { src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop", alt: "Mountain" },
+  { src: "https://images.unsplash.com/photo-1614728263952-84ea256f9d1d?w=600&h=400&fit=crop", alt: "Abstract" },
+  { src: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=400&fit=crop", alt: "Cassette" },
+  { src: "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=600&h=400&fit=crop", alt: "Aurora" },
+  { src: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop", alt: "Office" },
+  { src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=400&fit=crop", alt: "Chrome" },
+  { src: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=400&fit=crop", alt: "Ocean" },
+  { src: "https://images.unsplash.com/photo-1583394293214-6ff819cd23eb?w=600&h=400&fit=crop", alt: "Ice cubes" },
+  { src: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop", alt: "Blue arch" },
+];
+
 export default function LandingPage() {
   const router = useRouter();
 
@@ -215,10 +238,11 @@ export default function LandingPage() {
 
       <PhotoScrollSection />
 
-      <ScrollImagesReveal bgClass="bg-[#0a0a0a]" />
+      {/* <ScrollImagesReveal bgClass="bg-[#0a0a0a]" /> */}
 
       <GallerySection />
       <div className="flex justify-center pb-24 bg-background transition-colors duration-300">
+
         <GradientButton
           variant="primary"
           onClick={() => router.push('/explore')}

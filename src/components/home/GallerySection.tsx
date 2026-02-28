@@ -5,6 +5,9 @@ import { motion, useScroll, useTransform, useAnimation, useMotionValue } from 'f
 import { ArtworkCard } from './ArtworkCard';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import ProcessConstellation from '../ProcessConstellation';
+import PhotoScrollSection from '../Photoscrollsection';
+import { IMAGES } from '@/views/LandingPage';
 
 const ARTWORKS = [
     { id: 1, title: 'The Liquid Abstract', artist: 'Elena V.', price: '₹18,284.75', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=1000&auto=format&fit=crop', aspectRatio: 'aspect-[3/4]' },
@@ -67,15 +70,17 @@ export function GallerySection() {
                 <h2 className="font-serif text-3xl md:text-5xl">Curated Masterpieces</h2>
             </div>
 
-            <div className="md:hidden">
+            <PhotoScrollSection />
+
+            {/* <div className="md:hidden">
                 <InfiniteColumn artworks={[...COLUMN_1, ...COLUMN_2]} duration={30} />
             </div>
 
             <div className="hidden md:grid grid-cols-3 gap-10 max-w-7xl mx-auto px-4 h-[800px]">
                 <InfiniteColumn artworks={COLUMN_1} duration={45} className="mt-0" />
-                <InfiniteColumn artworks={COLUMN_2} duration={55} className="-mt-12" /> {/* Parallax/Offset effect */}
+                <InfiniteColumn artworks={COLUMN_2} duration={55} className="-mt-12" />
                 <InfiniteColumn artworks={COLUMN_3} duration={40} className="mt-8" />
-            </div>
+            </div> */}
         </section>
     );
 }
