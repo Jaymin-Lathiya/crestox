@@ -18,13 +18,13 @@ const tabs: { id: TabType; label: string }[] = [
 
 const ArtistTabs: React.FC<ArtistTabsProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="flex justify-center overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+    <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:justify-center scrollbar-hide">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-        className="inline-flex h-11 items-center p-1 bg-card/80 border border-border rounded-full backdrop-blur-md min-w-max"
-      >
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.3, duration: 0.6 }}
+  className="inline-flex h-11 items-center p-1 bg-card/80 border border-border rounded-full backdrop-blur-md min-w-max shrink-0"
+>
         {tabs.map((tab) => (
           <button
             key={tab.id}

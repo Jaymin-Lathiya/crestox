@@ -98,39 +98,41 @@ export const AnalyticsTab = () => {
         transition={{ delay: 0.5 }}
       >
         <h3 className="text-label mb-4">Top Performing Artworks</h3>
-        <div className="space-y-4">
-          {[
-            { title: "Ethereal Dawn", views: 4521, sales: 67, revenue: 2847.50 },
-            { title: "The Observer", views: 3892, sales: 100, revenue: 8500 },
-            { title: "Solitude", views: 2847, sales: 89, revenue: 4628 },
-          ].map((artwork, i) => (
-            <div 
-              key={artwork.title}
-              className="flex items-center justify-between py-3 border-b border-border last:border-0"
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-mono text-muted-foreground w-6">
-                  #{i + 1}
-                </span>
-                <span className="text-sm text-foreground">{artwork.title}</span>
-              </div>
-              <div className="flex items-center gap-8 text-right">
-                <div>
-                  <p className="text-xs text-muted-foreground">Views</p>
-                  <p className="text-sm font-mono text-foreground">{artwork.views.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Sales</p>
-                  <p className="text-sm font-mono text-foreground">{artwork.sales}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Revenue</p>
-                  <p className="text-sm font-mono text-accent">${artwork.revenue.toFixed(2)}</p>
-                </div>
-              </div>
+        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4"> {/* 👈 negative margin trick for full bleed scroll */}
+  <div className="min-w-[480px]"> {/* 👈 prevent squishing */}
+    <div className="space-y-4">
+      {[
+        { title: "Ethereal Dawn", views: 4521, sales: 67, revenue: 2847.50 },
+        { title: "The Observer", views: 3892, sales: 100, revenue: 8500 },
+        { title: "Solitude", views: 2847, sales: 89, revenue: 4628 },
+      ].map((artwork, i) => (
+        <div
+          key={artwork.title}
+          className="flex items-center justify-between py-3 border-b border-border last:border-0"
+        >
+          <div className="flex items-center gap-4 shrink-0">
+            <span className="text-xs font-mono text-muted-foreground w-6">#{i + 1}</span>
+            <span className="text-sm text-foreground w-28">{artwork.title}</span>
+          </div>
+          <div className="flex items-center gap-8 text-right">
+            <div>
+              <p className="text-xs text-muted-foreground">Views</p>
+              <p className="text-sm font-mono text-foreground">{artwork.views.toLocaleString()}</p>
             </div>
-          ))}
+            <div>
+              <p className="text-xs text-muted-foreground">Sales</p>
+              <p className="text-sm font-mono text-foreground">{artwork.sales}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Revenue</p>
+              <p className="text-sm font-mono text-accent">${artwork.revenue.toFixed(2)}</p>
+            </div>
+          </div>
         </div>
+      ))}
+    </div>
+  </div>
+</div>
       </motion.div>
     </div>
   );

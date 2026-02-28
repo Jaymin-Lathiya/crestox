@@ -30,12 +30,16 @@ export default function CardFlip({
     step = "1",
 }: CardFlipProps) {
     const [isFlipped, setIsFlipped] = useState(false);
+const [isHovered, setIsHovered] = useState(false);
+
+const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers flip
 
     return (
         <div
             className="group relative h-[320px] w-full max-w-[280px] [perspective:2000px]"
-            onMouseEnter={() => setIsFlipped(true)}
-            onMouseLeave={() => setIsFlipped(false)}
+            onMouseEnter={() => setIsHovered(true)}
+  onMouseLeave={() => setIsHovered(false)}
+  onClick={() => setIsFlipped(prev => !prev)}
         >
             <div
                 className={cn(

@@ -104,12 +104,12 @@ export default function ProcessConstellation() {
           className="text-center mb-24"
         >
           <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-ghost tracking-tighter mb-4">
-            HOW{" "}
-            <span className="italic bg-gradient-to-r from-cyber to-cyber-dim bg-clip-text text-transparent">
-              CRESTOX
-            </span>
-            {" "}WORKS
-          </h2>
+  HOW{" "}
+  <span className="italic bg-gradient-to-r from-cyber to-cyber-dim bg-clip-text text-transparent pr-4">
+    CRESTOX
+  </span>
+  {" "}WORKS
+</h2>
           <p className="font-mono text-sm text-ghost-dim tracking-widest uppercase">
             [ The Protocol in Four Steps ]
           </p>
@@ -146,7 +146,8 @@ export default function ProcessConstellation() {
     <div
       key={item.number}
       className={cn(
-        "relative flex items-center justify-between mb-24 last:mb-0",
+        "relative flex items-center justify-between mb-24",
+        index === STEPS.length - 1 && "mb-0",
         index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
       )}
     >
@@ -154,9 +155,9 @@ export default function ProcessConstellation() {
       <div className="hidden md:block w-1/2" />
 
       {/* Timeline Node */}
-      <div className="absolute left-[20px] md:left-1/2 -translate-x-1/2 flex items-center justify-center w-4 h-4">
-        <div className="w-3 h-3 rounded-full bg-void border-2 border-gold shadow-[0_0_12px_rgba(212,175,55,0.5)] z-10" />
-      </div>
+<div className="absolute hidden md:flex left-1/2 -translate-x-1/2 items-center justify-center w-4 h-4">
+  <div className="w-3 h-3 rounded-full bg-void border-2 border-gold shadow-[0_0_12px_rgba(212,175,55,0.5)] z-10" />
+</div>
 
       {/* Card */}
       <motion.div
@@ -183,14 +184,14 @@ export default function ProcessConstellation() {
 
 
           {/* End Node */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="absolute left-1/2 -translate-x-1/2 -bottom-8"
-          >
-            <div className="w-6 h-6 rounded-full bg-cyber shadow-[0_0_20px_rgba(0,240,255,0.6)] animate-pulse-glow" />
-          </motion.div>
+<motion.div
+  initial={{ opacity: 0, scale: 0 }}
+  whileInView={{ opacity: 1, scale: 1 }}
+  viewport={{ once: true }}
+  className="flex items-center justify-center mt-4" // 👈 replace absolute with flow layout
+>
+  <div className="w-6 h-6 rounded-full bg-cyber shadow-[0_0_20px_rgba(0,240,255,0.6)] animate-pulse-glow" />
+</motion.div>
         </div>
       </div>
     </section>

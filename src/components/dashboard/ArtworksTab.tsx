@@ -105,14 +105,14 @@ export const ArtworksTab = () => {
   ];
 
   return (
-    <div className="space-y-8 px-20">
+    <div className="space-y-8 md:px-20">
       {/* Header */}
       <motion.div
-        className="flex items-center justify-between"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+  className="flex gap-1 p-1 bg-card/40 backdrop-blur-sm border border-border w-fit max-w-full overflow-x-auto scrollbar-hide" 
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.1 }}
+>
         <div>
           <h1 className="text-3xl font-light text-foreground tracking-tight mb-2">
             My Artworks

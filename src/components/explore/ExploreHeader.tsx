@@ -36,16 +36,16 @@ export function ExploreHeader() {
 
                 <div className="relative w-full max-w-xl group">
                     <div className="absolute inset-x-0 -bottom-4 h-8 bg-gradient-to-t from-background to-transparent blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="relative flex items-center bg-secondary/50 hover:bg-secondary/80 transition-colors rounded-full px-4 py-3 border border-border/50 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20">
+                    <div className="relative flex items-center bg-background/80 hover:bg-background/90 transition-colors rounded-full px-4 py-3 border border-border hover:border-primary/30 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 backdrop-blur-sm">
                         <Sparkles className="w-4 h-4 text-muted-foreground mr-3" />
                         <input
                             type="text"
                             placeholder="Try 'archival animations'..."
                             className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70"
                         />
-                        <div className="bg-background/80 p-1.5 rounded-full ml-2 cursor-pointer hover:scale-105 transition-transform">
-                            <Search className="w-3.5 h-3.5 text-foreground" />
-                        </div>
+                        <div className="bg-primary/10 hover:bg-primary/20 p-1.5 rounded-full ml-2 cursor-pointer hover:scale-105 transition-all">
+  <Search className="w-3.5 h-3.5 text-primary" />
+</div>
                     </div>
                 </div>
 

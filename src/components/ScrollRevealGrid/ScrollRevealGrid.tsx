@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
 import { useRef } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 import ScrollImagesReveal from "../ScrollImagesReveal";
 
 const ARTWORK_IMAGES = [
@@ -34,6 +34,20 @@ function getColumnOffset(col: number): number {
     return distance * distance * 55;
 }
 
+// Add this hook
+import { useEffect, useState } from "react";
+
+function useColumns() {
+    const [cols, setCols] = useState(5);
+    useEffect(() => {
+        const update = () => setCols(window.innerWidth < 768 ? 2 : 5);
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return cols;
+}
+
 /**
  * Center columns are slightly larger in the scattered state.
  */
@@ -55,15 +69,24 @@ function GridCard({
     src,
     col,
     row,
+    cols,
     scrollYProgress,
 }: {
     src: string;
     col: number;
     row: number;
+    cols: number;
     scrollYProgress: MotionValue<number>;
 }) {
-    const yOffset = getColumnOffset(col) + getRowOffset(row);
-    const scaleStart = getColumnScale(col);
+    const center = (cols - 1) / 2;
+    const distance = Math.abs(col - center);
+
+    // Stronger offsets on mobile (2 cols) to keep the pyramid feel
+    const colMultiplier = cols === 2 ? 120 : 55;
+    const rowMultiplier = cols === 2 ? 100 : 60;
+
+    const yOffset = distance * distance * colMultiplier + row * rowMultiplier;
+    const scaleStart = 1 - distance * 0.04;
 
     const y = useTransform(scrollYProgress, [0, 0.55], [yOffset, 0]);
     const scale = useTransform(scrollYProgress, [0, 0.55], [scaleStart, 1]);
@@ -90,13 +113,16 @@ function GridCard({
 // ─── Main component ─────────────────────────────────────────────────
 export default function ScrollRevealGrid() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const cols = useColumns(); // 👈
+    const rows = cols === 2 ? 5 : 3;
+    const total = cols * rows;
 
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end end"],
     });
 
-    const items = ARTWORK_IMAGES.slice(0, TOTAL);
+    const items = ARTWORK_IMAGES.slice(0, total);
 
     return (
         <>
@@ -104,17 +130,18 @@ export default function ScrollRevealGrid() {
                 <div className="sticky top-0 flex flex-col items-center justify-center overflow-hidden">
                     <div
                         className="grid gap-4 px-4 w-full max-w-[95vw] mx-auto"
-                        style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+                        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
                     >
                         {items.map((src, i) => {
-                            const col = i % COLS;
-                            const row = Math.floor(i / COLS);
+                            const col = i % cols;
+                            const row = Math.floor(i / cols);
                             return (
                                 <GridCard
                                     key={i}
                                     src={src}
                                     col={col}
                                     row={row}
+                                    cols={cols} // 👈 pass cols
                                     scrollYProgress={scrollYProgress}
                                 />
                             );

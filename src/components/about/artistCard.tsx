@@ -1,5 +1,47 @@
+'use client';
 import Link from 'next/link'
 import SocialButton from '../ui/social-button'
+
+import { useState } from 'react';
+
+function MemberCard({ member, index }: { member: typeof members[0], index: number }) {
+  const [isActive, setIsActive] = useState(false);
+
+  return (
+    <div
+      className="group overflow-hidden"
+      onClick={() => setIsActive(prev => !prev)}
+    >
+      <img
+        className={`h-96 w-full rounded-md object-cover object-top transition-all duration-500
+          ${isActive ? 'grayscale-0 h-[22.5rem] rounded-xl' : 'grayscale'}
+          md:grayscale md:group-hover:grayscale-0 md:group-hover:h-[22.5rem] md:group-hover:rounded-xl`}
+        src={member.avatar}
+        alt={member.name}
+        width="826"
+        height="1239"
+      />
+      <div className="px-2 pt-2 sm:pb-0 sm:pt-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-base font-medium transition-all duration-500">
+            {member.role}
+          </h3>
+          <span className="text-xs">_0{index + 1}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span
+            className={`inline-block text-sm transition-all duration-500
+              ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}
+              md:translate-y-6 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100`}
+          >
+            {member.name}
+          </span>
+          <SocialButton />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const members = [
     {
@@ -56,35 +98,8 @@ export default function TeamSection() {
                 <div className="mt-12 md:mt-24">
                     <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                         {members.map((member, index) => (
-                            <div key={index} className="group overflow-hidden">
-                                <img
-                                    className="h-96 w-full rounded-md object-cover object-top grayscale transition-all duration-500 hover:grayscale-0 group-hover:h-[22.5rem] group-hover:rounded-xl"
-                                    src={member.avatar}
-                                    alt={member.name}
-                                    width="826"
-                                    height="1239"
-                                />
-
-                                <div className="px-2 pt-2 sm:pb-0 sm:pt-4">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="text-base font-medium transition-all duration-500">
-                                            {member.role}
-                                        </h3>
-
-                                        <span className="text-xs">_0{index + 1}</span>
-                                    </div>
-
-                                    <div className="mt-1 flex items-center justify-between">
-                                        <span className="inline-block translate-y-6 text-sm opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                                            {member.name}
-                                        </span>
-
-                                        <SocialButton />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
+    <MemberCard key={index} member={member} index={index} />
+  ))}
                     </div>
                 </div>
             </div>

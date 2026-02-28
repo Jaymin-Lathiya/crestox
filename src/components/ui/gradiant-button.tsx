@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -105,7 +105,23 @@ export default function GradientButton({
   variant = "primary",
   ...props
 }: GradientButtonProps) {
+  const [isDark, setIsDark] = useState(false)
   const colors = gradientColors[variant]
+
+  useEffect(() => {
+    // Check initial theme
+    setIsDark(document.documentElement.classList.contains("dark"))
+
+    // Watch for theme changes
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"))
+    })
+
+    observer.observe(document.documentElement, { attributes: true })
+    return () => observer.disconnect()
+  }, [])
+
+  const currentColors = isDark ? colors.dark : colors.light
 
   return (
     <Button
@@ -121,20 +137,20 @@ export default function GradientButton({
         {/* Gradient Border */}
         <div
           className={cn(
-            "absolute inset-0 rounded-xl bg-gradient-to-r p-[1.5px]",
-            colors.light.border,
-            `dark:bg-gradient-to-r ${colors.dark.border}`
+            "absolute inset-0 rounded-xl p-[1.5px]",
+            isDark
+              ? `bg-gradient-to-r ${colors.dark.border}`
+              : `bg-gradient-to-r ${colors.light.border}`
           )}
         >
-          <div className="absolute inset-0 rounded-xl bg-white dark:bg-[#0F172A]" />
+          <div className={cn("absolute inset-0 rounded-xl", isDark ? "bg-[#0F172A]" : "bg-white")} />
         </div>
 
         {/* Button Base */}
         <div
           className={cn(
             "absolute inset-[1.5px] rounded-xl bg-gradient-to-r",
-            colors.light.base,
-            `dark:bg-gradient-to-r ${colors.dark.base}`
+            isDark ? colors.dark.base : colors.light.base
           )}
         />
 
@@ -142,8 +158,7 @@ export default function GradientButton({
         <div
           className={cn(
             "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-90",
-            colors.light.overlay,
-            `dark:bg-gradient-to-r ${colors.dark.overlay}`
+            isDark ? colors.dark.overlay : colors.light.overlay
           )}
         />
 
@@ -151,14 +166,7 @@ export default function GradientButton({
         <div
           className="absolute inset-[1.5px] rounded-xl"
           style={{
-            boxShadow: `inset 0 0 20px ${colors.light.glow}`,
-          }}
-        />
-
-        <div
-          className="absolute inset-[1.5px] rounded-xl dark:block hidden"
-          style={{
-            boxShadow: `inset 0 0 25px ${colors.dark.glow}`,
+            boxShadow: `inset 0 0 20px ${isDark ? colors.dark.glow : colors.light.glow}`,
           }}
         />
 
@@ -166,10 +174,11 @@ export default function GradientButton({
         <span
           className={cn(
             "relative z-10 bg-gradient-to-b flex items-center bg-clip-text text-transparent font-light tracking-wide",
-            colors.light.text,
-            `dark:bg-gradient-to-b ${colors.dark.text}`,
-            `dark:drop-shadow-[0_0_10px_${colors.dark.textGlow}]`
+            isDark ? colors.dark.text : colors.light.text
           )}
+          style={{
+            filter: isDark ? `drop-shadow(0 0 10px ${colors.dark.textGlow})` : "none"
+          }}
         >
           {label}
           {props.children}
@@ -179,8 +188,7 @@ export default function GradientButton({
         <div
           className={cn(
             "absolute inset-[1.5px] rounded-xl bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-            colors.light.hover,
-            `dark:bg-gradient-to-r ${colors.dark.hover}`
+            isDark ? colors.dark.hover : colors.light.hover
           )}
         />
       </div>

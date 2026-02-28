@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+'use client';
+import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 const features = [
@@ -47,6 +48,60 @@ const features = [
     statLabel: 'Avg. Settlement'
   },
 ];
+
+interface FeatureFlipCardProps {
+  feature: {
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    stat: string;
+    statLabel: string;
+    backDescription?: string;
+  };
+  index: number;
+}
+
+export function FeatureFlipCard({ feature, index }: FeatureFlipCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="group [perspective:1000px] cursor-pointer"
+      onClick={() => setIsFlipped(prev => !prev)}
+    >
+      <div
+        className={`relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d]
+          ${isFlipped ? '[transform:rotateY(180deg)]' : ''}
+          md:group-hover:[transform:rotateY(180deg)]`}
+      >
+        {/* FRONT */}
+        <div className="absolute inset-0 bg-muted rounded-lg p-6 border border-border group-hover:border-primary/30 transition-all duration-500 [backface-visibility:hidden]">
+          <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:bg-primary/20 transition-colors duration-300">
+  {feature.icon}
+</div>
+          <h3 className="font-display text-lg italic text-foreground mb-2">{feature.title}</h3>
+          <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-4">{feature.description}</p>
+          <div className="pt-4 border-t border-border">
+            <p className="font-display text-2xl italic text-gradient-gold">{feature.stat}</p>
+            <p className="terminal-text text-muted-foreground text-[10px]">{feature.statLabel}</p>
+          </div>
+        </div>
+
+        {/* BACK */}
+        <div className="absolute inset-0 bg-background rounded-lg p-6 border border-primary/30 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+          <h3 className="font-display text-lg italic text-foreground mb-4">Why It Matters</h3>
+          <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-6">
+            {feature.backDescription ?? 'Institutional-grade infrastructure ensuring maximum protection, compliance, and transparency for investors.'}
+          </p>
+          <div className="text-gradient-gold font-display text-2xl italic">{feature.stat}</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 const BlockchainVisualization = () => {
   return (
@@ -155,63 +210,10 @@ const TrustMatrix = () => {
 
         {/* Feature grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="group [perspective:1000px]"
-            >
-              <div className="relative h-[260px] transition-transform duration-700 ease-in-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
-
-                {/* FRONT */}
-                <div className="absolute inset-0 bg-muted rounded-lg p-6 border border-border group-hover:border-primary/30 transition-all duration-500 [backface-visibility:hidden]">
-
-                  {/* Icon */}
-                  <div className="w-14 h-14 rounded-lg bg-secondary flex items-center justify-center text-primary mb-4 group-hover:bg-primary/10 transition-colors duration-300">
-                    {feature.icon}
-                  </div>
-
-                  <h3 className="font-display text-lg italic text-foreground mb-2">
-                    {feature.title}
-                  </h3>
-
-                  <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-4">
-                    {feature.description}
-                  </p>
-
-                  <div className="pt-4 border-t border-border">
-                    <p className="font-display text-2xl italic text-gradient-gold">
-                      {feature.stat}
-                    </p>
-                    <p className="terminal-text text-muted-foreground text-[10px]">
-                      {feature.statLabel}
-                    </p>
-                  </div>
-                </div>
-
-                {/* BACK */}
-                <div className="absolute inset-0 bg-background rounded-lg p-6 border border-primary/30 flex flex-col justify-center items-center text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
-
-                  <h3 className="font-display text-lg italic text-foreground mb-4">
-                    Why It Matters
-                  </h3>
-
-                  <p className="font-sans text-xs text-muted-foreground leading-relaxed mb-6">
-                    Institutional-grade infrastructure ensuring maximum protection,
-                    compliance, and transparency for investors.
-                  </p>
-
-                  <div className="text-gradient-gold font-display text-2xl italic">
-                    {feature.stat}
-                  </div>
-                </div>
-
-              </div>
-            </motion.div>
-          ))}
-        </div>
+  {features.map((feature, index) => (
+    <FeatureFlipCard key={feature.title} feature={feature} index={index} />
+  ))}
+</div>
 
 
         {/* Trust badges */}

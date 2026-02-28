@@ -70,7 +70,7 @@ export function GallerySection() {
                 <h2 className="font-serif text-3xl md:text-5xl">Curated Masterpieces</h2>
             </div>
 
-            <PhotoScrollSection />
+            <PhotoScrollSection images={IMAGES} />
 
             {/* <div className="md:hidden">
                 <InfiniteColumn artworks={[...COLUMN_1, ...COLUMN_2]} duration={30} />

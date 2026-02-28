@@ -47,12 +47,12 @@ export default function CollectionPage() {
                         title="How Crestox Works"
                         description="A simple, secure certificate workflow"
                         image={{
-                            step1light1: "/images/step1-1.png",
-                            step1light2: "/images/step1-2.png",
-                            step2light1: "/images/step2-1.png",
-                            step2light2: "/images/step2-2.png",
-                            step3light: "/images/step3.png",
-                            step4light: "/images/step4.png",
+                            step1light1: "/assets/artwork-1.jpg",
+                            step1light2: "/assets/artwork-2.jpg",
+                            step2light1: "/assets/artwork-3.jpg",
+                            step2light2: "/assets/artwork-4.jpg",
+                            step3light: "/assets/artwork-5.jpg",
+                            step4light: "/assets/artwork-6.jpg",
                             alt: "Feature carousel demo"
                         }}
                     />

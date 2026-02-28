@@ -69,7 +69,7 @@ const ArtistPage = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-12 md:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-15">
 
-          <div className="lg:col-span-8 order-2 lg:order-1">
+          <div className="lg:col-span-8 lg:order-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -83,7 +83,7 @@ const ArtistPage = () => {
             </AnimatePresence>
           </div>
 
-          <div className="lg:col-span-4 order-1 lg:order-last">
+          <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
               <CollectModule
                 pricePerFractal={240.50}
