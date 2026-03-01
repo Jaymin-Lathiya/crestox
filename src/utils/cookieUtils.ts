@@ -1,4 +1,5 @@
 export function getCookie(cname : String) {
+  if (typeof document === 'undefined') return '';
   var name = cname + '=';
   var decodedCookie = decodeURIComponent(document.cookie);
   var ca = decodedCookie.split(';');
@@ -14,6 +15,7 @@ export function getCookie(cname : String) {
   return '';
 }
 export function setCookie(cname : String, cvalue : String, exdays = 30) {
+  if (typeof document === 'undefined') return;
   var d = new Date();
   d.setTime(d.getTime() + exdays * 8 * 60 * 60 * 1000);
   var expires = 'expires='
