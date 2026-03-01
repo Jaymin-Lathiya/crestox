@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
+import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { PlusCircle, Upload, Twitter, Instagram, Linkedin, User, Trash2 } from "lucide-react"
@@ -26,6 +27,8 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import GradientButton from "@/components/ui/gradiant-button"
+import { getProfile } from "@/apis/user/userActions"
+import { applyAsArtist } from "@/apis/artists/artistActions"
 
 const profileFormSchema = z.object({
     artistName: z.string().min(1, { message: "Artist name is required." }),
@@ -55,6 +58,11 @@ const profileFormSchema = z.object({
 })
 
 export default function ArtistProfileForm() {
+    const router = useRouter()
+    const [isLoading, setIsLoading] = useState(false)
+    const [profileError, setProfileError] = useState<string | null>(null)
+    const [submitError, setSubmitError] = useState<string | null>(null)
+
     const form = useForm<z.infer<typeof profileFormSchema>>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: {
@@ -74,6 +82,27 @@ export default function ArtistProfileForm() {
         },
     })
 
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const fetchProfileAction = getProfile();
+                const profileRes = await fetchProfileAction();
+                if (profileRes.data && profileRes.data.data) {
+                    const userData = profileRes.data.data;
+                    form.reset({
+                        ...form.getValues(),
+                        artistName: userData.name || "",
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch profile", err);
+                setProfileError("Could not verify your profile details. Please try refreshing.");
+            }
+        };
+
+        fetchUserData();
+    }, [form]);
+
     const { fields: awardFields, append: appendAward, remove: removeAward } = useFieldArray({
         control: form.control,
         name: "awards",
@@ -89,13 +118,60 @@ export default function ArtistProfileForm() {
         name: "soldArtworks",
     })
 
-    function onSubmit(values: z.infer<typeof profileFormSchema>) {
-        console.log("Profile submitted:", values)
-        // Redirect or move to next step here
+    async function onSubmit(values: z.infer<typeof profileFormSchema>) {
+        setIsLoading(true);
+        setSubmitError(null);
+
+        try {
+            const payload = {
+                // avatar_url handling normally requires a separate file upload endpoint to get a URL.
+                // For now passing a placeholder or empty string depending on file upload implementation.
+                avatar_url: "string",
+                artist_name: values.artistName,
+                artist_bio: values.bio,
+                collector_message: values.collectorMessage || "",
+                location: values.location || "",
+                university: values.university || "",
+                website_portfolio_link: values.portfolioUrl || "",
+                artist_style: values.artisticStyle || "",
+                achievements: values.awards?.map(a => ({
+                    title: a.name,
+                    description: "", // Currently no description field in UI for awards
+                    image_url: "string" // File uploads would need pre-processing
+                })) || [],
+                history: values.exhibitions?.map(e => ({
+                    title: e.name,
+                    description: "", // Currently no description field in UI for exhibitions
+                    image_url: "string"
+                })) || [],
+                previously_sold_artworks: values.soldArtworks?.map(s => ({
+                    artwork_name: s.name,
+                    artwork_image_url: "string",
+                    proof_of_sale_url: "string",
+                    sell_value: s.saleValue ? parseInt(s.saleValue, 10) : 0
+                })) || [],
+                social_links: [
+                    ...(values.twitter ? [{ platform: "twitter", url: values.twitter }] : []),
+                    ...(values.instagram ? [{ platform: "instagram", url: values.instagram }] : []),
+                    ...(values.linkedin ? [{ platform: "linkedin", url: values.linkedin }] : []),
+                ]
+            };
+
+            const submitAction = applyAsArtist(payload);
+            await submitAction();
+
+            // Success! Route them to their new portfolio or dashboard
+            router.push("/portfolio");
+        } catch (error: any) {
+            console.error("Submission error:", error);
+            setSubmitError(error?.response?.data?.message || error.message || "Failed to create artist profile");
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
-        <Card className="w-full max-w-3xl border-border/50 bg-card/50 backdrop-blur-sm mx-auto">
+        <Card className="w-full max-w-3xl border-border/50 bg-card/50 backdrop-blur-sm mx-auto mb-20 mt-40">
             <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-2xl font-serif">Create Your Artist Profile</CardTitle>
                 <CardDescription className="font-sans">
@@ -103,6 +179,11 @@ export default function ArtistProfileForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {profileError && (
+                    <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-md text-sm border border-destructive/20">
+                        {profileError}
+                    </div>
+                )}
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         {/* Avatar */}
@@ -547,11 +628,17 @@ export default function ArtistProfileForm() {
                             )}
                         />
 
-                        <div className="pt-4">
+                        <div className="pt-4 space-y-4">
+                            {submitError && (
+                                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded border border-destructive/20 text-center">
+                                    {submitError}
+                                </div>
+                            )}
                             <GradientButton
                                 type="submit"
                                 className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-8"
-                                label="Create Profile & Continue"
+                                label={isLoading ? "Submitting Application..." : "Create Profile & Continue"}
+                                disabled={isLoading}
                             />
                         </div>
                     </form>

@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoaderCircleIcon, CheckCircle2, XCircle } from "lucide-react"
 import { setCookie } from "@/utils/cookieUtils"
-
+import { UserType } from "@/enums/userType"
 
 function VerifyContent() {
     const searchParams = useSearchParams()
@@ -19,11 +19,45 @@ function VerifyContent() {
         const processToken = async () => {
             if (token && lastVerifiedToken.current !== token) {
                 lastVerifiedToken.current = token
-                const accessToken = await verifyMagicLinkToken(token)
+                const verifyResult = await verifyMagicLinkToken(token)
 
-                if (accessToken) {
-                    setCookie("token", accessToken, 30);
-                    window.location.href = "/"
+                if (verifyResult && verifyResult.accessToken) {
+                    setCookie("token", verifyResult.accessToken, 30);
+
+                    if (!!verifyResult.isTypeSelected) {
+                        router.push("/");
+                        return;
+                    }
+
+                    const types = verifyResult.userTypes as string[];
+                    const isArtist = types.includes(UserType.ARTIST) || types.includes("artist");
+                    const isCollector = types.includes(UserType.COLLECTOR) || types.includes("collector");
+
+                    if (verifyResult.isNewUser) {
+                        if (isArtist) {
+                            router.push("/onboarding/artist");
+                        } else if (isCollector) {
+                            router.push("/explore");
+                        } else {
+                            router.push("/");
+                        }
+                    } else {
+                        if (isArtist) {
+                            if (verifyResult.isNewArtist) {
+                                router.push("/onboarding/artist");
+                            } else {
+                                router.push("/portfolio");
+                            }
+                        } else if (isCollector) {
+                            if (verifyResult.isNewCollector) {
+                                router.push("/explore");
+                            } else {
+                                router.push("/collection");
+                            }
+                        } else {
+                            router.push("/");
+                        }
+                    }
                 } else {
                     setTimeout(() => {
                         clearStore()

@@ -23,14 +23,12 @@ instance.interceptors.response.use((response) => {
     return response;
 }, (error) => {
     console.log(error);
-    if (error.response.status === 401 && error.config.url !== "/auth/login") {
+    if (error.response?.status === 401 && error.config?.url !== "/auth/login") {
         // clearCookie(token);
         // localStorage.removeItem(USER_DETAILS);
         // window.location.href = "/";
-    } else {
-        return Promise.reject(error);
     }
-
+    return Promise.reject(error);
 });
 
 export default instance;

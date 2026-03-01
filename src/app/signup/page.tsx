@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -44,11 +46,19 @@ const formSchema = z.object({
     firstName: z.string().min(1, { message: "First name is required." }),
     lastName: z.string().min(1, { message: "Last name is required." }),
     email: z.string().email({ message: "Please enter a valid email address." }),
+    user_type: z.nativeEnum(UserType).default(UserType.COLLECTOR),
 })
 
-export default function SignupPage() {
+function SignupFormContent() {
     const { requestMagicLink, isLoading, isSuccess, error } = useAuthStore()
     const [activeStep, setActiveStep] = useState(1);
+
+    const searchParams = useSearchParams();
+
+    const rawType = searchParams.get("user_type");
+    const userType = Object.values(UserType).includes(rawType as UserType)
+        ? (rawType as UserType)
+        : UserType.COLLECTOR;
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -56,13 +66,14 @@ export default function SignupPage() {
             firstName: "",
             lastName: "",
             email: "",
+            user_type: userType,
         },
         mode: "onChange"
     })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const name = `${values.firstName} ${values.lastName}`.trim();
-        await requestMagicLink(values.email, name);
+        await requestMagicLink(values.email, name, values.user_type);
     }
 
     const nextStep = async () => {
@@ -86,7 +97,9 @@ export default function SignupPage() {
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-lg border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="space-y-1 text-center pb-2">
-                    <CardTitle className="text-2xl font-serif">Sign Up</CardTitle>
+                    <CardTitle className="text-2xl font-serif">
+                        {userType === UserType.ARTIST ? "Join as an Artist" : "Create Your Collector Account"}
+                    </CardTitle>
                     <CardDescription className="font-sans">
                         {isSuccess
                             ? "Check your email for the verification link."
@@ -264,5 +277,13 @@ export default function SignupPage() {
                 </CardFooter>
             </Card>
         </div>
+    )
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <SignupFormContent />
+        </Suspense>
     )
 }
