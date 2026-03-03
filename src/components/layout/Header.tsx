@@ -21,10 +21,12 @@ import GradientButton from "../ui/gradiant-button";
 import ProfileDropdown from "../ui/profile";
 import { clearCookie, getCookie } from "@/utils/cookieUtils";
 import { useUserStore } from "@/store/useUserStore";
+import { SignupModal } from "../ui/signup-modal";
 
 export function Header() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const { toggleTheme } = useThemeToggle({
@@ -145,20 +147,26 @@ export function Header() {
                 logout={() => {
                   clearCookie("token");
                   setIsLoggedIn(false);
+                  window.location.href = "/";
                 }}
               />
               : <div className="flex items-center gap-2">
-                <GradientButton
+                {/* <GradientButton
                   label="Sign In"
                   variant="primary"
                   className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm"
                   onClick={() => router.push("/login")}
+                ></GradientButton> */}
+                <GradientButton
+                  label="Sign Up"
+                  variant="primary"
+                  className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm"
+                  onClick={() => setIsSignupModalOpen(true)}
                 ></GradientButton>
                 {/* <GradientButton
                                     variant="secondary"
                                     className="flex text-[10px] md:text-xs h-10 px-2 md:h-12 md:px-3 whitespace-nowrap"
                                     onClick={() => setIsLoggedIn(true)}
-                                    label="Test Login"
                                 >
                                 </GradientButton> */}
               </div>
@@ -166,25 +174,6 @@ export function Header() {
           </div>
         </div>
       </nav>
-      {/* Desktop Dock — lg and above */}
-      <div className="absolute top-1/2 left-1/2 max-w-full -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
-        <Dock className="items-end pb-3">
-          {data.map((item, idx) => (
-            <DockItem
-              key={idx}
-              className="aspect-square rounded-full bg-gray-200 dark:bg-neutral-800"
-              onClick={() => {
-                if (item.type === "theme") toggleTheme();
-                else if (item.href) router.push(item.href);
-              }}
-            >
-              <DockLabel>{item.title}</DockLabel>
-              <DockIcon>{item.icon}</DockIcon>
-            </DockItem>
-          ))}
-        </Dock>
-      </div>
-
       {/* Mobile/Tablet Bottom Nav — below lg */}
       <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
         <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-background/80 backdrop-blur-lg border border-border/50 shadow-sm">
@@ -209,6 +198,11 @@ export function Header() {
           ))}
         </div>
       </div>
+
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+      />
     </>
   );
 }

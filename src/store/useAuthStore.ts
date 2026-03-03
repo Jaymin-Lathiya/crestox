@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import { getMagicLink, verifyMagicLink, getToken } from '@/apis/auth/authActions';
 import { setCookie } from '@/utils/cookieUtils';
+import { UserType } from '@/enums/userType';
+
+export interface VerifyResponseData {
+    accessToken: string;
+    isNewUser: boolean;
+    userTypes: UserType[] | string[];
+    isTypeSelected?: boolean;
+    isNewArtist?: boolean;
+    isNewCollector?: boolean;
+}
 
 interface AuthState {
     email: string;
@@ -11,8 +21,8 @@ interface AuthState {
     setError: (error: string | null) => void;
     isSuccess: boolean;
     setIsSuccess: (isSuccess: boolean) => void;
-    requestMagicLink: (email: string, name?: string) => Promise<void>;
-    verifyMagicLinkToken: (token: string) => Promise<string | null>;
+    requestMagicLink: (email: string, name?: string, user_type?: string) => Promise<void>;
+    verifyMagicLinkToken: (token: string) => Promise<VerifyResponseData | null>;
     fetchUserToken: (accessToken: string) => Promise<boolean>;
     clearStore: () => void;
 }
@@ -27,10 +37,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     isSuccess: false,
     setIsSuccess: (isSuccess) => set({ isSuccess }),
 
-    requestMagicLink: async (email: string, name?: string) => {
+    requestMagicLink: async (email: string, name?: string, user_type?: string) => {
         set({ isLoading: true, error: null, isSuccess: false });
         try {
-            const action = getMagicLink({ email, name });
+            const action = getMagicLink({ email, name, user_type });
             await action();
             set({ isSuccess: true });
         } catch (err: any) {
@@ -46,14 +56,22 @@ export const useAuthStore = create<AuthState>((set) => ({
             const verifyAction = verifyMagicLink({ token });
             const verifyResponse = await verifyAction();
 
+            console.log({ verifyResponse });
+
+
             if (verifyResponse.status !== 200) {
                 set({ error: verifyResponse.data.message || 'Verification failed. The link might be expired or invalid.' });
                 return null;
             }
 
-            const accessToken = verifyResponse.data.data?.accessToken
+            const accessToken = verifyResponse.data.data?.accessToken;
+            const isNewUser = verifyResponse.data.data?.isNewUser || verifyResponse.data?.isNewUser;
+            const userTypes = verifyResponse.data.data?.userTypes || [];
+            const isTypeSelected = verifyResponse.data.data?.isTypeSelected;
+            const isNewArtist = verifyResponse.data.data?.isNewArtist;
+            const isNewCollector = verifyResponse.data.data?.isNewCollector;
 
-            return accessToken;
+            return { accessToken, isNewUser, userTypes, isTypeSelected, isNewArtist, isNewCollector };
         } catch (err: any) {
             console.log(err);
             set({ error: err?.response?.data?.message || err.message || 'Verification failed. The link might be expired or invalid.' });

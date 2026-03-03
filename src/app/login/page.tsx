@@ -1,5 +1,8 @@
 "use client"
 
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -32,8 +35,14 @@ const formSchema = z.object({
     }),
 })
 
-export default function LoginPage() {
+function LoginFormContent() {
     const { requestMagicLink, isLoading, isSuccess, error } = useAuthStore()
+    const searchParams = useSearchParams()
+
+    const rawType = searchParams.get("user_type")
+    const userType = Object.values(UserType).includes(rawType as UserType)
+        ? (rawType as UserType)
+        : null
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -55,14 +64,16 @@ export default function LoginPage() {
             return;
         }
 
-        await requestMagicLink(values.email)
+        await requestMagicLink(values.email, undefined, userType || undefined)
     }
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-lg border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="space-y-1 text-center pb-6">
-                    <CardTitle className="text-2xl font-serif">Login</CardTitle>
+                    <CardTitle className="text-2xl font-serif">
+                        {userType === UserType.ARTIST ? "Login as Artist" : "Login"}
+                    </CardTitle>
                     <CardDescription className="font-sans">
                         {isSuccess
                             ? "Check your email for the magic link."
@@ -147,6 +158,14 @@ export default function LoginPage() {
                 </CardFooter>
             </Card>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <LoginFormContent />
+        </Suspense>
     )
 }
 

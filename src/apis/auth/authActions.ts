@@ -10,13 +10,15 @@ export const getMagicLink = (data: any) => async () => {
     }
 }
 
-export const verifyMagicLink = (data: any) => async () => {
+export const verifyMagicLink = (data: { token: string }) => async () => {
     try {
-        const response = await instance.get(AUTH_URLS.MAGIC_LINK_VERIFY, {
-            params: data
-        });
+        const response = await instance.post(AUTH_URLS.MAGIC_LINK_VERIFY, { token: data.token });
+        console.log({ response, data });
+
         return response;
     } catch (err: any) {
+        console.log({ err });
+
         throw err;
     }
 }
