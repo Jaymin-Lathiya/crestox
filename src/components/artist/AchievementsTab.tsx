@@ -65,78 +65,86 @@ interface AchievementsTabProps {
 const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements = DEFAULT_ACHIEVEMENTS }) => {
   return (
     <div className='mx-auto max-w-xl space-y-4'>
-      {achievements.map((achievement) => (
-        <MorphingDialog
-          key={achievement.id}
-          transition={{
-            type: 'spring',
-            stiffness: 200,
-            damping: 24,
-          }}
-        >
-          <MorphingDialogTrigger
-            style={{ borderRadius: '4px' }}
-            className='w-full border border-border bg-background'
+      {achievements.length > 0 ? (
+        <> {achievements.map((achievement) => (
+          <MorphingDialog
+            key={achievement.id}
+            transition={{
+              type: 'spring',
+              stiffness: 200,
+              damping: 24,
+            }}
           >
-            <div className='flex items-center space-x-3 p-3'>
-              <MorphingDialogImage
-                src={achievement.image}
-                alt={achievement.title}
-                className='h-10 w-10 object-cover'
-                style={{ borderRadius: '4px' }}
-              />
-              <div className='flex flex-col items-start justify-center space-y-0'>
-                <MorphingDialogTitle className='text-xs font-medium text-foreground'>
-                  {achievement.title}
-                </MorphingDialogTitle>
-                <MorphingDialogSubtitle className='text-xs text-muted-foreground'>
-                  {achievement.year}
-                </MorphingDialogSubtitle>
-              </div>
-            </div>
-          </MorphingDialogTrigger>
-
-          <MorphingDialogContainer>
-            <MorphingDialogContent
-              style={{ borderRadius: '12px' }}
-              className='relative h-auto w-[500px] border border-border bg-background'
+            <MorphingDialogTrigger
+              style={{ borderRadius: '4px' }}
+              className='w-full border border-border bg-background'
             >
-              <ScrollArea className='h-[90vh]' type='scroll'>
-                <div className='relative p-6'>
-                  <div className='flex justify-center py-8'>
-                    <MorphingDialogImage
-                      src={achievement.image}
-                      alt={achievement.title}
-                      className='h-auto w-[220px]'
-                    />
-                  </div>
-
-                  <MorphingDialogTitle className='text-lg font-semibold text-foreground'>
+              <div className='flex items-center space-x-3 p-3'>
+                <MorphingDialogImage
+                  src={achievement.image}
+                  alt={achievement.title}
+                  className='h-10 w-10 object-cover'
+                  style={{ borderRadius: '4px' }}
+                />
+                <div className='flex flex-col items-start justify-center space-y-0'>
+                  <MorphingDialogTitle className='text-xs font-medium text-foreground'>
                     {achievement.title}
                   </MorphingDialogTitle>
-
-                  <MorphingDialogSubtitle className='font-light text-muted-foreground'>
+                  <MorphingDialogSubtitle className='text-xs text-muted-foreground'>
                     {achievement.year}
                   </MorphingDialogSubtitle>
-
-                  <div className='mt-4 space-y-4 text-sm text-foreground/80 leading-relaxed font-sans'>
-                    <p>{achievement.description}</p>
-
-                    <p>
-                      This milestone significantly contributed to the artist’s
-                      global recognition in generative and algorithmic art,
-                      influencing collectors, institutions, and future digital
-                      exhibition models.
-                    </p>
-                  </div>
                 </div>
-              </ScrollArea>
-
-              <MorphingDialogClose className='text-muted-foreground' />
-            </MorphingDialogContent>
-          </MorphingDialogContainer>
-        </MorphingDialog>
-      ))}
+              </div>
+            </MorphingDialogTrigger>
+  
+            <MorphingDialogContainer>
+              <MorphingDialogContent
+                style={{ borderRadius: '12px' }}
+                className='relative h-auto w-[500px] border border-border bg-background'
+              >
+                <ScrollArea className='h-[90vh]' type='scroll'>
+                  <div className='relative p-6'>
+                    <div className='flex justify-center py-8'>
+                      <MorphingDialogImage
+                        src={achievement.image}
+                        alt={achievement.title}
+                        className='h-auto w-[220px]'
+                      />
+                    </div>
+  
+                    <MorphingDialogTitle className='text-lg font-semibold text-foreground'>
+                      {achievement.title}
+                    </MorphingDialogTitle>
+  
+                    <MorphingDialogSubtitle className='font-light text-muted-foreground'>
+                      {achievement.year}
+                    </MorphingDialogSubtitle>
+  
+                    <div className='mt-4 space-y-4 text-sm text-foreground/80 leading-relaxed font-sans'>
+                      <p>{achievement.description}</p>
+  
+                      <p>
+                        This milestone significantly contributed to the artist’s
+                        global recognition in generative and algorithmic art,
+                        influencing collectors, institutions, and future digital
+                        exhibition models.
+                      </p>
+                    </div>
+                  </div>
+                </ScrollArea>
+  
+                <MorphingDialogClose className='text-muted-foreground' />
+              </MorphingDialogContent>
+            </MorphingDialogContainer>
+          </MorphingDialog>
+        ))}
+        </>
+      ) : (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-muted-foreground">No achievements found</p>
+        </div>
+      )}
+      
     </div>
   );
 };

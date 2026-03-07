@@ -36,21 +36,30 @@ export function ArtworksGridSkeleton() {
 const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-      {artworks.map((artwork, index) => (
-        <motion.div
-          key={artwork.id}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            delay: index * 0.1, 
-            duration: 0.6,
-            ease: [0.22, 1, 0.36, 1]
-          }}
-          className="break-inside-avoid"
-        >
-          <ArtworkCard artwork={artwork} />
-        </motion.div>
-      ))}
+      {artworks.length > 0 ? (
+        <> {artworks.map((artwork, index) => (
+          <motion.div
+            key={artwork.id}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              delay: index * 0.1, 
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            className="break-inside-avoid"
+          >
+            <ArtworkCard artwork={artwork} />
+          </motion.div>
+        ))}
+
+        </>
+      ) : (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-muted-foreground">No artworks found</p>
+        </div>
+      )}
+     
     </div>
   );
 };

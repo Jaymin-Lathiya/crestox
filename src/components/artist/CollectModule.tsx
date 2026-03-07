@@ -27,6 +27,7 @@ interface CollectModuleProps {
   firstArtworkId?: number | null;
   onCollectSuccess?: () => void;
   id?: number | null;
+  isAtwork?: boolean;
 }
 
 const CollectModule: React.FC<CollectModuleProps> = ({
@@ -40,6 +41,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   firstArtworkId = null,
   id = null,
   onCollectSuccess,
+  isAtwork = false,
 }) => {
   const [quantity, setQuantity] = useState<any>(1);
   const [quote, setQuote] = useState<{ current_price: number; buffer_percent: number | null } | null>(null);
@@ -170,6 +172,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Qty</span>
             <input
               type="number"
+              disabled={!isAtwork}
               max={Math.max(1, available)}
               value={quantity}
               onChange={(e) => {
@@ -237,7 +240,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            disabled={firstArtworkId == null || (Number(artist_profile_id)  === id) }
+            disabled={firstArtworkId == null || (Number(artist_profile_id)  === id) || !isAtwork}
             className="group relative w-full h-12 bg-primary/50 overflow-hidden rounded-sm border-t border-foreground/10 border-b  transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
           >
             {/* Hover Glow Border */}

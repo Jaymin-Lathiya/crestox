@@ -30,7 +30,9 @@ const CollectorsTab: React.FC<CollectorsTabProps> = ({ collectors = DEFAULT_COLL
       transition={{ duration: 0.5 }}
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
     >
-      {collectors.map((collector, index) => (
+      {collectors.length > 0 ? (
+        <>
+           {collectors.map((collector, index) => (
         <motion.div
           key={collector.id}
           initial={{ opacity: 0, scale: 0.95 }}
@@ -57,6 +59,13 @@ const CollectorsTab: React.FC<CollectorsTabProps> = ({ collectors = DEFAULT_COLL
           </div>
         </motion.div>
       ))}
+        </>
+      ) : (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-muted-foreground">No collectors found</p>
+        </div>
+      )}
+   
     </motion.div>
   );
 };

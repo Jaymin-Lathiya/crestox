@@ -95,7 +95,9 @@ interface HistoryTabProps {
 const HistoryTab: React.FC<HistoryTabProps> = ({ history = DEFAULT_HISTORY }) => {
   return (
     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-      {history.map((event) => (
+      {history.length > 0 ? (
+        <>
+         {history.map((event) => (
         <MorphingDialog
           key={event.id}
           transition={{
@@ -172,6 +174,13 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ history = DEFAULT_HISTORY }) =>
           </MorphingDialogContainer>
         </MorphingDialog>
       ))}
+        </>
+      ) : (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-muted-foreground">No history found</p>
+        </div>
+      )}
+     
     </div>
   );
 };

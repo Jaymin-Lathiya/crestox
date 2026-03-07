@@ -357,7 +357,7 @@ const ArtistPage = () => {
 
           <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
-              <CollectModule {...collectModuleProps} id={Number(id)} />
+              <CollectModule {...collectModuleProps} id={Number(id)} isAtwork={artworks.length > 0} />
             </div>
           </div>
 
