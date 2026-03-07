@@ -19,6 +19,7 @@ export default function CreateArtworkPage() {
     }, [user, router])
 
     useEffect(() => {
+        if (typeof window === 'undefined') return
         const stored = localStorage.getItem(ARTIST_PROFILE_ID_KEY)
         const parsed = stored ? parseInt(stored, 10) : NaN
         if (!isNaN(parsed) && parsed > 0) {
@@ -27,6 +28,7 @@ export default function CreateArtworkPage() {
     }, [])
 
     useEffect(() => {
+        if (typeof window === 'undefined') return
         if (user?.id && (user as any).artist_profile_id != null) {
             const id = parseInt(String((user as any).artist_profile_id), 10)
             if (!isNaN(id) && id > 0) {
@@ -37,6 +39,7 @@ export default function CreateArtworkPage() {
     }, [user])
 
     useEffect(() => {
+        if (typeof window === 'undefined') return
         localStorage.setItem(ARTIST_PROFILE_ID_KEY, String(artistProfileId))
     }, [artistProfileId])
 

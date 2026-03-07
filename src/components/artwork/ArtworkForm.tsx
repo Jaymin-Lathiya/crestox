@@ -71,7 +71,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
 
     const router = useRouter()
 
-    const artist_profile_id = localStorage.getItem("artist_profile_id")
+    const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null
 
     const form = useForm<ArtworkFormValues>({
         resolver: zodResolver(artworkFormSchema),

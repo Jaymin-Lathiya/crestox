@@ -80,7 +80,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const gst = subTotal * 0.18;
   const total = gst + subTotal;
 
-  const artist_profile_id = localStorage.getItem("artist_profile_id");
+  const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null;
 
   const handleCollectConfirm = () => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
