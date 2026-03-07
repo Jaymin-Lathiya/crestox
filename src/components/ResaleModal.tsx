@@ -32,13 +32,28 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
   const calculations = useMemo(() => {
     const numPrice = parseFloat(price) || 0;
     const numQty = parseInt(quantity) || 0;
+
     const safeQty = Math.min(numQty, maxQuantity);
+
     const gross = numPrice * safeQty;
+
     const platformFee = gross * 0.02;
-    const royalty = gross * (royaltyRate / 100);
-    const net = gross - platformFee - royalty;
-    return { gross, platformFee, royalty, net, safeQty };
-  }, [price, quantity, maxQuantity, royaltyRate]);
+
+    const royalty = 0;
+
+    const totalCharges = platformFee + royalty;
+
+    const net = gross - totalCharges;
+
+    return {
+      gross,
+      platformFee,
+      royalty,
+      totalCharges,
+      net,
+      safeQty,
+    };
+  }, [price, quantity, maxQuantity]);
 
   const handleSubmit = () => {
     if (calculations.net > 0) {
@@ -93,7 +108,7 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
               </div>
 
               {/* Body */}
-              <div className="p-8 space-y-8">
+              <div className="pt-6 px-6 pb-0 space-y-6">
                 {/* Price Input */}
                 <div>
                   <label className="block font-cyber text-[10px] text-cyber-lime uppercase tracking-widest mb-2">
@@ -140,19 +155,29 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                     <span>Gross Value</span>
                     <span>{formatCurrency(calculations.gross)}</span>
                   </div>
+
                   <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
                     <span>Platform Fee (2%)</span>
-                    <span>- {formatCurrency(calculations.platformFee)}</span>
+                    <span>+ {formatCurrency(calculations.platformFee)}</span>
                   </div>
+
                   <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
-                    <span>Artist Royalty ({royaltyRate}%)</span>
-                    <span>- {formatCurrency(calculations.royalty)}</span>
+                    <span>Artist Royalty (0%)</span>
+                    <span>+ {formatCurrency(calculations.royalty)}</span>
                   </div>
+
+                  <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
+                    <span>Total Charges</span>
+                    <span>+ {formatCurrency(calculations.totalCharges)}</span>
+                  </div>
+
                   <div className="h-px bg-white/10 my-2" />
+
                   <div className="flex justify-between items-center">
                     <span className="font-cyber text-xs text-cyber-lime uppercase tracking-widest">
                       Est. Net Payout
                     </span>
+
                     <motion.span
                       key={calculations.net}
                       initial={{ scale: 1.1 }}
@@ -168,7 +193,6 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
               <div className="p-8 pt-0">
                 <button
                   onClick={handleSubmit}
-                  disabled={calculations.net <= 0 || isOverMax}
                   className="w-full group relative px-6 py-4 rounded-lg bg-primary/50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <div className="flex items-center justify-center gap-2">

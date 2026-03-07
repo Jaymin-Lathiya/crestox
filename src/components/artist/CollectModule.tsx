@@ -26,6 +26,7 @@ interface CollectModuleProps {
   total_fractals?: number;
   firstArtworkId?: number | null;
   onCollectSuccess?: () => void;
+  id?: number | null;
 }
 
 const CollectModule: React.FC<CollectModuleProps> = ({
@@ -37,6 +38,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   available_fractals = 142,
   total_fractals = 1000,
   firstArtworkId = null,
+  id = null,
   onCollectSuccess,
 }) => {
   const [quantity, setQuantity] = useState<any>(1);
@@ -77,6 +79,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const subTotal = baseAmount;
   const gst = subTotal * 0.18;
   const total = gst + subTotal;
+
+  const artist_profile_id = localStorage.getItem("artist_profile_id");
 
   const handleCollectConfirm = () => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
@@ -233,7 +237,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            disabled={firstArtworkId == null}
+            disabled={firstArtworkId == null || (Number(artist_profile_id)  === id) }
             className="group relative w-full h-12 bg-primary/50 overflow-hidden rounded-sm border-t border-foreground/10 border-b  transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
           >
             {/* Hover Glow Border */}

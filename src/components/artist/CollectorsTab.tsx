@@ -48,7 +48,7 @@ const CollectorsTab: React.FC<CollectorsTabProps> = ({ collectors = DEFAULT_COLL
           <div className="flex items-center justify-between pt-3 border-t border-border">
             <div>
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Fractals</span>
-              <p className="font-mono text-lg text-accent font-medium">{collector.fractalsHeld}</p>
+              <p className="font-mono text-lg text-muted-foreground font-medium">{collector.fractalsHeld}</p>
             </div>
             <div className="text-right">
               <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Joined</span>

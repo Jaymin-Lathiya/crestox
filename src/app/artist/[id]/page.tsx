@@ -26,12 +26,14 @@ import {
 } from '@/apis/artists/artistActions';
 import { strings } from '@/utils/strings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { addToWatchlist } from '@/apis/my-collection/myCollectionActions';
+import { toast } from 'sonner';
 
 type TabType = 'artworks' | 'analytics' | 'achievements' | 'history' | 'collectors';
 
 function ArtistPageSkeleton() {
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24">
+    <div className="min-h-screen bg-background text-foreground pt-[144px]">
       {/* Hero skeleton */}
       <div className="w-full min-h-[50vh] flex items-end justify-center pb-12 md:pb-24 px-4 md:px-6">
         <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-end">
@@ -287,7 +289,7 @@ const ArtistPage = () => {
 
   if (!id || isNaN(id)) {
     return (
-      <div className="min-h-screen bg-background text-foreground pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground pt-[144px] flex items-center justify-center">
         <p className="font-mono text-muted-foreground">Invalid artist ID</p>
       </div>
     );
@@ -295,7 +297,7 @@ const ArtistPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground pt-[144px] flex items-center justify-center">
         <p className="font-mono text-destructive">{error}</p>
       </div>
     );
@@ -307,14 +309,14 @@ const ArtistPage = () => {
 
   if (!artistData) {
     return (
-      <div className="min-h-screen bg-background text-foreground pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground pt-[144px] flex items-center justify-center">
         <p className="font-mono text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24">
+    <div className="min-h-screen bg-background text-foreground pt-[144px]">
       <div
         className="fixed inset-0 pointer-events-none z-[100] opacity-[0.02]"
         style={{
@@ -322,7 +324,15 @@ const ArtistPage = () => {
         }}
       />
 
-      <ArtistHero artist={artistData} />
+      <ArtistHero
+        artist={artistData}
+        onWatchlistClick={() => {
+          if (id == null || isNaN(id)) return;
+          addToWatchlist({ artist_profile_id: id })
+            .then(() => toast.success('Added to watchlist'))
+            .catch((err: any) => toast.error(err?.response?.data?.message ?? 'Failed to add to watchlist'));
+        }}
+      />
 
       <div className="py-8 md:py-12 px-4 md:px-6">
         <ArtistTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -347,7 +357,7 @@ const ArtistPage = () => {
 
           <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
-              <CollectModule {...collectModuleProps} />
+              <CollectModule {...collectModuleProps} id={Number(id)} />
             </div>
           </div>
 

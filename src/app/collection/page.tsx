@@ -518,13 +518,12 @@
 
 "use client"
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PortfolioHUD from '@/components/PortfolioHUD';
 import DriftGrid from '@/components/DriftGrid';
 import ListedGrid from '@/components/ListedGrid';
 import TunnelView from '@/components/TunnelView';
 import ResaleListingModal from '@/components/ResaleListingModal';
-import type { Holding } from '@/components/DriftGrid';
 
 import art1 from '@/assets/art-1.jpg';
 import art2 from '@/assets/art-2.jpg';
@@ -541,6 +540,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MonolithCard from '@/components/MonolithCard';
 import { toast } from 'sonner';
 import ResaleModal from '@/components/ResaleModal';
+import { getMyCollection, getWatchlist, sellFractal } from '@/apis/my-collection/myCollectionActions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 // Mock data
@@ -566,72 +567,122 @@ const MOCK_WATCHLIST = [
   { id: 'w6', artistName: 'Arpita Singh', artworkUrl: art6, yieldPercent: 9.8, floorPrice: 28000, provenance: 'Pundole\'s 2024' },
 ];
 
-const mockHoldings: any = [
-  {
-    id: '1',
-    artistName: 'Aria Celestine',
-    artworkUrl: artwork1,
-    totalFractals: 24,
-    investedAmount: 180000,
-    currentValue: 215000,
-    gainLossPerc: 19.4,
-    royaltyRate: 5,
-  },
-  {
-    id: '2',
-    artistName: 'Marcus Vex',
-    artworkUrl: artwork2,
-    totalFractals: 12,
-    investedAmount: 95000,
-    currentValue: 88000,
-    gainLossPerc: -7.4,
-    royaltyRate: 3,
-  },
-  {
-    id: '3',
-    artistName: 'Ember Alizarin',
-    artworkUrl: artwork3,
-    totalFractals: 48,
-    investedAmount: 320000,
-    currentValue: 410000,
-    gainLossPerc: 28.1,
-    royaltyRate: 7,
-  },
-  {
-    id: '4',
-    artistName: 'Kael Northwind',
-    artworkUrl: artwork4,
-    totalFractals: 8,
-    investedAmount: 55000,
-    currentValue: 62000,
-    gainLossPerc: 12.7,
-    royaltyRate: 4,
-  },
-];
+/** API response types for my-collection */
+export interface MyCollectionArtist {
+  artist_profile_id: number;
+  artist_name: string;
+  avatar_url: string;
+  total_shares: number;
+  current_share_price: string;
+  total_invested: string;
+  current_value: string;
+  gain_loss: string;
+  gain_loss_pct: string;
+  artworks: { artwork_id: number; artwork_name: string; artwork_image_url: string; shares_count: number }[];
+}
+
+export interface MyCollectionResponse {
+  total_amount_invested: string;
+  total_portfolio_value: string;
+  total_gain_loss: string;
+  total_gain_loss_pct: string;
+  artists: MyCollectionArtist[];
+}
+
+function MyHoldingsSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="relative max-w-7xl mx-auto w-full h-[180px] overflow-hidden border border-border/50 rounded-sm"
+        >
+          <Skeleton className="absolute inset-0" />
+          <div className="relative z-10 flex flex-col justify-between h-full p-4 md:p-6">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function CollectionPage() {
   const [activeTab, setActiveTab] = useState('My Holdings');
-  const [selectedHolding, setSelectedHolding] = useState<any>(null);
-  const [resaleTarget, setResaleTarget] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resaleTarget, setResaleTarget] = useState<MyCollectionArtist | null>(null);
+  const [myCollection, setMyCollection] = useState<MyCollectionResponse | null>(null);
+  const [isLoadingCollection, setIsLoadingCollection] = useState(true);
+  const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true);
+  const [watchlist, setWatchlist] = useState<any[]>([]);
+
   const portfolio = useMemo(() => {
-    const totalValue = mockHoldings.reduce((sum, h) => sum + h.currentValue, 0);
-    const totalInvested = mockHoldings.reduce((sum, h) => sum + h.investedAmount, 0);
-    const gainLossAbs = totalValue - totalInvested;
-    const gainLossPerc = totalInvested > 0 ? ((gainLossAbs / totalInvested) * 100) : 0;
+    if (!myCollection) return { totalValue: 0, totalInvested: 0, gainLossAbs: 0, gainLossPerc: 0 };
+    const totalValue = parseFloat(String(myCollection.total_portfolio_value ?? 0)) || 0;
+    const totalInvested = parseFloat(String(myCollection.total_amount_invested ?? 0)) || 0;
+    const gainLossAbs = parseFloat(String(myCollection.total_gain_loss ?? 0)) || 0;
+    const gainLossPerc = parseFloat(String(myCollection.total_gain_loss_pct ?? 0)) || 0;
     return { totalValue, totalInvested, gainLossAbs, gainLossPerc: Math.round(gainLossPerc * 10) / 10 };
+  }, [myCollection]);
+
+  const fetchMyCollection = React.useCallback(async () => {
+    setIsLoadingCollection(true);
+    try {
+      const response = await getMyCollection();
+      const data = response?.data?.data;
+      if (data && (Array.isArray(data.artists) || data.total_portfolio_value != null)) {
+        setMyCollection({
+          total_amount_invested: data.total_amount_invested ?? '0',
+          total_portfolio_value: data.total_portfolio_value ?? '0',
+          total_gain_loss: data.total_gain_loss ?? '0',
+          total_gain_loss_pct: data.total_gain_loss_pct ?? '0',
+          artists: Array.isArray(data.artists) ? data.artists : [],
+        });
+      } else {
+        setMyCollection(null);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to load collection');
+      setMyCollection(null);
+    } finally {
+      setIsLoadingCollection(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchMyCollection();
+  }, [fetchMyCollection]);
 
-  const totalValue = MOCK_HOLDINGS.reduce((s, h) => s + h.currentValue, 0);
-  const totalInvested = MOCK_HOLDINGS.reduce((s, h) => s + h.invested, 0);
-  const gainLoss = totalValue - totalInvested;
-  const gainLossPercent = ((gainLoss / totalInvested) * 100);
+  const fetchWatchlist = React.useCallback(async () => {
+    setIsLoadingWatchlist(true);
+    try {
+      const response = await getWatchlist();
+      if (response?.status === 200 && response?.data?.data != null) {
+        const data = response.data.data;
+        setWatchlist(Array.isArray(data) ? data : []);
+      } else {
+        setWatchlist([]);
+      }
+    } catch {
+      setWatchlist([]);
+    } finally {
+      setIsLoadingWatchlist(false);
+    }
+  }, []);
 
-  const handleSell = (holding: Holding) => {
-    setSelectedHolding(holding);
-    setIsModalOpen(true);
-  };
+  useEffect(() => {
+    if (activeTab === 'Watchlist') {
+      fetchWatchlist();
+    }
+  }, [activeTab, fetchWatchlist]);
+
 
   return (
     <div className="min-h-screen relative bg-background text-foreground">
@@ -643,7 +694,7 @@ export default function CollectionPage() {
 
       <div className="relative z-10">
         <PortfolioHUD
-          metrics={{ totalValue, invested: totalInvested, gainLoss, gainLossPercent }}
+          metrics={{ totalValue: portfolio.totalValue, invested: portfolio.totalInvested, gainLoss: portfolio.gainLossAbs, gainLossPercent: portfolio.gainLossPerc }}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -659,25 +710,34 @@ export default function CollectionPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col gap-6"
               >
-                {mockHoldings.map((holding, index) => (
-                  <motion.div
-                    key={holding.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <MonolithCard
-                      artistName={holding.artistName}
-                      artworkUrl={holding.artworkUrl}
-                      totalFractals={holding.totalFractals}
-                      investedAmount={holding.investedAmount}
-                      currentValue={holding.currentValue}
-                      gainLossPerc={holding.gainLossPerc}
-                      onSell={() => setResaleTarget(holding)}
-                      onCertificate={() => toast.success(`Certificate for ${holding.artistName} generated`)}
-                    />
-                  </motion.div>
-                ))}
+                {isLoadingCollection ? (
+                  <MyHoldingsSkeleton />
+                ) : !myCollection?.artists?.length ? (
+                  <div className="text-center py-12 text-muted-foreground font-mono text-sm">
+                    No holdings yet. Start collecting fractals from the marketplace.
+                  </div>
+                ) : (
+                  myCollection.artists.map((artist, index) => (
+                    <motion.div
+                      key={artist.artist_profile_id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <MonolithCard
+                        artistId={artist.artist_profile_id}
+                        artistName={artist.artist_name}
+                        artworkUrl={artist.avatar_url}
+                        totalFractals={artist.total_shares}
+                        investedAmount={parseFloat(artist.total_invested) || 0}
+                        currentValue={parseFloat(artist.current_value) || 0}
+                        gainLossPerc={parseFloat(artist.gain_loss_pct) || 0}
+                        onSell={() => setResaleTarget(artist)}
+                        onCertificate={() => toast.success(`Certificate for ${artist.artist_name} generated`)}
+                      />
+                    </motion.div>
+                  ))
+                )}
               </motion.div>
             )}
             {activeTab === 'Listed for Sale' && (
@@ -688,7 +748,7 @@ export default function CollectionPage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                <ListedGrid items={MOCK_LISTED} />
+                <ListedGrid />
               </motion.div>
             )}
             {activeTab === 'Watchlist' && (
@@ -699,7 +759,7 @@ export default function CollectionPage() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                <TunnelView items={MOCK_WATCHLIST} />
+                <TunnelView items={watchlist} loading={isLoadingWatchlist} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -708,12 +768,23 @@ export default function CollectionPage() {
         <ResaleModal
           isOpen={!!resaleTarget}
           onClose={() => setResaleTarget(null)}
-          artistName={resaleTarget?.artistName ?? ''}
-          maxQuantity={resaleTarget?.totalFractals ?? 0}
-          royaltyRate={resaleTarget?.royaltyRate ?? 5}
-          onSubmit={(data) => {
-            toast.success(`Listed ${data.quantity} fractals at ₹${data.price.toLocaleString()} each`);
-            setResaleTarget(null);
+          artistName={resaleTarget?.artist_name ?? ''}
+          maxQuantity={resaleTarget?.total_shares ?? 0}
+          royaltyRate={5}
+          onSubmit={async (data) => {
+            if (!resaleTarget) return;
+            try {
+              await sellFractal({
+                artist_profile_id: resaleTarget.artist_profile_id,
+                quantity: data.quantity,
+                listed_price: data.price,
+              });
+              toast.success(`Listed ${data.quantity} fractals at ₹${data.price.toLocaleString()} each`);
+              setResaleTarget(null);
+              await fetchMyCollection();
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message ?? 'Failed to list fractals');
+            }
           }}
         />
       </div>

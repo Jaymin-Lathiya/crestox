@@ -156,6 +156,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
             }
 
             form.reset()
+            router.push("/portfolio")
         } catch (err: any) {
             // Handle error
             const errorMessage = err?.response?.data?.message || "Failed to create artwork. Please try again."

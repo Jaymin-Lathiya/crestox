@@ -12,6 +12,7 @@ interface MonolithCardProps {
   gainLossPerc: number;
   onSell: () => void;
   onCertificate: () => void;
+  artistId: number;
 }
 
 const formatCurrency = (value: number) =>
@@ -22,6 +23,7 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 const MonolithCard: React.FC<MonolithCardProps> = ({
+  artistId,
   artistName,
   artworkUrl,
   totalFractals,
@@ -54,9 +56,16 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
         transition={{ duration: 0.8 }}
       />
 
-      {/* Void Gradient */}
+      {/* Overlay so artist name, Verified Artist, totalFractals, Invested, etc. stay readable */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-r from-background via-background/90 to-transparent"
+        aria-hidden
+      />
+
+      {/* Content wrapper: flex row on desktop so left + right (buttons) sit side by side and are both visible */}
+      <div className="relative z-10 flex flex-col md:flex-row h-full min-h-[180px] w-full">
       {/* Left Section */}
-      <div className="flex flex-col justify-between h-full w-full md:max-w-[60%]">
+      <div className="flex flex-col justify-between flex-1 min-w-0 py-4 md:py-0">
         <div className="space-y-1">
           <h2 className="font-renaissance text-2xl md:text-3xl text-foreground tracking-wide font-bold">
             {artistName}
@@ -108,8 +117,8 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
         </div>
       </div>
 
-      {/* Right Section: Actions */}
-      <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 w-full md:w-auto h-full border-t md:border-t-0 md:border-l border-border/10 pt-4 md:pt-0 pl-0 md:pl-8 md:py-4">
+      {/* Right Section: Actions - always visible beside left on desktop, below on mobile */}
+      <div className="flex flex-row md:flex-col items-center md:items-end justify-center md:justify-center gap-3 shrink-0 w-full md:w-auto py-3 md:py-4 md:pl-6 md:pr-6 border-t md:border-t-0 md:border-l border-border/50 bg-transparent backdrop-blur-sm">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
@@ -129,7 +138,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
 
         <motion.button
           whileHover={{
-            backgroundColor: "hsl(var(--primary) / 0.1)",
+            backgroundColor: "hsl(var(--primary) / 0.2)",
             borderColor: "hsl(var(--primary))",
           }}
           whileTap={{ scale: 0.95 }}
@@ -137,7 +146,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
             e.stopPropagation();
             onSell();
           }}
-          className="group/btn relative px-4 py-2 border border-border overflow-hidden transition-all duration-300 whitespace-nowrap"
+          className="group/btn relative px-4 py-2.5 border-2 border-primary/80 overflow-hidden transition-all duration-300 whitespace-nowrap bg-background text-primary shadow-sm"
         >
           <div className="absolute inset-0 w-0 bg-primary/10 transition-all duration-250 ease-out group-hover/btn:w-full" />
           <div className="flex items-center gap-2 relative z-10">
@@ -150,13 +159,14 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
 
         <button
           className="flex items-center gap-2"
-          onClick={() => router.push("/artist")}
+          onClick={() => router.push(`/artist/${artistId}`)}
         >
           <User size={14} className="text-primary" />
           <span className="font-cyber text-xs md:text-sm text-primary tracking-widest font-bold whitespace-nowrap">
             Artist Profile
           </span>
         </button>
+      </div>
       </div>
     </motion.div>
   );

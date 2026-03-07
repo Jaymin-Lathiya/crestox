@@ -21,9 +21,10 @@ interface ArtistData {
 
 interface ArtistHeroProps {
   artist: ArtistData;
+  onWatchlistClick?: () => void;
 }
 
-const ArtistHero: React.FC<ArtistHeroProps> = ({ artist }) => {
+const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => {
   const {
     name,
     bio,
@@ -106,7 +107,7 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist }) => {
             transition={{ delay: 0.8, duration: 0.8 }}
             className="flex flex-wrap items-center gap-3 md:gap-4 pt-4"
           >
-            <ActionButton icon={Heart} label="Watchlist" />
+            <ActionButton icon={Heart} label="Watchlist" onClick={onWatchlistClick} />
             <ActionButton icon={Share2} label="Share" />
             <SocialButton links={social_media_links || []} />
           </motion.div>
@@ -148,10 +149,15 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist }) => {
 interface ActionButtonProps {
   icon: React.ElementType;
   label: string;
+  onClick?: () => void;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, label }) => (
-  <button className="group flex items-center space-x-2 md:space-x-3 px-4 md:px-5 py-2.5 md:py-3 border border-border rounded-full hover:border-primary/50 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center space-x-2 md:space-x-3 px-4 md:px-5 py-2.5 md:py-3 border border-border rounded-full hover:border-primary/50 transition-all duration-300 bg-card/50 backdrop-blur-sm"
+  >
     <Icon size={14} className="md:w-4 md:h-4 text-muted-foreground group-hover:text-accent transition-colors duration-300" />
     <span className="font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
       {label}
