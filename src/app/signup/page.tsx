@@ -233,8 +233,8 @@ function SignupFormContent() {
                                                     <div className="flex flex-col w-full text-right items-end gap-2">
                                                         <GradientButton
                                                             type="submit"
-                                                            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white w-40"
-                                                            label={isLoading ? "Loading..." : "Create Account"}
+                                                            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                            label={isLoading ? "Loading..." : "Create "}
                                                             onClick={form.handleSubmit(onSubmit)}
                                                             disabled={isLoading}
                                                         />

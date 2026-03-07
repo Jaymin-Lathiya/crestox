@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import ArtistHero from '@/components/artist/ArtistHero';
 import CollectModule from '@/components/artist/CollectModule';
 import ArtistTabs from '@/components/artist/ArtistTabs';
-import ArtworksGrid from '@/components/artist/ArtworksGrid';
+import ArtworksGrid, { ArtworksGridSkeleton } from '@/components/artist/ArtworksGrid';
 import AnalyticsTab from '@/components/artist/AnalyticsTab';
 import AchievementsTab from '@/components/artist/AchievementsTab';
 import HistoryTab from '@/components/artist/HistoryTab';
@@ -22,20 +22,59 @@ import {
   type ArtistHistory,
   type ArtistCollector,
   type ArtistPriceHistory,
+  getArtistArtworks,
 } from '@/apis/artists/artistActions';
 import { strings } from '@/utils/strings';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type TabType = 'artworks' | 'analytics' | 'achievements' | 'history' | 'collectors';
 
-// Static artworks (no API for artist artworks)
-const artworksData = [
-  { id: '1', title: 'Void Symphony #12', image: '/assets/artwork-1.jpg', valuation: 45000, roi: '+24%', aspectRatio: 'portrait' as const },
-  { id: '2', title: 'Emerald Pulse', image: '/assets/artwork-2.jpg', valuation: 28500, roi: '+18%', aspectRatio: 'landscape' as const },
-  { id: '3', title: 'Golden Dissolution', image: '/assets/artwork-3.jpg', valuation: 72000, roi: '+45%', aspectRatio: 'square' as const },
-  { id: '4', title: 'Algorithmic Decay I', image: '/assets/artwork-1.jpg', valuation: 38000, roi: '+12%', aspectRatio: 'portrait' as const },
-  { id: '5', title: 'Digital Finitude', image: '/assets/artwork-2.jpg', valuation: 52000, roi: '+31%', aspectRatio: 'landscape' as const },
-  { id: '6', title: 'Renaissance Fragment', image: '/assets/artwork-3.jpg', valuation: 65000, roi: '+28%', aspectRatio: 'portrait' as const },
-];
+function ArtistPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-background text-foreground pt-24">
+      {/* Hero skeleton */}
+      <div className="w-full min-h-[50vh] flex items-end justify-center pb-12 md:pb-24 px-4 md:px-6">
+        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-end">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex gap-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            <Skeleton className="h-16 md:h-24 w-3/4" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+          <div className="lg:col-span-5 flex justify-center lg:justify-end">
+            <Skeleton className="w-48 h-48 md:w-56 md:h-56 rounded-full shrink-0" />
+          </div>
+        </div>
+      </div>
+      {/* Tabs skeleton */}
+      <div className="py-8 md:py-12 px-4 md:px-6 flex justify-center">
+        <Skeleton className="h-11 w-96 rounded-full" />
+      </div>
+      {/* Content + sidebar skeleton */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-12 md:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-15">
+          <div className="lg:col-span-8">
+            <ArtworksGridSkeleton />
+          </div>
+          <div className="lg:col-span-4">
+            <div className="sticky top-6 space-y-4">
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-48 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 const PLACEHOLDER_AVATAR = '/assets/artist-portrait.jpg';
 
@@ -56,6 +95,7 @@ const ArtistPage = () => {
   const [history, setHistory] = useState<ArtistHistory[]>([]);
   const [collectors, setCollectors] = useState<ArtistCollector[]>([]);
   const [priceHistory, setPriceHistory] = useState<ArtistPriceHistory | null>(null);
+  const [artworks, setArtworks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,23 +109,45 @@ const ArtistPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [basic, achievementsData, historyData, collectorsData, priceData] = await Promise.all([
+        const [basic, achievementsData, historyData, collectorsData, priceData, artworksResponse] = await Promise.all([
           getArtistBasicDetails(id)(),
           getArtistAchievements(id)(),
           getArtistHistory(id)(),
           getArtistCollectors(id)(),
           getArtistPriceHistory(id)(),
+          getArtistArtworks(id)(),
         ]);
         console.log('Artist basic details:', basic);
         console.log('Artist achievements data:', achievementsData);
         console.log('Artist history data:', historyData);
         console.log('Artist collectors data:', collectorsData);
         console.log('Artist price history data:', priceData);
+        console.log('Artist artworks data:', artworksResponse);
         setBasicDetails(basic ?? null);
         setAchievements(Array.isArray(achievementsData) ? achievementsData : []);
         setHistory(Array.isArray(historyData) ? historyData : []);
         setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
         setPriceHistory(priceData ?? null);
+        const list = Array.isArray(artworksResponse) ? artworksResponse : [];
+        const mapped = list.length > 0
+          ? list.map((a: any) => {
+              const item = a as Record<string, unknown>;
+              const mediaList = item.artwork_media as Array<{ is_primary?: boolean; media?: { file_path?: string } }> | undefined;
+              const primaryOrFirst = Array.isArray(mediaList)
+                ? mediaList.find((m) => m.is_primary) ?? mediaList[0]
+                : undefined;
+              const imageUrl = primaryOrFirst?.media?.file_path ?? (item.image as string) ?? '/assets/artwork-1.jpg';
+              return {
+                id: String(item.id ?? ''),
+                title: (item.name ?? item.title ?? 'Untitled') as string,
+                image: imageUrl,
+                valuation: Number(item.valuation ?? item.starting_price ?? 0),
+                roi: (item.roi as string) ?? '+0%',
+                aspectRatio: (item.aspect_ratio ?? item.aspectRatio ?? 'PORTRAIT') as 'PORTRAIT' | 'LANDSCAPE' | 'SQUARE',
+              };
+            })
+          : [];
+        setArtworks(mapped);
       } catch (err: any) {
         setError(err?.response?.data?.message ?? 'Failed to load artist');
       } finally {
@@ -96,6 +158,41 @@ const ArtistPage = () => {
     fetchData();
   }, [id]);
 
+  const refetchAfterCollect = useCallback(async () => {
+    if (id == null || isNaN(id)) return;
+    try {
+      const [basic, collectorsData, artworksResponse] = await Promise.all([
+        getArtistBasicDetails(id)(),
+        getArtistCollectors(id)(),
+        getArtistArtworks(id)(),
+      ]);
+      setBasicDetails(basic ?? null);
+      setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
+      const list = Array.isArray(artworksResponse) ? artworksResponse : [];
+      const mapped = list.length > 0
+        ? list.map((a: any) => {
+            const item = a as Record<string, unknown>;
+            const mediaList = item.artwork_media as Array<{ is_primary?: boolean; media?: { file_path?: string } }> | undefined;
+            const primaryOrFirst = Array.isArray(mediaList)
+              ? mediaList.find((m) => m.is_primary) ?? mediaList[0]
+              : undefined;
+            const imageUrl = primaryOrFirst?.media?.file_path ?? (item.image as string) ?? '/assets/artwork-1.jpg';
+            return {
+              id: String(item.id ?? ''),
+              title: (item.name ?? item.title ?? 'Untitled') as string,
+              image: imageUrl,
+              valuation: Number(item.valuation ?? item.starting_price ?? 0),
+              roi: (item.roi as string) ?? '+0%',
+              aspectRatio: (item.aspect_ratio ?? item.aspectRatio ?? 'portrait') as 'portrait' | 'landscape' | 'square',
+            };
+          })
+        : [];
+      setArtworks(mapped);
+    } catch (_err) {
+      // Optionally toast or ignore refetch errors
+    }
+  }, [id]);
+
   const artistData = basicDetails
     ? {
         name: basicDetails.artist_name,
@@ -104,9 +201,13 @@ const ArtistPage = () => {
         profileImage: basicDetails.avatar_url ?? PLACEHOLDER_AVATAR,
         isVerified: true,
         rank: 'Top 1% Global',
+        social_media_links: basicDetails.social_media_links ?? [],
       }
-    : null;
+    : isLoading
+      ? { name: '—', bio: '', location: '—', profileImage: PLACEHOLDER_AVATAR, isVerified: false, rank: '—', social_media_links: [] }
+      : null;
 
+  const firstArtworkId = artworks.length > 0 ? Number(artworks[0].id) : null;
   const collectModuleProps = basicDetails
     ? {
         pricePerFractal: Number(basicDetails.current_share_value) || 240.5,
@@ -114,8 +215,12 @@ const ArtistPage = () => {
         available: Number(basicDetails.available_fractals) ?? 142,
         estimatedYield: '12.4%',
         lockupPeriod: '12 M',
+        available_fractals: Number(basicDetails.available_fractals) ?? 142,
+        total_fractals: Number(basicDetails.total_fractals) || 1000,
+        firstArtworkId,
+        onCollectSuccess: refetchAfterCollect,
       }
-    : { pricePerFractal: 240.5, totalSupply: 1000, available: 142, estimatedYield: '12.4%', lockupPeriod: '12 M' };
+    : { pricePerFractal: 240.5, totalSupply: 1000, available: 142, estimatedYield: '12.4%', lockupPeriod: '12 M', firstArtworkId, onCollectSuccess: refetchAfterCollect };
 
   const achievementsForTab = Array.isArray(achievements)
     ? achievements.map((a) => ({
@@ -165,7 +270,8 @@ const ArtistPage = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'artworks':
-        return <ArtworksGrid artworks={artworksData} />;
+        if (isLoading) return <ArtworksGridSkeleton />;
+        return <ArtworksGrid artworks={artworks} />;
       case 'analytics':
         return <AnalyticsTab priceData={priceDataForAnalytics} />;
       case 'achievements':
@@ -175,7 +281,7 @@ const ArtistPage = () => {
       case 'collectors':
         return <CollectorsTab collectors={collectorsForTab} />;
       default:
-        return <ArtworksGrid artworks={artworksData} />;
+        return <ArtworksGrid artworks={artworks} />;
     }
   };
 
@@ -195,7 +301,11 @@ const ArtistPage = () => {
     );
   }
 
-  if (isLoading || !artistData) {
+  if (isLoading) {
+    return <ArtistPageSkeleton />;
+  }
+
+  if (!artistData) {
     return (
       <div className="min-h-screen bg-background text-foreground pt-24 flex items-center justify-center">
         <p className="font-mono text-muted-foreground">Loading...</p>

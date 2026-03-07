@@ -47,6 +47,11 @@ export interface ArtistPriceHistory {
     history: { month: string; price: number }[];
 }
 
+export interface ArtistArtwork {
+    artistProfileId: number;
+}
+
+
 export interface FeaturedArtist {
     artist_profile_id: number;
     artist_id: number;
@@ -112,3 +117,41 @@ export const getArtistPriceHistory = (id: number) => async (): Promise<ArtistPri
     const response = await instance.get(ARTIST_URLS.PRICE_HISTORY(id));
     return response.data?.data ?? { current_price: 0, history: [] };
 }
+
+export const getArtistArtworks = (id: number) => async (): Promise<any[]> => {
+    const response = await instance.get(ARTIST_URLS.ARTWORKS(id));
+    const body = response.data;
+    const data = body?.data ?? body?.artworks ?? body;
+    const list = Array.isArray(data) ? data : [];
+    return list;
+};
+
+export const getBufferPriceOfArtwork = (id: number) => async (): Promise<number> => {
+    const response = await instance.get(ARTIST_URLS.BUFFER_PRICE_OF_ARTWORK(id));
+    const data = response.data?.data;
+    const currentPrice = data?.current_price;
+    const value = currentPrice != null ? parseFloat(String(currentPrice)) : NaN;
+    return Number.isFinite(value) ? value : 0;
+};
+
+export interface BufferPriceQuote {
+    current_price: number;
+    buffer_percent: number | null;
+}
+
+export const getBufferPriceQuote = (artworkId: number, quantity?: number) => async (): Promise<BufferPriceQuote> => {
+    const response = await instance.get(ARTIST_URLS.BUFFER_PRICE_QUOTE(artworkId, quantity));
+    const data = response.data?.data;
+    const currentPrice = data?.current_price;
+    const price = currentPrice != null ? parseFloat(String(currentPrice)) : NaN;
+    const bufferPercent = data?.buffer_percent != null ? parseFloat(String(data.buffer_percent)) : null;
+    return {
+        current_price: Number.isFinite(price) ? price : 0,
+        buffer_percent: bufferPercent != null && Number.isFinite(bufferPercent) ? bufferPercent : null,
+    };
+};
+
+export const collectFractals = (data: any) => async () => {
+    const response = await instance.post(ARTIST_URLS.COLLECT_FRACTALS, data);
+    return response.data?.data ?? null;
+};

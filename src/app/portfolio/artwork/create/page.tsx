@@ -49,8 +49,8 @@ export default function CreateArtworkPage() {
     return (
         <div className="min-h-screen pt-24 pb-12">
             <div className="flex items-center justify-center p-4">
-                <ArtworkForm artistProfileId={artistProfileId} onSubmit={handleSubmit} />
-            </div>
+                <ArtworkForm  onSubmit={handleSubmit} />
+                </div>
         </div>
     )
 }

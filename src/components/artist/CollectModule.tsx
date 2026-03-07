@@ -1,6 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Info } from 'lucide-react';
+import { getBufferPriceQuote, collectFractals } from '@/apis/artists/artistActions';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import GradientButton from '../ui/gradiant-button';
 
 interface CollectModuleProps {
   pricePerFractal?: number;
@@ -8,6 +22,10 @@ interface CollectModuleProps {
   available?: number;
   estimatedYield?: string;
   lockupPeriod?: string;
+  available_fractals?: number;
+  total_fractals?: number;
+  firstArtworkId?: number | null;
+  onCollectSuccess?: () => void;
 }
 
 const CollectModule: React.FC<CollectModuleProps> = ({
@@ -16,11 +34,73 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   available = 142,
   estimatedYield = "12.4%",
   lockupPeriod = "12 M",
+  available_fractals = 142,
+  total_fractals = 1000,
+  firstArtworkId = null,
+  onCollectSuccess,
 }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<any>(1);
+  const [quote, setQuote] = useState<{ current_price: number; buffer_percent: number | null } | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [collecting, setCollecting] = useState(false);
+
+  useEffect(() => {
+    const id = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
+    if (id == null) {
+      setQuote(null);
+      return;
+    }
+    let cancelled = false;
+    setQuoteLoading(true);
+    getBufferPriceQuote(id, quantity)()
+      .then((data) => {
+        if (!cancelled) setQuote(data);
+      })
+      .catch(() => {
+        if (!cancelled) setQuote(null);
+      })
+      .finally(() => {
+        if (!cancelled) setQuoteLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [firstArtworkId, quantity]);
 
   const sold = totalSupply - available;
   const progressPercent = (sold / totalSupply) * 100;
+
+  const currentPrice = quote?.current_price ?? pricePerFractal;
+  const bufferPercent = quote?.buffer_percent ?? 0;
+  const effectiveQty = Math.max(1, typeof quantity === 'number' && !Number.isNaN(quantity) ? quantity : parseInt(String(quantity), 10) || 1);
+  const baseAmount = effectiveQty * currentPrice;
+  const bufferAdjustment = baseAmount * (bufferPercent / 100);
+  const subTotal = baseAmount;
+  const gst = subTotal * 0.18;
+  const total = gst + subTotal;
+
+  const handleCollectConfirm = () => {
+    const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
+    if (artworkId == null) {
+      toast.error('No artwork selected');
+      return;
+    }
+    setCollecting(true);
+    collectFractals({
+      artwork_id: artworkId,
+      quantity: effectiveQty,
+      buffer_percent: bufferPercent ?? 0,
+      current_price: currentPrice,
+    })()
+      .then((result) => {
+        toast.success('Fractals collected successfully');
+        setConfirmOpen(false);
+        if (result != null && result !== false && onCollectSuccess) onCollectSuccess();
+      })
+      .catch((err: any) => {
+        toast.error(err?.response?.data?.message ?? 'Failed to collect fractals');
+      })
+      .finally(() => setCollecting(false));
+  };
 
   return (
     <motion.aside
@@ -39,9 +119,9 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               Current Valuation
             </h3>
             <div className="flex items-baseline space-x-1">
-              <span className="font-mono text-muted-foreground text-lg">$</span>
+              <span className="font-mono text-muted-foreground text-lg">₹</span>
               <span className="font-mono text-3xl text-foreground font-medium tracking-tight">
-                {pricePerFractal.toFixed(2)}
+                {quoteLoading ? '—' : currentPrice.toFixed(2)}
               </span>
             </div>
           </div>
@@ -58,7 +138,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         <div className="px-5 py-6 space-y-4">
           <div className="flex justify-between text-xs font-mono">
             <span className="text-muted-foreground">Minted Supply</span>
-            <span className="text-foreground">{sold} / {totalSupply}</span>
+            <span className="text-foreground">{available_fractals} / {total_fractals}</span>
           </div>
 
           {/* Custom Progress Bar */}
@@ -86,24 +166,76 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Qty</span>
             <input
               type="number"
-              min="1"
-              max={available}
+              max={Math.max(1, available)}
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Math.min(available, parseInt(e.target.value) || 1)))}
+              onChange={(e) => {
+                const raw = e.target.value;
+              
+                if (raw === "") {
+                  setQuantity("");
+                  return;
+                }
+              
+                const num = Number(raw);
+                if (!Number.isNaN(num) && num >= 0) {
+                  setQuantity(num);
+                }
+              }}
               className="w-24 bg-transparent text-right font-mono text-foreground text-xl focus:outline-none"
             />
           </div>
 
-          {/* Total Display */}
-          <div className="flex justify-between items-center px-1">
-            <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Total</span>
-            <span className="font-mono text-lg text-foreground">
-              ${(pricePerFractal * quantity).toFixed(2)}
-            </span>
+          {/* Sub total & Total Display */}
+          <div className="space-y-2 px-1">
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Sub total</span>
+              <div className="flex items-center gap-1">
+                {quoteLoading ? (
+                  <Skeleton className="h-6 w-20" />
+                ) : (
+                  <>
+                    <span className="font-mono text-lg text-foreground">
+                      ₹{subTotal.toFixed(2)}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">+-{bufferPercent.toFixed(2)}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">G.S.T. (18%)</span>
+              {quoteLoading ? (
+                <Skeleton className="h-6 w-20" />
+              ) : (
+                <span className="font-mono text-lg text-foreground font-medium">
+                  ₹{gst.toFixed(2)}
+                </span>
+              )}
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Total</span>
+              <div className="flex items-center gap-1">
+                {quoteLoading ? (
+                  <Skeleton className="h-6 w-20" />
+                ) : (
+                  <>
+                    <span className="font-mono text-lg text-foreground font-medium">
+                      ₹{total.toFixed(2)}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">+-{bufferPercent.toFixed(2)}</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Primary Button: Liquid Metal Style */}
-          <button className="group relative w-full h-12 bg-primary/50 overflow-hidden rounded-sm border-t border-foreground/10 border-b border-background transition-all duration-300 active:scale-[0.98]">
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            disabled={firstArtworkId == null}
+            className="group relative w-full h-12 bg-primary/50 overflow-hidden rounded-sm border-t border-foreground/10 border-b  transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+          >
             {/* Hover Glow Border */}
             <div className="absolute inset-0 border border-primary/50 rounded-sm transition-all duration-300 group-hover:border-primary group-hover:shadow-[0_0_20px_hsl(var(--primary)/0.3)]" />
 
@@ -117,6 +249,23 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             {/* Subtle Gloss Sheen */}
             <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 to-transparent opacity-50 pointer-events-none" />
           </button>
+
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Collect fractal</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to collect the fractal? This will purchase {effectiveQty} fractal(s) at the current price.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className='flex justify-end items-center gap-2'>
+                <AlertDialogCancel disabled={collecting} className='rounded-lg h-11'>Cancel</AlertDialogCancel>
+                <GradientButton variant='primary' label= {collecting ? 'Collecting…' : 'Confirm'}  onClick={handleCollectConfirm} disabled={collecting} >
+                 
+                </GradientButton>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <p className="text-center font-mono text-[10px] text-muted-foreground flex items-center justify-center space-x-1.5">
             <Info size={10} />

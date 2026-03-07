@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getBufferPriceOfArtwork } from '@/apis/artists/artistActions';
 
-interface Artwork {
+export interface Artwork {
   id: string;
   title: string;
   image: string;
@@ -13,6 +15,22 @@ interface Artwork {
 
 interface ArtworksGridProps {
   artworks: Artwork[];
+}
+
+export function ArtworksGridSkeleton() {
+  return (
+    <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="break-inside-avoid space-y-3">
+          <Skeleton className="aspect-[3/4] w-full rounded-sm" />
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
@@ -42,6 +60,32 @@ interface ArtworkCardProps {
 }
 
 const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
+  const artworkId = Number(artwork.id);
+  const [bufferPrice, setBufferPrice] = useState<number | null>(null);
+  const [priceLoading, setPriceLoading] = useState(true);
+
+  useEffect(() => {
+    if (!artworkId || isNaN(artworkId)) {
+      setPriceLoading(false);
+      return;
+    }
+    let cancelled = false;
+    getBufferPriceOfArtwork(artworkId)()
+      .then((price) => {
+        if (!cancelled) {
+          setBufferPrice(typeof price === 'number' ? price : Number(price) || 0);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBufferPrice(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPriceLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [artworkId]);
+
+  const displayValue = bufferPrice ?? artwork.valuation;
   const aspectClass = {
     portrait: 'aspect-[3/4]',
     landscape: 'aspect-[4/3]',
@@ -69,7 +113,9 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
         >
           <div className="flex flex-col">
             <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Value</span>
-            <span className="font-mono text-sm text-foreground">${artwork.valuation.toLocaleString()}</span>
+            <span className="font-mono text-sm text-foreground">
+              {priceLoading ? '—' : `₹${displayValue.toLocaleString() || "-"}`}
+            </span>
           </div>
           <div className="w-px h-6 bg-border" />
           <div className="flex items-center space-x-1">

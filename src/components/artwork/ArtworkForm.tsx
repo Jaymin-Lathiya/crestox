@@ -62,14 +62,16 @@ const artworkFormSchema = z.object({
 type ArtworkFormValues = z.infer<typeof artworkFormSchema>
 
 interface ArtworkFormProps {
-    artistProfileId: number
     onSubmit?: (values: ArtworkFormValues) => void | Promise<void>
 }
 
-export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormProps) {
+export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
     const [isUploading, setIsUploading] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+
     const router = useRouter()
+
+    const artist_profile_id = localStorage.getItem("artist_profile_id")
 
     const form = useForm<ArtworkFormValues>({
         resolver: zodResolver(artworkFormSchema),
@@ -82,7 +84,7 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
             length: 0,
             breadth: 0,
             dimensions_unit: "cm",
-            artist_profile_id: artistProfileId,
+            artist_profile_id: Number(artist_profile_id),
             number_of_shares: 100,
             starting_price: 0,
         },

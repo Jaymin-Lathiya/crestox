@@ -27,6 +27,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import GradientButton from "@/components/ui/gradiant-button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getProfile } from "@/apis/user/userActions"
 import { applyAsArtist } from "@/apis/artists/artistActions"
 import { uploadMedia } from "@/apis/media/mediaActions"
@@ -63,6 +64,7 @@ const profileFormSchema = z.object({
 export default function ArtistProfileForm() {
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const [isFetchingUser, setIsFetchingUser] = useState(true)
     const [profileError, setProfileError] = useState<string | null>(null)
     const [submitError, setSubmitError] = useState<string | null>(null)
     const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -94,6 +96,7 @@ export default function ArtistProfileForm() {
 
     useEffect(() => {
         const fetchUserData = async () => {
+            setIsFetchingUser(true);
             try {
                 const fetchProfileAction = getProfile();
                 const profileRes = await fetchProfileAction();
@@ -107,6 +110,8 @@ export default function ArtistProfileForm() {
             } catch (err) {
                 console.error("Failed to fetch profile", err);
                 setProfileError("Could not verify your profile details. Please try refreshing.");
+            } finally {
+                setIsFetchingUser(false);
             }
         };
 
@@ -367,6 +372,46 @@ export default function ArtistProfileForm() {
         } finally {
             setIsLoading(false);
         }
+    }
+
+    if (isFetchingUser) {
+        return (
+            <Card className="w-full max-w-3xl border-border/50 bg-card/50 backdrop-blur-sm mx-auto mb-20 mt-40">
+                <CardHeader className="space-y-1 pb-6">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-full max-w-md" />
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div className="space-y-3">
+                        <Skeleton className="h-4 w-16" />
+                        <div className="flex items-center gap-6">
+                            <Skeleton className="w-20 h-20 rounded-full shrink-0" />
+                            <Skeleton className="h-9 w-28" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-[120px] w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-[120px] w-full" />
+                    </div>
+                    <div className="space-y-4">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="flex justify-end pt-4">
+                        <Skeleton className="h-11 w-32" />
+                    </div>
+                </CardContent>
+            </Card>
+        );
     }
 
     return (

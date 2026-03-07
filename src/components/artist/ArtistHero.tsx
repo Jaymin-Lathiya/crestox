@@ -3,6 +3,11 @@ import { motion } from 'framer-motion';
 import { Share2, Heart, MapPin, BadgeCheck } from 'lucide-react';
 import SocialButton from '../ui/social-button';
 
+export interface SocialMediaLink {
+  platform: string;
+  url: string;
+}
+
 interface ArtistData {
   name: string;
   bio: string;
@@ -11,6 +16,7 @@ interface ArtistData {
   isVerified: boolean;
   rank?: string;
   isWishlisted?: boolean;
+  social_media_links?: SocialMediaLink[];
 }
 
 interface ArtistHeroProps {
@@ -25,6 +31,7 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist }) => {
     profileImage,
     isVerified,
     rank = "Top 1% Global",
+    social_media_links = [],
   } = artist;
 
   return (
@@ -101,7 +108,7 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist }) => {
           >
             <ActionButton icon={Heart} label="Watchlist" />
             <ActionButton icon={Share2} label="Share" />
-            <SocialButton />
+            <SocialButton links={social_media_links || []} />
           </motion.div>
         </div>
 
