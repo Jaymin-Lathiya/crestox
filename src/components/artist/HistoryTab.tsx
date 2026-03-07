@@ -12,7 +12,7 @@ import {
 } from '@/components/motion-primitives/morphing-dialog';
 import { PlusIcon } from 'lucide-react';
 
-interface HistoryEvent {
+export interface HistoryEvent {
   id: string;
   type: 'sale' | 'mint' | 'exhibition';
   title: string;
@@ -22,7 +22,7 @@ interface HistoryEvent {
   image: string;
 }
 
-const historyEvents: HistoryEvent[] = [
+const DEFAULT_HISTORY: HistoryEvent[] = [
   {
     id: '1',
     type: 'sale',
@@ -88,10 +88,14 @@ const historyEvents: HistoryEvent[] = [
   },
 ];
 
-const HistoryTab: React.FC = () => {
+interface HistoryTabProps {
+  history?: HistoryEvent[];
+}
+
+const HistoryTab: React.FC<HistoryTabProps> = ({ history = DEFAULT_HISTORY }) => {
   return (
     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-      {historyEvents.map((event) => (
+      {history.map((event) => (
         <MorphingDialog
           key={event.id}
           transition={{

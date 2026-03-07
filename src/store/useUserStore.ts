@@ -13,6 +13,8 @@ export interface User {
     roles: string[];
     permissions: string[];
     isAdmin: boolean;
+    artist_profile_id?: number | null;
+    artist_profile_approved?: boolean;
 }
 
 interface UserState {

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
-const priceData = [
+const DEFAULT_PRICE_DATA = [
   { month: 'Jan', price: 180 },
   { month: 'Feb', price: 195 },
   { month: 'Mar', price: 210 },
@@ -36,7 +36,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const AnalyticsTab: React.FC = () => {
+interface AnalyticsTabProps {
+  priceData?: { month: string; price: number }[];
+}
+
+const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ priceData: chartData = DEFAULT_PRICE_DATA }) => {
   const maxCount = Math.max(...gradeDistribution.map(g => g.count));
 
   return (
@@ -53,7 +57,7 @@ const AnalyticsTab: React.FC = () => {
         </h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={priceData}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />

@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { ArtworkCard } from "./ArtworkCard";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/store/useUserStore";
 
 type FilterStatus = "all" | "live" | "pending" | "draft";
 
@@ -91,7 +94,11 @@ const mockArtworks = [
 ];
 
 export const ArtworksTab = () => {
+  const router = useRouter();
+  const { user } = useUserStore();
   const [filter, setFilter] = useState<FilterStatus>("all");
+
+  const canAddArtwork = user?.artist_profile_approved === true;
 
   const filteredArtworks = filter === "all" 
     ? mockArtworks 
@@ -122,11 +129,22 @@ export const ArtworksTab = () => {
           </p>
         </div>
 
-        {/* Add New Button */}
+        {/* Add New Button - only enabled when artist profile is approved */}
         <motion.button
-          className="btn-liquid-metal flex items-center gap-2 px-6 py-3"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "flex items-center gap-2 px-6 py-3",
+            canAddArtwork ? "btn-liquid-metal" : "opacity-60 cursor-not-allowed bg-muted"
+          )}
+          whileHover={canAddArtwork ? { scale: 1.02 } : undefined}
+          whileTap={canAddArtwork ? { scale: 0.98 } : undefined}
+          onClick={() => {
+            if (canAddArtwork) {
+              router.push("/portfolio/artwork/create");
+            } else {
+              toast.error("Your artist profile is not verified yet");
+            }
+          }}
+          title={!canAddArtwork ? "Your artist profile must be approved to add artworks" : undefined}
         >
           <Plus className="w-4 h-4" />
           <span className="text-sm uppercase tracking-wider">Add Artwork</span>

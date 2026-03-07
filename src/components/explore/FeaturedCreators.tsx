@@ -1,9 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, User, Award, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getFeaturedArtists, type FeaturedArtist } from '@/apis/artists/artistActions';
+
+const PLACEHOLDER_AVATAR = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop';
+
+type CreatorItem = {
+    id?: number;
+    name: string;
+    role?: string;
+    image: string;
+    bio: string;
+    stats: { label: string; value: number; max: number };
+};
 
 const CREATOR_TABS = [
     { id: 'artists', label: 'Featured Artists', icon: User },
@@ -90,15 +104,71 @@ const MOCK_CREATORS = {
     ]
 };
 
+function CreatorCardSkeleton() {
+    return (
+        <div className="group relative bg-card/40 border border-border/50 rounded-2xl p-6 flex flex-col items-center text-center">
+            <div className="relative mb-6">
+                <Skeleton className="w-24 h-24 rounded-full" />
+                <Skeleton className="absolute -bottom-2 -right-2 w-8 h-5 rounded-full" />
+            </div>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <div className="w-full space-y-2 mb-8 min-h-[4.5em]">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+            </div>
+            <div className="w-full mt-auto mb-6">
+                <div className="flex justify-between items-end mb-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-12" />
+                </div>
+                <Skeleton className="h-1.5 w-full rounded-full" />
+            </div>
+            <Skeleton className="h-10 w-full rounded-md" />
+        </div>
+    );
+}
+
+function mapFeaturedArtistToCreator(artist: FeaturedArtist): CreatorItem {
+    const max = Math.max(artist.total_fractals, 1);
+    return {
+        id: artist.artist_profile_id,
+        name: artist.artist_name,
+        role: 'Artist',
+        image: artist.avatar_url || PLACEHOLDER_AVATAR,
+        bio: artist.artist_bio || 'Featured artist on Crestox.',
+        stats: {
+            label: 'Fractals Available',
+            value: artist.available_fractals,
+            max,
+        },
+    };
+}
+
 export function FeaturedCreators() {
     const [activeTab, setActiveTab] = useState('artists');
     const [isExpanded, setIsExpanded] = useState(false);
-    const [displayedCreators, setDisplayedCreators] = useState<any[]>([]);
+    const [displayedCreators, setDisplayedCreators] = useState<CreatorItem[]>([]);
+    const [isLoadingArtists, setIsLoadingArtists] = useState(false);
 
     useEffect(() => {
-        const creators = MOCK_CREATORS[activeTab as keyof typeof MOCK_CREATORS];
-        const shuffled = [...creators].sort(() => 0.5 - Math.random());
-        setDisplayedCreators(shuffled);
+        if (activeTab === 'artists') {
+            setIsLoadingArtists(true);
+            getFeaturedArtists()()
+                .then((artists) => {
+                    setDisplayedCreators(artists.map(mapFeaturedArtistToCreator));
+                })
+                .catch(() => {
+                    setDisplayedCreators([]);
+                })
+                .finally(() => {
+                    setIsLoadingArtists(false);
+                });
+        } else {
+            const creators = MOCK_CREATORS[activeTab as keyof typeof MOCK_CREATORS];
+            const shuffled = [...creators].sort(() => 0.5 - Math.random());
+            setDisplayedCreators(shuffled);
+        }
     }, [activeTab]);
 
     const visibleCreators = isExpanded ? displayedCreators : displayedCreators.slice(0, 4);
@@ -127,9 +197,12 @@ export function FeaturedCreators() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {visibleCreators.map((creator, idx) => (
+                {isLoadingArtists && activeTab === 'artists' ? (
+                    Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={i} />)
+                ) : (
+                visibleCreators.map((creator, idx) => (
                     <div
-                        key={idx}
+                        key={creator.id ?? idx}
                         className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
                     >
                         <div className="relative mb-6">
@@ -168,14 +241,25 @@ export function FeaturedCreators() {
                             </div>
                         </div>
 
-                        <Button
-                            variant="outline"
-                            className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
-                        >
-                            View Profile
-                        </Button>
+                        {creator.id != null ? (
+                            <Button
+                                variant="outline"
+                                className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                asChild
+                            >
+                                <Link href={`/artist/${creator.id}`}>View Profile</Link>
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                            >
+                                View Profile
+                            </Button>
+                        )}
                     </div>
-                ))}
+                ))
+                )}
             </div>
 
             <div className="mt-10 flex justify-center">

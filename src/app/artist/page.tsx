@@ -13,6 +13,10 @@ import CollectorsTab from '@/components/artist/CollectorsTab';
 
 type TabType = 'artworks' | 'analytics' | 'achievements' | 'history' | 'collectors';
 
+/**
+ * Reference / demo artist page with static data.
+ * For dynamic artist details by ID, use /artist/[id]
+ */
 const artistData = {
   name: "Julian V. Koda",
   bio: "Deconstructing the digital soul through algorithmic decay and renaissance composition. Exploring the tension between the infinite void and human finitude.",

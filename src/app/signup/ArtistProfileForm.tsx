@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { PlusCircle, Upload, Twitter, Instagram, Linkedin, User, Trash2 } from "lucide-react"
+import { PlusCircle, Upload, Twitter, Instagram, Linkedin, User, Trash2, FileText } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,10 +29,13 @@ import {
 import GradientButton from "@/components/ui/gradiant-button"
 import { getProfile } from "@/apis/user/userActions"
 import { applyAsArtist } from "@/apis/artists/artistActions"
+import { uploadMedia } from "@/apis/media/mediaActions"
+import { toast } from "sonner"
 
 const profileFormSchema = z.object({
     artistName: z.string().min(1, { message: "Artist name is required." }),
     bio: z.string().min(1, { message: "Bio is required." }),
+    avatar_media_id: z.string().optional(),
     collectorMessage: z.string().optional(),
     twitter: z.string().optional(),
     instagram: z.string().optional(),
@@ -62,12 +65,19 @@ export default function ArtistProfileForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [profileError, setProfileError] = useState<string | null>(null)
     const [submitError, setSubmitError] = useState<string | null>(null)
+    const [avatarFile, setAvatarFile] = useState<File | null>(null)
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+    // Store preview and filename for file uploads (keyed by field id for stability)
+    const [filePreviews, setFilePreviews] = useState<Record<string, string>>({})
+    const [fileNames, setFileNames] = useState<Record<string, string>>({})
 
     const form = useForm<z.infer<typeof profileFormSchema>>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: {
             artistName: "",
             bio: "",
+            avatar_media_id: "",
             collectorMessage: "",
             twitter: "",
             instagram: "",
@@ -118,15 +128,208 @@ export default function ArtistProfileForm() {
         name: "soldArtworks",
     })
 
+    const extractMediaIdFromResponse = (response: any): string | null => {
+        if (!response?.data) return null;
+        const d = response.data;
+        // Handle array response: { data: [{ media_id: 2, ... }] }
+        const dataArray = Array.isArray(d?.data) ? d.data : null;
+        if (dataArray?.[0]?.media_id != null) {
+            return String(dataArray[0].media_id);
+        }
+        // Try other common response structures
+        const candidates = [
+            d?.data?.id,
+            d?.data?.media_id,
+            d?.data?.mediaId,
+            d?.id,
+            d?.media_id,
+            d?.mediaId,
+            d?.data, // when id is returned directly as data
+        ];
+        for (const c of candidates) {
+            if (c != null && c !== "") {
+                return String(c);
+            }
+        }
+        return null;
+    }
+
+    const handleAvatarUpload = async (file: File) => {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
+        if (!validTypes.includes(file.type)) {
+            toast.error("Invalid file type", {
+                description: "Please upload a JPEG, PNG, JPG, GIF, WEBP, BMP, or SVG file.",
+            });
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            toast.error("File too large", {
+                description: "Please upload an image smaller than 5MB.",
+            });
+            return;
+        }
+
+        setIsUploadingAvatar(true);
+        try {
+            const uploadAction = uploadMedia(file);
+            const response = await uploadAction();
+            
+            const mediaId = extractMediaIdFromResponse(response);
+            
+            if (mediaId) {
+                form.setValue("avatar_media_id", mediaId);
+                setAvatarFile(file);
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setAvatarPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+                
+                toast.success("Avatar uploaded successfully");
+            } else {
+                console.warn("Upload succeeded but media ID not found. Response:", response?.data);
+                toast.error("Upload succeeded but could not get media ID", {
+                    description: "Please try again or contact support. Response structure may have changed.",
+                });
+            }
+        } catch (error: any) {
+            console.error("Avatar upload error:", error);
+            const errMsg = error?.response?.data?.message || error?.message || "Please try again.";
+            toast.error("Failed to upload avatar", {
+                description: errMsg,
+            });
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    }
+
+    const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleAvatarUpload(file);
+        }
+    }
+
+    const handleFileSelect = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        fieldId: string,
+        onChange: (file: File | null) => void
+    ) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onChange(file);
+            setFileNames((prev) => ({ ...prev, [fieldId]: file.name }));
+            // Only create image preview for image files
+            if (file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFilePreviews((prev) => ({ ...prev, [fieldId]: reader.result as string }));
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // For PDF etc, use empty string - we'll show a document icon
+                setFilePreviews((prev) => ({ ...prev, [fieldId]: "document" }));
+            }
+        }
+        e.target.value = ""; // Reset so same file can be selected again
+    }
+
+    const clearFile = (fieldId: string, onChange: (value: null) => void) => {
+        onChange(null);
+        setFilePreviews((prev) => {
+            const next = { ...prev };
+            delete next[fieldId];
+            return next;
+        });
+        setFileNames((prev) => {
+            const next = { ...prev };
+            delete next[fieldId];
+            return next;
+        });
+    }
+
+    const uploadFileAndGetMediaId = async (file: File | FileList | null | undefined): Promise<string | null> => {
+        if (!file) return null;
+        
+        // Handle FileList (multiple files) - take first file
+        const fileToUpload = file instanceof FileList ? file[0] : file instanceof File ? file : null;
+        if (!fileToUpload) return null;
+
+        try {
+            const uploadAction = uploadMedia(fileToUpload);
+            const response = await uploadAction();
+            
+            const mediaId = extractMediaIdFromResponse(response);
+            return mediaId;
+        } catch (error: any) {
+            console.error("File upload error:", error);
+            const errMsg = error?.response?.data?.message || error?.message || "Unknown error";
+            toast.error("Failed to upload file", {
+                description: errMsg,
+            });
+            throw new Error(`Failed to upload file: ${errMsg}`);
+        }
+    }
+
     async function onSubmit(values: z.infer<typeof profileFormSchema>) {
         setIsLoading(true);
         setSubmitError(null);
 
         try {
+            // Ensure avatar is uploaded before submission
+            if (avatarFile && !values.avatar_media_id) {
+                toast.error("Please wait for avatar upload to complete");
+                setIsLoading(false);
+                return;
+            }
+
+            // Upload award files
+            const achievements = await Promise.all(
+                (values.awards || []).map(async (award) => {
+                    const mediaId = await uploadFileAndGetMediaId(award.file);
+                    return {
+                        title: award.name,
+                        description: "",
+                        media_id: mediaId ? parseInt(mediaId, 10) : undefined,
+                    };
+                })
+            );
+
+            // Upload exhibition files
+            const history = await Promise.all(
+                (values.exhibitions || []).map(async (exhibition) => {
+                    const mediaId = await uploadFileAndGetMediaId(exhibition.file);
+                    return {
+                        title: exhibition.name,
+                        description: "",
+                        media_id: mediaId ? parseInt(mediaId, 10) : undefined,
+                    };
+                })
+            );
+
+            // Upload sold artwork images and proof of sale files
+            const previously_sold_artworks = await Promise.all(
+                (values.soldArtworks || []).map(async (artwork) => {
+                    const artworkImageMediaId = await uploadFileAndGetMediaId(artwork.image);
+                    const proofOfSaleMediaId = await uploadFileAndGetMediaId(artwork.proofOfSale);
+                    
+                    return {
+                        artwork_name: artwork.name,
+                        artwork_image_media_id: artworkImageMediaId ? parseInt(artworkImageMediaId, 10) : undefined,
+                        proof_of_sale_media_id: proofOfSaleMediaId ? parseInt(proofOfSaleMediaId, 10) : undefined,
+                        sell_value: artwork.saleValue ? parseInt(artwork.saleValue, 10) : 0,
+                    };
+                })
+            );
+
             const payload = {
-                // avatar_url handling normally requires a separate file upload endpoint to get a URL.
-                // For now passing a placeholder or empty string depending on file upload implementation.
-                avatar_url: "string",
+                avatar_media_id: values.avatar_media_id ? parseInt(values.avatar_media_id, 10) : undefined,
                 artist_name: values.artistName,
                 artist_bio: values.bio,
                 collector_message: values.collectorMessage || "",
@@ -134,22 +337,9 @@ export default function ArtistProfileForm() {
                 university: values.university || "",
                 website_portfolio_link: values.portfolioUrl || "",
                 artist_style: values.artisticStyle || "",
-                achievements: values.awards?.map(a => ({
-                    title: a.name,
-                    description: "", // Currently no description field in UI for awards
-                    image_url: "string" // File uploads would need pre-processing
-                })) || [],
-                history: values.exhibitions?.map(e => ({
-                    title: e.name,
-                    description: "", // Currently no description field in UI for exhibitions
-                    image_url: "string"
-                })) || [],
-                previously_sold_artworks: values.soldArtworks?.map(s => ({
-                    artwork_name: s.name,
-                    artwork_image_url: "string",
-                    proof_of_sale_url: "string",
-                    sell_value: s.saleValue ? parseInt(s.saleValue, 10) : 0
-                })) || [],
+                achievements,
+                history,
+                previously_sold_artworks,
                 social_links: [
                     ...(values.twitter ? [{ platform: "twitter", url: values.twitter }] : []),
                     ...(values.instagram ? [{ platform: "instagram", url: values.instagram }] : []),
@@ -158,13 +348,22 @@ export default function ArtistProfileForm() {
             };
 
             const submitAction = applyAsArtist(payload);
-            await submitAction();
+            const response = await submitAction();
+
+            // Show success message
+            toast.success("Artist profile created successfully!", {
+                description: "Your profile has been submitted and is being reviewed.",
+            });
 
             // Success! Route them to their new portfolio or dashboard
             router.push("/portfolio");
         } catch (error: any) {
             console.error("Submission error:", error);
-            setSubmitError(error?.response?.data?.message || error.message || "Failed to create artist profile");
+            const errorMessage = error?.response?.data?.message || error.message || "Failed to create artist profile";
+            setSubmitError(errorMessage);
+            toast.error("Failed to create artist profile", {
+                description: errorMessage,
+            });
         } finally {
             setIsLoading(false);
         }
@@ -190,16 +389,51 @@ export default function ArtistProfileForm() {
                         <div className="space-y-3">
                             <FormLabel>Avatar</FormLabel>
                             <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-full border border-border/50 bg-muted/20 flex items-center justify-center">
-                                    <User className="w-8 h-8 text-muted-foreground" />
+                                <div className="relative w-20 h-20 rounded-full border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden">
+                                    {avatarPreview ? (
+                                        <img 
+                                            src={avatarPreview} 
+                                            alt="Avatar preview" 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <User className="w-8 h-8 text-muted-foreground" />
+                                    )}
+                                    {isUploadingAvatar && (
+                                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    )}
                                 </div>
-                                <Button variant="outline" type="button" size="sm" className="font-sans">
-                                    Upload Image
-                                </Button>
+                                <div className="relative">
+                                    <Button 
+                                        variant="outline" 
+                                        type="button" 
+                                        size="sm" 
+                                        className="font-sans"
+                                        disabled={isUploadingAvatar}
+                                        onClick={() => {
+                                            const input = document.getElementById("avatar-upload-input");
+                                            input?.click();
+                                        }}
+                                    >
+                                        {isUploadingAvatar ? "Uploading..." : "Upload Image"}
+                                    </Button>
+                                    <input
+                                        id="avatar-upload-input"
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
+                                        className="hidden"
+                                        onChange={handleAvatarFileChange}
+                                    />
+                                </div>
                             </div>
                             <p className="text-[13px] text-muted-foreground">
-                                Choose a public avatar. Use a square image (PNG/JPG, max 2MB) for best results.
+                                Choose a public avatar. Supported formats: JPEG, PNG, JPG, GIF, WEBP, BMP, SVG (max 5MB).
                             </p>
+                            {form.watch("avatar_media_id") && (
+                                <p className="text-[12px] text-primary">Avatar uploaded successfully ✓</p>
+                            )}
                         </div>
 
                         {/* Artist Name */}
@@ -263,8 +497,8 @@ export default function ArtistProfileForm() {
                         {/* Awards */}
                         <div className="space-y-4">
                             <FormLabel className="text-base text-foreground/90">Awards</FormLabel>
-                            {awardFields.map((field, index) => (
-                                <div key={field.id} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
+                            {awardFields.map((awardField, index) => (
+                                <div key={awardField.id} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
                                     <div className="flex gap-4">
                                         <div className="flex-1 space-y-4">
                                             <FormField
@@ -282,22 +516,56 @@ export default function ArtistProfileForm() {
                                             <FormField
                                                 control={form.control}
                                                 name={`awards.${index}.file`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <div className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md h-10 text-sm overflow-hidden text-muted-foreground w-full">
-                                                                <span className="font-semibold text-foreground shrink-0 cursor-pointer">Choose file</span>
-                                                                <span className="truncate">No file chosen</span>
-                                                                <Input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    onChange={(e) => field.onChange(e.target.files)}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
+                                                render={({ field }) => {
+                                                    const fieldId = `awards-${awardField.id}`;
+                                                    const preview = filePreviews[fieldId];
+                                                    const filename = fileNames[fieldId];
+                                                    return (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs text-muted-foreground">Award Certificate / Image</FormLabel>
+                                                            <FormControl>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                        {preview ? (
+                                                                            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <Upload className="w-6 h-6 text-muted-foreground" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                                        <div
+                                                                            className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md min-h-10 text-sm overflow-hidden text-muted-foreground w-full cursor-pointer hover:bg-background/70 transition-colors"
+                                                                            onClick={() => document.getElementById(`awards-file-${awardField.id}`)?.click()}
+                                                                        >
+                                                                            <Upload className="w-4 h-4 shrink-0" />
+                                                                            <span className="font-semibold text-foreground shrink-0">Choose file</span>
+                                                                            <span className="truncate text-muted-foreground">{filename || "No file chosen"}</span>
+                                                                        </div>
+                                                                        <input
+                                                                            id={`awards-file-${awardField.id}`}
+                                                                            type="file"
+                                                                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
+                                                                            className="hidden"
+                                                                            onChange={(e) => handleFileSelect(e, fieldId, (f) => field.onChange(f))}
+                                                                        />
+                                                                        {filename && (
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-7 text-xs text-destructive hover:text-destructive"
+                                                                                onClick={() => clearFile(fieldId, () => field.onChange(null))}
+                                                                            >
+                                                                                Remove file
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    );
+                                                }}
                                             />
                                         </div>
                                         <Button
@@ -305,7 +573,11 @@ export default function ArtistProfileForm() {
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-                                            onClick={() => removeAward(index)}
+                                            onClick={() => {
+                                                setFilePreviews((p) => { const n = { ...p }; delete n[`awards-${awardField.id}`]; return n; });
+                                                setFileNames((p) => { const n = { ...p }; delete n[`awards-${awardField.id}`]; return n; });
+                                                removeAward(index);
+                                            }}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -329,8 +601,8 @@ export default function ArtistProfileForm() {
                         {/* Exhibitions */}
                         <div className="space-y-4">
                             <FormLabel className="text-base text-foreground/90">Exhibitions</FormLabel>
-                            {exhibitionFields.map((field, index) => (
-                                <div key={field.id} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
+                            {exhibitionFields.map((exhibitionField, index) => (
+                                <div key={exhibitionField.id} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
                                     <div className="flex gap-4">
                                         <div className="flex-1 space-y-4">
                                             <FormField
@@ -348,23 +620,56 @@ export default function ArtistProfileForm() {
                                             <FormField
                                                 control={form.control}
                                                 name={`exhibitions.${index}.file`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <div className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md h-10 text-sm overflow-hidden text-muted-foreground w-full">
-                                                                <span className="font-semibold text-foreground shrink-0 cursor-pointer">Choose files</span>
-                                                                <span className="truncate">No file chosen</span>
-                                                                <Input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    multiple
-                                                                    onChange={(e) => field.onChange(e.target.files)}
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
+                                                render={({ field }) => {
+                                                    const fieldId = `exhibitions-${exhibitionField.id}`;
+                                                    const preview = filePreviews[fieldId];
+                                                    const filename = fileNames[fieldId];
+                                                    return (
+                                                        <FormItem>
+                                                            <FormLabel className="text-xs text-muted-foreground">Exhibition Image</FormLabel>
+                                                            <FormControl>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                        {preview ? (
+                                                                            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <Upload className="w-6 h-6 text-muted-foreground" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                                        <div
+                                                                            className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md min-h-10 text-sm overflow-hidden text-muted-foreground w-full cursor-pointer hover:bg-background/70 transition-colors"
+                                                                            onClick={() => document.getElementById(`exhibitions-file-${exhibitionField.id}`)?.click()}
+                                                                        >
+                                                                            <Upload className="w-4 h-4 shrink-0" />
+                                                                            <span className="font-semibold text-foreground shrink-0">Choose file</span>
+                                                                            <span className="truncate text-muted-foreground">{filename || "No file chosen"}</span>
+                                                                        </div>
+                                                                        <input
+                                                                            id={`exhibitions-file-${exhibitionField.id}`}
+                                                                            type="file"
+                                                                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
+                                                                            className="hidden"
+                                                                            onChange={(e) => handleFileSelect(e, fieldId, (f) => field.onChange(f))}
+                                                                        />
+                                                                        {filename && (
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-7 text-xs text-destructive hover:text-destructive"
+                                                                                onClick={() => clearFile(fieldId, () => field.onChange(null))}
+                                                                            >
+                                                                                Remove file
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    );
+                                                }}
                                             />
                                         </div>
                                         <Button
@@ -372,7 +677,11 @@ export default function ArtistProfileForm() {
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-                                            onClick={() => removeExhibition(index)}
+                                            onClick={() => {
+                                                setFilePreviews((p) => { const n = { ...p }; delete n[`exhibitions-${exhibitionField.id}`]; return n; });
+                                                setFileNames((p) => { const n = { ...p }; delete n[`exhibitions-${exhibitionField.id}`]; return n; });
+                                                removeExhibition(index);
+                                            }}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -402,15 +711,29 @@ export default function ArtistProfileForm() {
                                 </p>
                             </div>
 
-                            {soldArtworkFields.map((field, index) => (
-                                <div key={field.id} className="p-5 border border-border/40 rounded-lg space-y-6 relative group">
+                            {soldArtworkFields.map((soldField, index) => (
+                                <div key={soldField.id} className="p-5 border border-border/40 rounded-lg space-y-6 relative group">
                                     <div className="absolute right-4 top-4">
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                            onClick={() => removeSoldArtwork(index)}
+                                            onClick={() => {
+                                                setFilePreviews((p) => {
+                                                    const n = { ...p };
+                                                    delete n[`soldArtworks-${soldField.id}-image`];
+                                                    delete n[`soldArtworks-${soldField.id}-proofOfSale`];
+                                                    return n;
+                                                });
+                                                setFileNames((p) => {
+                                                    const n = { ...p };
+                                                    delete n[`soldArtworks-${soldField.id}-image`];
+                                                    delete n[`soldArtworks-${soldField.id}-proofOfSale`];
+                                                    return n;
+                                                });
+                                                removeSoldArtwork(index);
+                                            }}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -434,45 +757,113 @@ export default function ArtistProfileForm() {
                                         <FormField
                                             control={form.control}
                                             name={`soldArtworks.${index}.image`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-xs text-muted-foreground">Artwork Image</FormLabel>
-                                                    <FormControl>
-                                                        <div className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md h-10 text-sm overflow-hidden text-muted-foreground w-full">
-                                                            <span className="font-semibold text-foreground shrink-0 cursor-pointer">Choose file</span>
-                                                            <span className="truncate">No file chosen</span>
-                                                            <Input
-                                                                type="file"
-                                                                className="hidden"
-                                                                onChange={(e) => field.onChange(e.target.files)}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                            render={({ field }) => {
+                                                const fieldId = `soldArtworks-${soldField.id}-image`;
+                                                const preview = filePreviews[fieldId];
+                                                const filename = fileNames[fieldId];
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs text-muted-foreground">Artwork Image</FormLabel>
+                                                        <FormControl>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                    {preview ? (
+                                                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <Upload className="w-6 h-6 text-muted-foreground" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                                    <div
+                                                                        className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md min-h-10 text-sm overflow-hidden text-muted-foreground w-full cursor-pointer hover:bg-background/70 transition-colors"
+                                                                        onClick={() => document.getElementById(`sold-image-${soldField.id}`)?.click()}
+                                                                    >
+                                                                        <Upload className="w-4 h-4 shrink-0" />
+                                                                        <span className="font-semibold text-foreground shrink-0">Choose file</span>
+                                                                        <span className="truncate text-muted-foreground">{filename || "No file chosen"}</span>
+                                                                    </div>
+                                                                    <input
+                                                                        id={`sold-image-${soldField.id}`}
+                                                                        type="file"
+                                                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
+                                                                        className="hidden"
+                                                                        onChange={(e) => handleFileSelect(e, fieldId, (f) => field.onChange(f))}
+                                                                    />
+                                                                    {filename && (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-7 text-xs text-destructive hover:text-destructive"
+                                                                            onClick={() => clearFile(fieldId, () => field.onChange(null))}
+                                                                        >
+                                                                            Remove file
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
 
                                         <FormField
                                             control={form.control}
                                             name={`soldArtworks.${index}.proofOfSale`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-xs text-muted-foreground">Proof of Sale</FormLabel>
-                                                    <FormControl>
-                                                        <div className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md h-10 text-sm overflow-hidden text-muted-foreground w-full">
-                                                            <span className="font-semibold text-foreground shrink-0 cursor-pointer">Choose file</span>
-                                                            <span className="truncate">No file chosen</span>
-                                                            <Input
-                                                                type="file"
-                                                                className="hidden"
-                                                                onChange={(e) => field.onChange(e.target.files)}
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
+                                            render={({ field }) => {
+                                                const fieldId = `soldArtworks-${soldField.id}-proofOfSale`;
+                                                const preview = filePreviews[fieldId];
+                                                const filename = fileNames[fieldId];
+                                                return (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs text-muted-foreground">Proof of Sale</FormLabel>
+                                                        <FormControl>
+                                                            <div className="flex items-center gap-4">
+                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                    {preview === "document" ? (
+                                                                        <FileText className="w-6 h-6 text-muted-foreground" />
+                                                                    ) : preview ? (
+                                                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <Upload className="w-6 h-6 text-muted-foreground" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                                    <div
+                                                                        className="flex items-center gap-2 border border-input bg-background/50 px-3 py-2 rounded-md min-h-10 text-sm overflow-hidden text-muted-foreground w-full cursor-pointer hover:bg-background/70 transition-colors"
+                                                                        onClick={() => document.getElementById(`sold-proof-${soldField.id}`)?.click()}
+                                                                    >
+                                                                        <Upload className="w-4 h-4 shrink-0" />
+                                                                        <span className="font-semibold text-foreground shrink-0">Choose file</span>
+                                                                        <span className="truncate text-muted-foreground">{filename || "No file chosen"}</span>
+                                                                    </div>
+                                                                    <input
+                                                                        id={`sold-proof-${soldField.id}`}
+                                                                        type="file"
+                                                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,application/pdf"
+                                                                        className="hidden"
+                                                                        onChange={(e) => handleFileSelect(e, fieldId, (f) => field.onChange(f))}
+                                                                    />
+                                                                    {filename && (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-7 text-xs text-destructive hover:text-destructive"
+                                                                            onClick={() => clearFile(fieldId, () => field.onChange(null))}
+                                                                        >
+                                                                            Remove file
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                );
+                                            }}
                                         />
                                     </div>
 

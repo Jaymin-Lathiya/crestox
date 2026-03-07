@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import GradientButton from '@/components/ui/gradiant-button';
 import { ArrowRight, Sparkles, TrendingUp, Users, Shield, Palette, BarChart3 } from 'lucide-react';
 import { UserType } from '@/enums/userType';
+import { useUserStore } from '@/store/useUserStore';
 
 
 import GallerySection from '@/components/home/GallerySection';
@@ -93,6 +94,17 @@ const CARDS = [
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user } = useUserStore();
+
+  const handleArtistButtonClick = () => {
+    // If user is logged in, redirect to artist onboarding form
+    // Otherwise, redirect to signup with artist type
+    if (user) {
+      router.push('/onboarding/artist');
+    } else {
+      router.push(`/signup?user_type=${UserType.ARTIST}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -136,7 +148,7 @@ export default function LandingPage() {
                   >
                     <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </GradientButton>
-                  <GradientButton variant="secondary" onClick={() => router.push(`/signup?user_type=${UserType.ARTIST}`)} label='Join as Artist'>
+                  <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Join as Artist'>
 
                   </GradientButton>
                 </div>
@@ -362,7 +374,7 @@ export default function LandingPage() {
               <div className="mt-8">
                 <GradientButton
                   variant="secondary"
-                  onClick={() => router.push(`/signup?user_type=${UserType.ARTIST}`)}
+                  onClick={handleArtistButtonClick}
                   label="Apply as Artist"
                 />
               </div>
@@ -390,7 +402,7 @@ export default function LandingPage() {
 
             <GradientButton
               variant="secondary"
-              onClick={() => router.push('/app')}
+              onClick={() => router.push('/explore')}
               label="Explore Marketplace"
             />
 

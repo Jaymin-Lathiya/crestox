@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface Collector {
+export interface Collector {
   id: string;
   name: string;
   handle: string;
@@ -9,7 +9,7 @@ interface Collector {
   joinedDate: string;
 }
 
-const collectors: Collector[] = [
+const DEFAULT_COLLECTORS: Collector[] = [
   { id: '1', name: 'Anonymous Whale', handle: '0x7a3...f2d', fractalsHeld: 45, joinedDate: 'Oct 2023' },
   { id: '2', name: 'Digital Vault DAO', handle: '@digitalvault', fractalsHeld: 32, joinedDate: 'Nov 2023' },
   { id: '3', name: 'Art Collector Alpha', handle: '0x9c1...8e4', fractalsHeld: 28, joinedDate: 'Dec 2023' },
@@ -18,7 +18,11 @@ const collectors: Collector[] = [
   { id: '6', name: 'Renaissance DAO', handle: '@renaissancedao', fractalsHeld: 15, joinedDate: 'Mar 2024' },
 ];
 
-const CollectorsTab: React.FC = () => {
+interface CollectorsTabProps {
+  collectors?: Collector[];
+}
+
+const CollectorsTab: React.FC<CollectorsTabProps> = ({ collectors = DEFAULT_COLLECTORS }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}

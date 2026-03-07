@@ -3,37 +3,47 @@
 import ArtworkForm from "@/components/artwork/ArtworkForm"
 import { useUserStore } from "@/store/useUserStore"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+
+const ARTIST_PROFILE_ID_KEY = "artist_profile_id"
 
 export default function CreateArtworkPage() {
+    const router = useRouter()
     const { user } = useUserStore()
     const [artistProfileId, setArtistProfileId] = useState<number>(1)
 
     useEffect(() => {
-        // TODO: Get artist_profile_id from user profile or context
-        // For now, using a default value
-        // You should replace this with actual logic to get the artist profile ID
-        if (user?.id) {
-            // Assuming user has an artist_profile_id field
-            // setArtistProfileId(user.artist_profile_id)
+        if (user && user.artist_profile_approved !== true) {
+            router.replace("/portfolio")
+        }
+    }, [user, router])
+
+    useEffect(() => {
+        const stored = localStorage.getItem(ARTIST_PROFILE_ID_KEY)
+        const parsed = stored ? parseInt(stored, 10) : NaN
+        if (!isNaN(parsed) && parsed > 0) {
+            setArtistProfileId(parsed)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (user?.id && (user as any).artist_profile_id != null) {
+            const id = parseInt(String((user as any).artist_profile_id), 10)
+            if (!isNaN(id) && id > 0) {
+                setArtistProfileId(id)
+                localStorage.setItem(ARTIST_PROFILE_ID_KEY, String(id))
+            }
         }
     }, [user])
 
+    useEffect(() => {
+        localStorage.setItem(ARTIST_PROFILE_ID_KEY, String(artistProfileId))
+    }, [artistProfileId])
+
     const handleSubmit = async (values: any) => {
-        console.log("Submitting artwork:", values)
-        // TODO: Implement API call to create artwork
-        // Example:
-        // try {
-        //     const response = await fetch('/api/artworks', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify(values),
-        //     })
-        //     if (response.ok) {
-        //         // Handle success (redirect, show toast, etc.)
-        //     }
-        // } catch (error) {
-        //     // Handle error
-        // }
+        // Optional: Custom submit handler if needed
+        // The form component handles the API call by default
+        console.log("Artwork submitted:", values)
     }
 
     return (

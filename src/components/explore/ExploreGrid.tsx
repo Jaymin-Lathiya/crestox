@@ -2,12 +2,11 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, ChevronRight, Menu, X, Sparkles, MoveRight } from "lucide-react";
+import { Globe, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import Navigation from "@/components/layout/Navigation";
-import { aborted } from "util";
 
 // --- Mock Data ---
 const TABS = [
@@ -23,7 +22,7 @@ const SELECTED_BY_COSMOS = [
     { id: 4, src: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1000", title: "Published Material", user: "@celindancel", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100", elements: 210, followers: 56 },
     { id: 5, src: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000", title: "art inspo", user: "@pescadofristo", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", elements: 67, followers: 8 },
     { id: 6, src: "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=1000", title: "Graphic Design", user: "@aethereal", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100", elements: 156, followers: 92 },
-]; aborted
+];
 
 const ELEMENTS_ITEMS = [
     { id: 5, src: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000", title: "Golden Hour", user: "@emma" },

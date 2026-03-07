@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { PlusCircle, Upload, Trash2 } from "lucide-react"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,11 +35,18 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import GradientButton from "@/components/ui/gradiant-button"
+import { createArtwork } from "@/apis/artwork/artworkActions"
+import { uploadMediaFiles } from "@/apis/media/mediaActions"
+
+const mediaItemSchema = z.object({
+    media_id: z.number().int().positive(),
+    file_path: z.string(),
+})
 
 const artworkFormSchema = z.object({
     name: z.string().min(1, { message: "Artwork name is required." }),
     description: z.string().min(1, { message: "Description is required." }),
-    photo_urls: z.array(z.string()).min(1, { message: "At least one photo is required." }),
+    media: z.array(mediaItemSchema).min(1, { message: "At least one photo is required." }),
     materials_used: z.string().min(1, { message: "Materials used is required." }),
     height: z.number().min(0.1, { message: "Height must be greater than 0." }),
     length: z.number().min(0.1, { message: "Length must be greater than 0." }),
@@ -58,14 +67,16 @@ interface ArtworkFormProps {
 }
 
 export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormProps) {
-    const [photoFiles, setPhotoFiles] = useState<File[]>([])
+    const [isUploading, setIsUploading] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const router = useRouter()
 
     const form = useForm<ArtworkFormValues>({
         resolver: zodResolver(artworkFormSchema),
         defaultValues: {
             name: "",
             description: "",
-            photo_urls: [] as string[],
+            media: [] as { media_id: number; file_path: string }[],
             materials_used: "",
             height: 0,
             length: 0,
@@ -77,42 +88,81 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
         },
     })
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
         const files = e.target.files
         if (!files || files.length === 0) return
 
-        Array.from(files).forEach((file) => {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                const result = reader.result as string
-                const currentPhotos = form.getValues("photo_urls") || []
-                if (index !== undefined) {
-                    const updated = [...currentPhotos]
-                    updated[index] = result
-                    form.setValue("photo_urls", updated)
-                    const updatedFiles = [...photoFiles]
-                    updatedFiles[index] = file
-                    setPhotoFiles(updatedFiles)
-                } else {
-                    form.setValue("photo_urls", [...currentPhotos, result])
-                    setPhotoFiles((prev) => [...prev, file])
-                }
+        const fileList = Array.from(files)
+        setIsUploading(true)
+        try {
+            const response = await uploadMediaFiles(fileList)()
+            const currentMedia = form.getValues("media") || []
+            const newItems = response.data.map((item) => ({
+                media_id: parseInt(String(item.media_id), 10),
+                file_path: item.file_path,
+            }))
+
+            if (newItems.length === 0) return
+
+            if (index !== undefined) {
+                const updated = [...currentMedia]
+                updated[index] = newItems[0]
+                form.setValue("media", updated)
+            } else {
+                form.setValue("media", [...currentMedia, ...newItems])
             }
-            reader.readAsDataURL(file)
-        })
+        } catch (err: any) {
+            const errorMessage = err?.response?.data?.message || "Failed to upload images. Please try again."
+            toast.error("Upload failed", { description: errorMessage })
+        } finally {
+            setIsUploading(false)
+            e.target.value = ""
+        }
     }
 
     const removePhoto = (index: number) => {
-        const currentPhotos = form.getValues("photo_urls") || []
-        const updated = currentPhotos.filter((_, i) => i !== index)
-        form.setValue("photo_urls", updated)
-        setPhotoFiles((prev) => prev.filter((_, i) => i !== index))
+        const currentMedia = form.getValues("media") || []
+        const updated = currentMedia.filter((_, i) => i !== index)
+        form.setValue("media", updated)
     }
 
     async function handleSubmit(values: ArtworkFormValues) {
-        console.log("Artwork submitted:", values)
-        if (onSubmit) {
-            await onSubmit(values)
+        setIsSubmitting(true)
+        try {
+            const mediaIds = values.media.map((m) => parseInt(String(m.media_id), 10))
+            const payload = {
+                ...values,
+                media: mediaIds.map((media_id, i) => ({
+                    media_id,
+                    display_order: i,
+                    is_primary: i === 0,
+                })),
+                demensions_unit: values.dimensions_unit,
+            }
+            delete (payload as any).dimensions_unit
+
+            await createArtwork(payload)()
+
+            toast.success("Artwork created successfully!", {
+                description: `${values.name} has been added to your portfolio.`,
+            })
+
+            if (onSubmit) {
+                await onSubmit(values)
+            } else {
+                router.push("/portfolio")
+            }
+
+            form.reset()
+        } catch (err: any) {
+            // Handle error
+            const errorMessage = err?.response?.data?.message || "Failed to create artwork. Please try again."
+            toast.error("Error creating artwork", {
+                description: errorMessage,
+            })
+            console.error("Error creating artwork:", err)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -166,14 +216,14 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
                         {/* Photo Uploads */}
                         <div className="space-y-4">
                             <FormLabel className="text-base text-foreground/90">Photos</FormLabel>
-                            {form.watch("photo_urls")?.map((photoUrl, index) => (
-                                <div key={index} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
+                            {form.watch("media")?.map((item, index) => (
+                                <div key={`${item.media_id}-${index}`} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
                                     <div className="flex gap-4">
                                         <div className="flex-1">
-                                            {photoUrl && (
+                                            {item.file_path && (
                                                 <div className="mb-4">
                                                     <img
-                                                        src={photoUrl}
+                                                        src={item.file_path}
                                                         alt={`Preview ${index + 1}`}
                                                         className="w-full h-48 object-cover rounded-md border border-border/50"
                                                     />
@@ -189,7 +239,7 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
                                                     <Upload className="w-4 h-4 shrink-0" />
                                                     <span className="font-semibold text-foreground shrink-0">Choose file</span>
                                                     <span className="truncate text-muted-foreground">
-                                                        {photoFiles[index]?.name || "No file chosen"}
+                                                        Image {index + 1}
                                                     </span>
                                                 </div>
                                                 <Input
@@ -219,6 +269,7 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
                                     size="sm"
                                     type="button"
                                     className="gap-2 font-sans"
+                                    disabled={isUploading}
                                     onClick={() => {
                                         const input = document.createElement("input")
                                         input.type = "file"
@@ -229,7 +280,7 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
                                     }}
                                 >
                                     <PlusCircle className="w-4 h-4" />
-                                    Add Photo
+                                    {isUploading ? "Uploading..." : "Add Photo"}
                                 </Button>
                             </div>
                         </div>
@@ -385,7 +436,8 @@ export default function ArtworkForm({ artistProfileId, onSubmit }: ArtworkFormPr
                             <GradientButton
                                 type="submit"
                                 className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-8"
-                                label="Create Artwork"
+                                label={isSubmitting ? "Creating..." : "Create Artwork"}
+                                disabled={isSubmitting}
                             />
                         </div>
                     </form>

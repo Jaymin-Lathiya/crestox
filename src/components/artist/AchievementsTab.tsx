@@ -12,7 +12,7 @@ import {
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface Achievement {
+export interface Achievement {
   id: string;
   title: string;
   year: string;
@@ -20,7 +20,7 @@ interface Achievement {
   image: string;
 }
 
-const achievements: Achievement[] = [
+const DEFAULT_ACHIEVEMENTS: Achievement[] = [
   {
     id: '1',
     title: 'Venice Biennale Selection',
@@ -58,7 +58,11 @@ const achievements: Achievement[] = [
   },
 ];
 
-const AchievementsTab: React.FC = () => {
+interface AchievementsTabProps {
+  achievements?: Achievement[];
+}
+
+const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements = DEFAULT_ACHIEVEMENTS }) => {
   return (
     <div className='mx-auto max-w-xl space-y-4'>
       {achievements.map((achievement) => (
