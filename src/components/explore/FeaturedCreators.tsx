@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronUp, User, Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getFeaturedArtists, type FeaturedArtist } from '@/apis/artists/artistActions';
+import { getFeaturedArtists, getAllArtists, type FeaturedArtist } from '@/apis/artists/artistActions';
 
 const PLACEHOLDER_AVATAR = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop';
 
@@ -129,17 +129,20 @@ function CreatorCardSkeleton() {
     );
 }
 
-function mapFeaturedArtistToCreator(artist: FeaturedArtist): CreatorItem {
-    const max = Math.max(artist.total_fractals, 1);
+function mapFeaturedArtistToCreator(artist: any): CreatorItem {
+    const total = artist.total_fractals ?? 100;
+    const available = artist.available_fractals ?? 50;
+    const max = Math.max(total, 1);
+
     return {
-        id: artist.artist_profile_id,
-        name: artist.artist_name,
+        id: artist.artist_profile_id || artist.id,
+        name: artist.artist_name || artist.user?.name || 'Unknown Artist',
         role: 'Artist',
-        image: artist.avatar_url || PLACEHOLDER_AVATAR,
+        image: artist.avatar_url || artist.avatar_media?.file_path || PLACEHOLDER_AVATAR,
         bio: artist.artist_bio || 'Featured artist on Crestox.',
         stats: {
             label: 'Fractals Available',
-            value: artist.available_fractals,
+            value: available,
             max,
         },
     };
@@ -171,7 +174,52 @@ export function FeaturedCreators() {
         }
     }, [activeTab]);
 
-    const visibleCreators = isExpanded ? displayedCreators : displayedCreators.slice(0, 4);
+    const loadAllArtists = async () => {
+        setIsLoadingArtists(true);
+        try {
+            const response = await getAllArtists({ page: 1, limit: 999999, isApproved: true })();
+            // The API returns paginated data inside a 'list' property
+            let artistsData: any[] = [];
+            if (Array.isArray(response)) {
+                artistsData = response;
+            } else if (response && Array.isArray(response.list)) {
+                artistsData = response.list;
+            } else if (response && Array.isArray(response.data)) {
+                artistsData = response.data;
+            }
+
+            // Map the new artists and filter out any that are already displayed as featured
+            const loadedCreators = artistsData.map(mapFeaturedArtistToCreator);
+
+            setDisplayedCreators(prev => {
+                const existingIds = new Set(prev.map(c => c.id));
+                const newCreators = loadedCreators.filter(c => !existingIds.has(c.id));
+                return [...prev, ...newCreators];
+            });
+            setIsExpanded(true);
+        } catch (error) {
+            console.error("Failed to load all artists:", error);
+        } finally {
+            setIsLoadingArtists(false);
+        }
+    };
+
+    const handleBrowseAllClick = () => {
+        if (activeTab === 'artists') {
+            if (!isExpanded) {
+                loadAllArtists();
+            } else {
+                // Collapse back to original featured artists list
+                setIsExpanded(false);
+                // Slice the displayed creators back to the first 4 (original featured artists)
+                setDisplayedCreators(prev => prev.slice(0, 4));
+            }
+        } else {
+            setIsExpanded(!isExpanded);
+        }
+    };
+
+    const visibleCreators = (!isExpanded && activeTab === 'artists') ? displayedCreators.slice(0, 4) : displayedCreators;
 
     return (
         <section className="mb-16 animate-fade-in-up delay-100">
@@ -197,80 +245,88 @@ export function FeaturedCreators() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {isLoadingArtists && activeTab === 'artists' ? (
+                {isLoadingArtists && activeTab === 'artists' && !isExpanded ? (
+                    // Initial load or tab switch: full skeletons
                     Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={i} />)
                 ) : (
-                visibleCreators.map((creator, idx) => (
-                    <div
-                        key={creator.id ?? idx}
-                        className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
-                    >
-                        <div className="relative mb-6">
-                            <div className="w-24 h-24 rounded-full p-1 border border-border/50 group-hover:border-primary/50 transition-colors">
-                                <img
-                                    src={creator.image}
-                                    alt={creator.name}
-                                    className="w-full h-full rounded-full object-cover"
-                                />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                                {creator.name.slice(0, 2)}
-                            </div>
-                        </div>
-
-                        <h3 className="font-serif text-xl font-medium mb-1 group-hover:text-primary transition-colors">
-                            {creator.name}
-                        </h3>
-
-                        <p className="text-sm text-muted-foreground leading-relaxed mb-8 line-clamp-3 min-h-[4.5em] font-sans">
-                            {creator.bio}
-                        </p>
-
-                        <div className="w-full mt-auto mb-6">
-                            <div className="flex justify-between items-end mb-2 text-xs">
-                                <span className="text-muted-foreground">{creator.stats.label}</span>
-                                <span className="font-mono font-medium text-foreground">
-                                    {creator.stats.value} / {creator.stats.max}
-                                </span>
-                            </div>
-                            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
-                                    style={{ width: `${(creator.stats.value / creator.stats.max) * 100}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {creator.id != null ? (
-                            <Button
-                                variant="outline"
-                                className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
-                                asChild
+                    <>
+                        {visibleCreators.map((creator, idx) => (
+                            <div
+                                key={creator.id ?? idx}
+                                className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
                             >
-                                <Link href={`/artist/${creator.id}`}>View Profile</Link>
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
-                            >
-                                View Profile
-                            </Button>
+                                <div className="relative mb-6">
+                                    <div className="w-24 h-24 rounded-full p-1 border border-border/50 group-hover:border-primary/50 transition-colors">
+                                        <img
+                                            src={creator.image}
+                                            alt={creator.name}
+                                            className="w-full h-full rounded-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                        {creator.name.slice(0, 2)}
+                                    </div>
+                                </div>
+
+                                <h3 className="font-serif text-xl font-medium mb-1 group-hover:text-primary transition-colors">
+                                    {creator.name}
+                                </h3>
+
+                                <p className="text-sm text-muted-foreground leading-relaxed mb-8 line-clamp-3 min-h-[4.5em] font-sans">
+                                    {creator.bio}
+                                </p>
+
+                                <div className="w-full mt-auto mb-6">
+                                    <div className="flex justify-between items-end mb-2 text-xs">
+                                        <span className="text-muted-foreground">{creator.stats.label}</span>
+                                        <span className="font-mono font-medium text-foreground">
+                                            {creator.stats.value} / {creator.stats.max}
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
+                                            style={{ width: `${(creator.stats.value / creator.stats.max) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {creator.id != null ? (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                        asChild
+                                    >
+                                        <Link href={`/artist/${creator.id}`}>View Profile</Link>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                    >
+                                        View Profile
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
+
+                        {isLoadingArtists && activeTab === 'artists' && isExpanded && (
+                            // Appended skeletons when fetching more
+                            Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={`skeleton-${i}`} />)
                         )}
-                    </div>
-                ))
+                    </>
                 )}
             </div>
 
             <div className="mt-10 flex justify-center">
                 <button
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    onClick={handleBrowseAllClick}
                     className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest border border-border/50 rounded-full px-8 py-3 hover:bg-secondary/50 group"
                 >
                     {isExpanded ? (
                         <>Collapse <ChevronUp className="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" /></>
                     ) : (
-                        <>Browse All {CREATOR_TABS.find(t => t.id === activeTab)?.label.replace('Featured ', '')}s <ChevronDown className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" /></>
+                        <>Browse All {CREATOR_TABS.find(t => t.id === activeTab)?.label.replace('Featured ', '')} <ChevronDown className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" /></>
                     )}
                 </button>
             </div>

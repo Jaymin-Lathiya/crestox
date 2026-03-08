@@ -79,6 +79,16 @@ export const getFeaturedArtists = () => async (): Promise<FeaturedArtist[]> => {
     }
 };
 
+export const getAllArtists = (params: { page?: number; limit?: number; isApproved?: boolean } = {}) => async (): Promise<any> => {
+    try {
+        const response = await instance.get(ARTIST_URLS.GET_ALL_ARTISTS, { params });
+        return response.data?.data ?? [];
+    } catch (err: any) {
+        console.error({ err });
+        throw err;
+    }
+};
+
 export const applyAsArtist = (data: any) => async () => {
     try {
         const response = await instance.post(ARTIST_URLS.CREATE_ARTIST, data);

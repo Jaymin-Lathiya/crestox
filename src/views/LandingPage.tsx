@@ -332,7 +332,7 @@ export default function LandingPage() {
             </div>
 
             <div className="order-1 md:order-2">
-              <span className="text-priamry font-mono text-sm tracking-widest">FOR ARTISTS</span>
+              <span className="text-primary font-mono text-sm tracking-widest">FOR ARTISTS</span>
               <h2 className="font-serif text-4xl md:text-5xl mt-4 mb-6">Fund Your Art, Keep Your Rights</h2>
               <p className="text-muted-foreground font-sans mb-8">
                 Get funding for new works without giving up ownership.
@@ -341,8 +341,8 @@ export default function LandingPage() {
 
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-accent/10 flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-accent" />
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="font-mono font-bold mb-1">Access New Collectors</h4>
@@ -351,8 +351,8 @@ export default function LandingPage() {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-accent/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-5 h-5 text-accent" />
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="font-mono font-bold mb-1">5% Perpetual Royalties</h4>
@@ -361,8 +361,8 @@ export default function LandingPage() {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-accent/10 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-accent" />
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
+                    <Shield className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="font-mono font-bold mb-1">Full Creative Control</h4>
