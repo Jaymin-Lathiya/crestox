@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Artwork {
   id: string;
@@ -20,34 +21,38 @@ const formatCurrency = (val: number) =>
 
 const ArtworkCard: React.FC<{ artwork: Artwork }> = ({ artwork }) => {
   return (
-    <motion.div
-      className="relative flex-shrink-0 w-[300px] h-[450px] cursor-pointer group overflow-hidden"
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-    >
-      {/* Image */}
-      <Image
-        src={artwork.imageUrl}
-        alt={artwork.title}
-        className="w-full h-full object-cover grayscale-[80%] contrast-[120%] group-hover:grayscale-0 transition-all duration-500"
-      />
+    <Link href={`/art/${artwork.id}`} className="block flex-shrink-0 w-[300px] h-[450px]">
+      <motion.div
+        className="relative w-full h-full cursor-pointer group overflow-hidden"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        {/* Image */}
+        <Image
+          src={artwork.imageUrl}
+          alt={artwork.title}
+          fill
+          sizes="300px"
+          className="object-cover grayscale-[80%] contrast-[120%] group-hover:grayscale-0 transition-all duration-500"
+        />
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent opacity-80" />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent opacity-80" />
 
-      {/* Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-6">
-        <span className="font-mono text-[10px] text-acid uppercase tracking-wider block mb-2">
-          {formatCurrency(artwork.price)}
-        </span>
-        <h3 className="font-serif text-marble text-lg italic leading-tight">
-          {artwork.title}
-        </h3>
-      </div>
+        {/* Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <span className="font-mono text-[10px] text-acid uppercase tracking-wider block mb-2">
+            {formatCurrency(artwork.price)}
+          </span>
+          <h3 className="font-serif text-marble text-lg italic leading-tight">
+            {artwork.title}
+          </h3>
+        </div>
 
-      {/* Hover Border */}
-      <div className="absolute inset-0 border border-transparent group-hover:border-acid/30 transition-colors duration-300" />
-    </motion.div>
+        {/* Hover Border */}
+        <div className="absolute inset-0 border border-transparent group-hover:border-acid/30 transition-colors duration-300" />
+      </motion.div>
+    </Link>
   );
 };
 
