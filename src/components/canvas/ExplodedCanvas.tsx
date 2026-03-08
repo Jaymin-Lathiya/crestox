@@ -207,27 +207,29 @@ interface ExplodedCanvasProps {
   exploded: boolean;
   onToggle: () => void;
   artworkUrl: string;
+  artworkName?: string;
 }
 
-export default function ExplodedCanvas({ exploded, onToggle, artworkUrl }: ExplodedCanvasProps) {
+export default function ExplodedCanvas({ exploded, onToggle, artworkUrl, artworkName }: ExplodedCanvasProps) {
   const { resolvedTheme } = useTheme();
   const backgroundColor = resolvedTheme === 'light' ? '#EBE6D6' : '#050505';
 
   return (
-    <Canvas
-      dpr={[1, 2]}
-      camera={{ position: [0, 0, 80], fov: 45 }}
-      gl={{ antialias: true, alpha: false }}
-      onClick={onToggle}
-      className="cursor-pointer"
-    >
-      <color attach="background" args={[backgroundColor]} />
-      <ambientLight intensity={1.5} />
-      <pointLight position={[10, 10, 10]} />
+    <div className="relative w-full h-full">
+      <Canvas
+        dpr={[1, 2]}
+        camera={{ position: [0, 0, 80], fov: 45 }}
+        gl={{ antialias: true, alpha: false }}
+        onClick={onToggle}
+        className="cursor-pointer"
+      >
+        <color attach="background" args={[backgroundColor]} />
+        <ambientLight intensity={1.5} />
+        <pointLight position={[10, 10, 10]} />
 
-      <ArtworkShards exploded={exploded} textureUrl={artworkUrl} />
+        <ArtworkShards exploded={exploded} textureUrl={artworkUrl} />
 
-      <OrbitControls
+        <OrbitControls
         enablePan={false}
         enableZoom={true}
         minDistance={40}
@@ -236,6 +238,14 @@ export default function ExplodedCanvas({ exploded, onToggle, artworkUrl }: Explo
         autoRotateSpeed={0.5}
         dampingFactor={0.05}
       />
-    </Canvas>
+      </Canvas>
+      {artworkName && (
+        <div className="absolute bottom-6 left-8 md:left-16 z-10 pointer-events-none">
+          <h1 className="font-serif text-2xl md:text-4xl text-marble italic drop-shadow-lg">
+            {artworkName}
+          </h1>
+        </div>
+      )}
+    </div>
   );
 }

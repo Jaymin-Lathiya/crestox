@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getBufferPriceOfArtwork } from '@/apis/artists/artistActions';
+import { useRouter } from 'next/navigation';
 
 export interface Artwork {
   id: string;
@@ -70,8 +71,11 @@ interface ArtworkCardProps {
 
 const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
   const artworkId = Number(artwork.id);
+  const router = useRouter();
   const [bufferPrice, setBufferPrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
+
+  // console.log("artworkId", artwork);
 
   useEffect(() => {
     if (!artworkId || isNaN(artworkId)) {
@@ -112,7 +116,9 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
         />
         
         {/* Overlay on Hover */}
-        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" onClick={()=>{
+          router.push(`/art/${artwork.id}`);
+        }} />
         
         {/* Glass Capsule - Financial Data */}
         <motion.div 
