@@ -66,7 +66,7 @@ const StepCard = ({ step, index, isLeft }: StepCardProps) => {
 
       {/* Node connector */}
       <div className="relative flex-shrink-0">
-        <div className="w-10 h-4 rounded-full bg-void border-2 border-gold shadow-[0_0_12px_rgba(212,175,55,0.5)]" />
+        <div className="w-10 h-4 rounded-full bg-void border-2 border-primary shadow-[0_0_12px_rgba(37,99,235,0.5)]" />
       </div>
     </motion.div>
   );
@@ -123,7 +123,7 @@ export default function ProcessConstellation() {
             <div className="absolute inset-0 bg-white/10" />
             {/* Animated fill */}
             <motion.div
-              className="absolute top-0 left-0 right-0 bg-gradient-to-b from-gold via-gold to-cyber"
+              className="absolute top-0 left-0 right-0 bg-gradient-to-b from-primary via-primary to-cyber"
               style={{ height: lineHeight }}
             />
           </div>
@@ -156,7 +156,7 @@ export default function ProcessConstellation() {
 
                 {/* Timeline Node */}
                 <div className="absolute hidden md:flex left-1/2 -translate-x-1/2 items-center justify-center w-4 h-4">
-                  <div className="w-10 h-3 rounded-full bg-void border-2 border-gold shadow-[0_0_12px_rgba(212,175,55,0.5)] z-10" />
+                  <div className="w-10 h-3 rounded-full bg-void border-2 border-primary shadow-[0_0_12px_rgba(37,99,235,0.5)] z-10" />
                 </div>
 
                 {/* Card */}

@@ -69,7 +69,7 @@ export const NavigationIsland = ({
               backdropFilter: "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
             }
-          : {}),
+            : {}),
         }}
         animate={{
           x: 0,
@@ -77,9 +77,9 @@ export const NavigationIsland = ({
           width:
             typeof window !== "undefined" && window.innerWidth < 768 ?
               isExpanded ? "100vw"
-              : 0
-            : isExpanded ? 240
-            : 64,
+                : 0
+              : isExpanded ? 240
+                : 64,
         }}
       >
         {/* Mobile header */}
@@ -95,8 +95,18 @@ export const NavigationIsland = ({
           </button>
         </div>
 
+        {/* Desktop expand toggle */}
+        <div className={cn("hidden md:flex w-full items-center pt-6 pb-2 transition-all duration-200", isExpanded ? "justify-end pr-4" : "justify-center")}>
+          <button
+            onClick={onToggleExpand}
+            className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-zinc-600 transition-colors"
+          >
+            {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+        </div>
+
         {/* Nav items — larger on mobile */}
-        <div className="py-6 flex flex-col gap-2">
+        <div className="py-2 flex flex-col gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -141,18 +151,8 @@ export const NavigationIsland = ({
           })}
         </div>
 
-        {/* Desktop expand toggle only */}
-        <div className="absolute bottom-4 left-0 right-0 hidden md:flex justify-center">
-          <button
-            onClick={onToggleExpand}
-            className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-zinc-600 transition-colors"
-          >
-            {isExpanded ?
-              <ChevronLeft className="w-4 h-4" />
-            : <ChevronRight className="w-4 h-4" />}
-          </button>
-        </div>
-      </motion.nav>
+
+      </motion.nav >
     </>
   );
 };

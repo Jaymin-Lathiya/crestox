@@ -20,7 +20,7 @@ const IMAGES = [
     "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=750&fit=crop",
 ];
 
-export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgClass?: string }) {
+export default function ScrollImagesReveal({ bgClass = "bg-background" }: { bgClass?: string }) {
     const gridRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -101,7 +101,7 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgCla
                     <div ref={gridRef} className="relative grid w-full max-w-[95vw] grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 py-10 px-4">
                         {[...IMAGES, ...IMAGES.slice(0, 8)].map((src, i) => (
                             <figure key={i} className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
-                                <div className="grid-item-imgwrap relative aspect-[4/5] w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-[#1c1c1c]">
+                                <div className="grid-item-imgwrap relative aspect-[4/5] w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-muted dark:bg-card">
                                     <div
                                         className="grid-item-img absolute -left-0 -top-0 h-full w-full bg-cover bg-center will-change-transform"
                                         style={{ backgroundImage: `url(${src})`, backfaceVisibility: "hidden" }}

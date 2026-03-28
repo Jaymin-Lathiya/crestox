@@ -407,7 +407,7 @@ function Steps({
                         <IconCheck className="h-3 w-3 stroke-white stroke-[3] text-white dark:stroke-black" />
                       </motion.div>
                     ) : (
-                      <span className={cn("text-xs", !isCurrent && "text-[#C6EA7E]")}>
+                      <span className={cn("text-xs", !isCurrent && "text-muted-foreground")}>
                         {stepIdx + 1}
                       </span>
                     )}
