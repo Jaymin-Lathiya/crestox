@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Heart, MapPin, BadgeCheck } from 'lucide-react';
 import SocialButton from '../ui/social-button';
@@ -25,6 +25,7 @@ interface ArtistHeroProps {
 }
 
 const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const {
     name,
     bio,
@@ -91,14 +92,24 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => 
           </motion.h1>
 
           {/* Bio - Rational Typography */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="font-mono text-muted-foreground text-sm leading-relaxed max-w-lg border-l border-border pl-6"
+            className="max-w-lg border-l border-border pl-6"
           >
-            {bio}
-          </motion.p>
+            <p className={`font-mono text-muted-foreground text-sm leading-relaxed transition-all duration-300 ${!isExpanded ? 'line-clamp-3 md:line-clamp-none' : ''}`}>
+              {bio}
+            </p>
+            {bio && bio.length > 150 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="md:hidden text-primary hover:text-primary/70 text-xs font-mono mt-2 transition-colors duration-300"
+              >
+                {isExpanded ? 'Read less' : 'Read more'}
+              </button>
+            )}
+          </motion.div>
 
           {/* Action Row */}
           <motion.div

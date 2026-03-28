@@ -132,7 +132,7 @@ function CreatorCardSkeleton() {
 function mapFeaturedArtistToCreator(artist: any): CreatorItem {
     const total = artist.total_fractals ?? 100;
     const available = artist.available_fractals ?? 50;
-    const max = Math.max(total, 1);
+    const max = total;
 
     return {
         id: artist.artist_profile_id || artist.id,
@@ -286,7 +286,7 @@ export function FeaturedCreators() {
                                     <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
-                                            style={{ width: `${(creator.stats.value / creator.stats.max) * 100}%` }}
+                                            style={{ width: `${creator.stats.max > 0 ? (creator.stats.value / creator.stats.max) * 100 : 0}%` }}
                                         />
                                     </div>
                                 </div>

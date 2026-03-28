@@ -115,61 +115,69 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       transition={{ delay: 0.4, duration: 0.8 }}
       className="w-full"
     >
-      {/* Glass Vault Container */}
-      <div className="relative overflow-hidden rounded-lg glass shadow-2xl shadow-black/50">
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B] p-6 flex flex-col gap-6 shadow-2xl">
 
         {/* Header: Status & Current Valuation */}
-        <div className="p-5 border-b border-border flex justify-between items-start">
-          <div>
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col gap-1">
+            <h3 className="font-sans text-sm font-medium tracking-wide text-blue-600 dark:text-[#3B82F6] uppercase">
               Current Valuation
             </h3>
             <div className="flex items-baseline space-x-1">
-              <span className="font-mono text-muted-foreground text-lg">₹</span>
-              <span className="font-mono text-3xl text-foreground font-medium tracking-tight">
-                {quoteLoading ? '—' : currentPrice.toFixed(2)}
+              <span className="font-sans text-4xl text-slate-900 dark:text-white font-bold tracking-tight">
+                ₹{quoteLoading ? '—' : currentPrice.toFixed(2)}
               </span>
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="flex items-center space-x-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded text-primary text-[10px] font-mono font-bold uppercase tracking-wide">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-              <span>Open</span>
-            </span>
-            <span className="text-[10px] font-mono text-muted-foreground mt-1">Updates live</span>
+            <div className="flex items-center space-x-2 bg-blue-100 dark:bg-[#1E3A8A]/40 px-3 py-1.5 rounded-full">
+              <div className="w-2 h-2 bg-blue-500 dark:bg-[#60A5FA] rounded-full" />
+              <span className="text-blue-600 dark:text-[#60A5FA] text-xs font-medium uppercase tracking-wide">
+                Open
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Supply Visualization */}
-        <div className="px-5 py-6 space-y-4">
-          <div className="flex justify-between text-xs font-mono">
-            <span className="text-muted-foreground">Minted Supply</span>
-            <span className="text-foreground">{available_fractals} / {total_fractals}</span>
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm font-sans">
+            <span className="text-slate-500 dark:text-zinc-400">Minted Supply</span>
+            <span className="text-slate-500 dark:text-zinc-400">{sold} / {totalSupply}</span>
           </div>
 
-          {/* Custom Progress Bar */}
-          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-slate-200 dark:bg-[#1E293B] rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
-              className="h-full bg-gradient-to-r from-muted-foreground/50 to-primary glow-emerald"
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
             />
-          </div>
-
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-px bg-muted border border-border rounded overflow-hidden mt-4">
-            <StatBox label="Yield (Est)" value={estimatedYield} highlight />
-            <StatBox label="Lock-up" value={lockupPeriod} />
           </div>
         </div>
 
-        {/* Action Area */}
-        <div className="p-5 bg-card/50 border-t border-border space-y-4">
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Yield */}
+          <div className="bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-xl p-4 flex flex-col justify-center">
+            <span className="text-sm font-sans text-slate-500 dark:text-zinc-400 mb-1">Yield (Est)</span>
+            <span className="font-sans text-2xl font-semibold text-blue-600 dark:text-[#3B82F6]">
+              {estimatedYield}
+            </span>
+          </div>
+          {/* Lock-up */}
+          <div className="bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-xl p-4 flex flex-col justify-center">
+            <span className="text-sm font-sans text-slate-500 dark:text-zinc-400 mb-1">Lock-up</span>
+            <span className="font-sans text-2xl font-semibold text-slate-900 dark:text-white">
+              {lockupPeriod}
+            </span>
+          </div>
+        </div>
 
-          {/* Quantity Input */}
-          <div className="flex items-center justify-between bg-background border border-border rounded px-4 py-3">
-            <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Qty</span>
+        {/* Quantity Input */}
+        <div className="flex flex-col gap-2">
+          <span className="font-sans text-sm text-slate-500 dark:text-zinc-400">Quantity</span>
+          <div className="bg-white dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 flex items-center shadow-sm dark:shadow-none">
             <input
               type="number"
               disabled={!isAtwork}
@@ -177,128 +185,78 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               value={quantity}
               onChange={(e) => {
                 const raw = e.target.value;
-              
                 if (raw === "") {
                   setQuantity("");
                   return;
                 }
-              
                 const num = Number(raw);
                 if (!Number.isNaN(num) && num >= 0) {
                   setQuantity(num);
                 }
               }}
-              className="w-24 bg-transparent text-right font-mono text-foreground text-xl focus:outline-none"
+              className="w-full bg-transparent font-sans text-slate-900 dark:text-white text-base focus:outline-none"
             />
           </div>
-
-          {/* Sub total & Total Display */}
-          <div className="space-y-2 px-1">
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Sub total</span>
-              <div className="flex items-center gap-1">
-                {quoteLoading ? (
-                  <Skeleton className="h-6 w-20" />
-                ) : (
-                  <>
-                    <span className="font-mono text-lg text-foreground">
-                      ₹{subTotal.toFixed(2)}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">+-{bufferPercent.toFixed(2)}</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">G.S.T. (18%)</span>
-              {quoteLoading ? (
-                <Skeleton className="h-6 w-20" />
-              ) : (
-                <span className="font-mono text-lg text-foreground font-medium">
-                  ₹{gst.toFixed(2)}
-                </span>
-              )}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Total</span>
-              <div className="flex items-center gap-1">
-                {quoteLoading ? (
-                  <Skeleton className="h-6 w-20" />
-                ) : (
-                  <>
-                    <span className="font-mono text-lg text-foreground font-medium">
-                      ₹{total.toFixed(2)}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">+-{bufferPercent.toFixed(2)}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Primary Button: Liquid Metal Style */}
-          <button
-            type="button"
-            onClick={() => setConfirmOpen(true)}
-            disabled={firstArtworkId == null || (Number(artist_profile_id)  === id) || !isAtwork}
-            className="group relative w-full h-12 bg-primary/50 overflow-hidden rounded-sm border-t border-foreground/10 border-b  transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {/* Hover Glow Border */}
-            <div className="absolute inset-0 border border-primary/50 rounded-sm transition-all duration-300 group-hover:border-primary group-hover:shadow-[0_0_20px_hsl(var(--primary)/0.3)]" />
-
-            <div className="relative z-10 flex items-center justify-center space-x-2">
-              <span className="font-sans font-medium text-sm text-primary-foreground tracking-wide group-hover:text-primary-foreground transition-colors">
-                Collect Fractal
-              </span>
-              <ArrowRight size={16} className="text-primary-foreground/80 group-hover:text-primary-foreground transition-colors duration-300" />
-            </div>
-
-            {/* Subtle Gloss Sheen */}
-            <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 to-transparent opacity-50 pointer-events-none" />
-          </button>
-
-          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Collect fractal</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to collect the fractal? This will purchase {effectiveQty} fractal(s) at the current price.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className='flex justify-end items-center gap-2'>
-                <AlertDialogCancel disabled={collecting} className='rounded-lg h-11'>Cancel</AlertDialogCancel>
-                <GradientButton variant='primary' label= {collecting ? 'Collecting…' : 'Confirm'}  onClick={handleCollectConfirm} disabled={collecting} >
-                 
-                </GradientButton>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <p className="text-center font-mono text-[10px] text-muted-foreground flex items-center justify-center space-x-1.5">
-            <Info size={10} />
-            <span>Gas fees included in final calculation</span>
-          </p>
         </div>
+
+        {/* Sub total & Total Display */}
+        <div className="flex flex-col gap-3 font-sans pt-2">
+          <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
+            <span className="text-sm">Sub Total</span>
+            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{subTotal.toFixed(2)}</span>}
+          </div>
+          <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
+            <span className="text-sm">GST (18%)</span>
+            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{gst.toFixed(2)}</span>}
+          </div>
+          <div className="w-full h-px bg-slate-200 dark:bg-[#1E293B] my-1" />
+          <div className="flex justify-between items-center">
+            <span className="text-base text-slate-600 dark:text-zinc-300">Total</span>
+            {quoteLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <span className="text-xl text-slate-900 dark:text-white font-bold tracking-tight">
+                ₹{total.toFixed(2)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Primary Button */}
+        <button
+          type="button"
+          onClick={() => setConfirmOpen(true)}
+          disabled={firstArtworkId == null || (Number(artist_profile_id) === id) || !isAtwork}
+          className="group w-full h-12 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
+        >
+          <span className="font-sans font-medium text-base">
+            Collect Fractal
+          </span>
+          <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
+
+        <p className="text-center font-sans text-xs text-slate-400 dark:text-zinc-500">
+          Gas fees included in final calculation
+        </p>
+
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Collect fractal</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to collect the fractal? This will purchase {effectiveQty} fractal(s) at the current price.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex justify-end items-center gap-2'>
+              <AlertDialogCancel disabled={collecting} className='rounded-lg h-11'>Cancel</AlertDialogCancel>
+              <GradientButton variant='primary' label={collecting ? 'Collecting…' : 'Confirm'} onClick={handleCollectConfirm} disabled={collecting} />
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </div>
     </motion.aside>
   );
 };
-
-// Sub-component for Stats
-interface StatBoxProps {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}
-
-const StatBox: React.FC<StatBoxProps> = ({ label, value, highlight }) => (
-  <div className="bg-background p-4 flex flex-col items-center justify-center">
-    <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-[0.15em] mb-1">{label}</span>
-    <span className={`font-mono text-sm font-medium ${highlight ? 'text-primary' : 'text-foreground'}`}>
-      {value}
-    </span>
-  </div>
-);
 
 export default CollectModule;

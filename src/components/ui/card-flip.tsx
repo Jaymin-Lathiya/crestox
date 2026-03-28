@@ -30,16 +30,16 @@ export default function CardFlip({
     step = "1",
 }: CardFlipProps) {
     const [isFlipped, setIsFlipped] = useState(false);
-const [isHovered, setIsHovered] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
-const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers flip
+    const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers flip
 
     return (
         <div
             className="group relative h-[320px] w-full max-w-[280px] [perspective:2000px]"
             onMouseEnter={() => setIsHovered(true)}
-  onMouseLeave={() => setIsHovered(false)}
-  onClick={() => setIsFlipped(prev => !prev)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={() => setIsFlipped(prev => !prev)}
         >
             <div
                 className={cn(
@@ -56,15 +56,15 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                         "absolute inset-0 h-full w-full",
                         "[backface-visibility:hidden] [transform:rotateY(0deg)]",
                         "overflow-hidden rounded-2xl",
-                        "bg-zinc-50 dark:bg-zinc-900",
-                        "border border-zinc-200 dark:border-zinc-800/50",
-                        "shadow-xs dark:shadow-lg",
+                        "bg-surface",
+                        "border border-gold/20",
+                        "shadow-lg",
                         "transition-all duration-700",
-                        "group-hover:shadow-lg dark:group-hover:shadow-xl",
+                        "group-hover:shadow-xl group-hover:border-gold/40",
                         isFlipped ? "opacity-0" : "opacity-100"
                     )}
                 >
-                    <div className="relative h-full overflow-hidden bg-gradient-to-b from-zinc-100 to-white dark:from-zinc-900 dark:to-black">
+                    <div className="relative h-full overflow-hidden bg-gradient-to-b from-background to-surface">
                         <div className="absolute inset-0 flex items-start justify-center pt-24">
                             <div className="relative flex h-[100px] w-[200px] items-center justify-center">
                                 {[...Array(10)].map((_, i) => (
@@ -74,7 +74,7 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                                             "rounded-[140px]",
                                             "animate-[scale_3s_linear_infinite]",
                                             "opacity-0",
-                                            "shadow-[0_0_50px_rgba(255,165,0,0.5)]",
+                                            "shadow-[0_0_50px_rgba(212,175,55,0.5)]",
                                             "group-hover:animate-[scale_2s_linear_infinite]"
                                         )}
                                         key={i}
@@ -90,23 +90,24 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                     <div className="absolute right-0 bottom-0 left-0 p-5">
                         <div className="flex items-center justify-between gap-3">
                             <div className="space-y-1.5">
-                                <h3 className="font-semibold text-lg text-zinc-900 leading-snug tracking-tighter transition-all duration-500 ease-out-expo group-hover:translate-y-[-4px] dark:text-white">
+                                <span className="font-mono text-xs text-cyber tracking-widest block">
+                                    STEP_{step}
+                                </span>
+                                <h3 className="font-serif font-bold text-2xl text-foreground mb-3 tracking-tight transition-all duration-500 group-hover:translate-y-[-2px]">
                                     {title}
                                 </h3>
-                                <p className="line-clamp-2 text-sm text-zinc-600 tracking-tight transition-all delay-[50ms] duration-500 ease-out-expo group-hover:translate-y-[-4px] dark:text-zinc-200 font-sans">
-                                    {subtitle}
+                                <p className="line-clamp-2 text-sm text-muted-foreground transition-all duration-500 group-hover:translate-y-[-2px] font-sans">
+                                    {description || subtitle}
                                 </p>
-                                  <span> STEP_{step}</span>
-
                             </div>
                             <div className="group/icon relative">
                                 <div
                                     className={cn(
                                         "absolute inset-[-8px] rounded-lg transition-opacity duration-300",
-                                        "bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-transparent"
+                                        "bg-gradient-to-br from-gold/20 via-gold/10 to-transparent"
                                     )}
                                 />
-                                <Repeat2 className="group-hover/icon:-rotate-12 relative z-10 h-4 w-4 text-orange-500 transition-transform duration-300 group-hover/icon:scale-110" />
+                                <Repeat2 className="group-hover/icon:-rotate-12 relative z-10 h-4 w-4 text-gold transition-transform duration-300 group-hover/icon:scale-110" />
                             </div>
                         </div>
                     </div>
@@ -118,9 +119,9 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                         "absolute inset-0 h-full w-full",
                         "[backface-visibility:hidden] [transform:rotateY(180deg)]",
                         "rounded-2xl p-6",
-                        "bg-gradient-to-b from-zinc-100 to-white dark:from-zinc-900 dark:to-black",
-                        "border border-zinc-200 dark:border-zinc-800",
-                        "shadow-xs dark:shadow-lg",
+                        "bg-gradient-to-b from-background to-surface",
+                        "border border-gold/20",
+                        "shadow-lg",
                         "flex flex-col",
                         "transition-all duration-700",
                         "group-hover:shadow-lg dark:group-hover:shadow-xl",
@@ -129,10 +130,10 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                 >
                     <div className="flex-1 space-y-6">
                         <div className="space-y-2">
-                            <h3 className="font-semibold text-lg text-zinc-900 leading-snug tracking-tight transition-all duration-500 ease-out-expo group-hover:translate-y-[-2px] dark:text-white">
+                            <h3 className="font-serif font-bold text-2xl text-foreground leading-snug tracking-tight transition-all duration-500 group-hover:translate-y-[-2px]">
                                 {title}
                             </h3>
-                            <p className=" text-sm text-zinc-600 tracking-tight transition-all duration-500 ease-out-expo group-hover:translate-y-[-2px] dark:text-zinc-400 font-sans">
+                            <p className="text-sm text-muted-foreground tracking-tight transition-all duration-500 group-hover:translate-y-[-2px] font-sans">
                                 {description}
                             </p>
                         </div>
@@ -157,32 +158,30 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                         </div> */}
                     </div>
 
-                    <div className="mt-6 border-zinc-200 border-t pt-6 dark:border-zinc-800">
+                    <div className="mt-6 border-border border-t pt-6">
                         <div
                             className={cn(
                                 "group/start relative",
                                 "flex items-center justify-between",
                                 "-m-3 rounded-xl p-3",
                                 "transition-all duration-300",
-                                "bg-gradient-to-r from-zinc-100 via-zinc-100 to-zinc-100",
-                                "dark:from-zinc-800 dark:via-zinc-800 dark:to-zinc-800",
-                                "hover:from-0% hover:from-orange-500/10 hover:via-100% hover:via-orange-500/5 hover:to-100% hover:to-transparent",
-                                "dark:hover:from-0% dark:hover:from-orange-500/20 dark:hover:via-100% dark:hover:via-orange-500/10 dark:hover:to-100% dark:hover:to-transparent",
+                                "bg-gradient-to-r from-transparent via-transparent to-transparent",
+                                "hover:from-gold/20 hover:via-gold/10 hover:to-transparent",
                                 "hover:scale-[1.02] hover:cursor-pointer"
                             )}
                         >
-                            <span className="font-medium text-sm text-zinc-900 transition-colors duration-300 group-hover/start:text-orange-600 dark:text-white dark:group-hover/start:text-orange-400">
+                            <span className="font-mono text-sm text-foreground transition-colors duration-300 group-hover/start:text-gold">
                                 Start today
                             </span>
                             <div className="group/icon relative">
                                 <div
                                     className={cn(
                                         "absolute inset-[-6px] rounded-lg transition-all duration-300",
-                                        "bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-transparent",
+                                        "bg-gradient-to-br from-gold/20 via-gold/10 to-transparent",
                                         "scale-90 opacity-0 group-hover/start:scale-100 group-hover/start:opacity-100"
                                     )}
                                 />
-                                <ArrowRight className="relative z-10 h-4 w-4 text-orange-500 transition-all duration-300 group-hover/start:translate-x-0.5 group-hover/start:scale-110" />
+                                <ArrowRight className="relative z-10 h-4 w-4 text-gold transition-all duration-300 group-hover/start:translate-x-0.5 group-hover/start:scale-110" />
                             </div>
                         </div>
                     </div>
@@ -194,17 +193,17 @@ const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers f
                     0% {
                         transform: scale(2);
                         opacity: 0;
-                        box-shadow: 0px 0px 50px rgba(255, 165, 0, 0.5);
+                        box-shadow: 0px 0px 50px rgba(212, 175, 55, 0.5);
                     }
                     50% {
                         transform: translate(0px, -5px) scale(1);
                         opacity: 1;
-                        box-shadow: 0px 8px 20px rgba(255, 165, 0, 0.5);
+                        box-shadow: 0px 8px 20px rgba(212, 175, 55, 0.5);
                     }
                     100% {
                         transform: translate(0px, 5px) scale(0.1);
                         opacity: 0;
-                        box-shadow: 0px 10px 20px rgba(255, 165, 0, 0);
+                        box-shadow: 0px 10px 20px rgba(212, 175, 55, 0);
                     }
                 }
             `}</style>

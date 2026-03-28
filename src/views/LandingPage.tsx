@@ -95,6 +95,7 @@ const CARDS = [
 export default function LandingPage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const isLoggedIn = !!user;
 
   const handleArtistButtonClick = () => {
     // If user is logged in, redirect to artist onboarding form
@@ -139,31 +140,31 @@ export default function LandingPage() {
                   Crestox democratizes fine art collecting through blockchain-powered fractionalization.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
-                  <GradientButton
-                    variant="primary"
-                    className="group h-12"
-                    onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
-                    label="Create Collector Account"
-                  >
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </GradientButton>
-                  <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Join as Artist'>
+                {!isLoggedIn && (
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
+                    <GradientButton
+                      variant="primary"
+                      className="group h-12"
+                      onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
+                      label="Create Collector Account"
+                    >
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </GradientButton>
+                    <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Join as Artist' />
+                  </div>
+                )}
 
-                  </GradientButton>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-20 pt-10 border-t border-border/30 animate-fade-in-up delay-400">
+                <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-20 pt-10 border-t border-border/30 animate-fade-in-up delay-400">
                   <div>
-                    <p className="text-3xl md:text-4xl font-mono font-bold text-primary">₹2.5Cr+</p>
+                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-primary">₹2.5Cr+</p>
                     <p className="text-muted-foreground font-mono text-sm mt-1">Trading Volume</p>
                   </div>
                   <div>
-                    <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">1,200+</p>
+                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-foreground">1,200+</p>
                     <p className="text-muted-foreground font-mono text-sm mt-1">Collectors</p>
                   </div>
                   <div>
-                    <p className="text-3xl md:text-4xl font-mono font-bold text-foreground">85+</p>
+                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-foreground">85+</p>
                     <p className="text-muted-foreground font-mono text-sm mt-1">Artists</p>
                   </div>
                 </div>
@@ -193,7 +194,7 @@ export default function LandingPage() {
 
       <TickerStream />
 
-      <CompanySlider />
+
 
       <section className="py-24 bg-white dark:bg-card transition-colors">
         <div className=" ">
@@ -371,17 +372,21 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="mt-8">
-                <GradientButton
-                  variant="secondary"
-                  onClick={handleArtistButtonClick}
-                  label="Apply as Artist"
-                />
-              </div>
+              {!isLoggedIn && (
+                <div className="mt-8">
+                  <GradientButton
+                    variant="secondary"
+                    onClick={handleArtistButtonClick}
+                    label="Apply as Artist"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
+
+      <CompanySlider />
 
       <section className="py-24 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
@@ -391,11 +396,13 @@ export default function LandingPage() {
             Join 1,200+ collectors investing in the future of art.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <GradientButton
-              variant="primary"
-              onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
-              label="Create Account"
-            />
+            {!isLoggedIn && (
+              <GradientButton
+                variant="primary"
+                onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
+                label="Create Account"
+              />
+            )}
             {/* <Button variant="outline" size="lg" onClick={() => router.push('/app')}>
               Explore Marketplace
             </Button> */}

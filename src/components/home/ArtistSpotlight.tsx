@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import GradientButton from '../ui/gradiant-button';
 
 interface FeaturedArtist {
@@ -73,6 +73,18 @@ const ArtistCard = ({ artist, index }: { artist: FeaturedArtist; index: number }
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const isInView = useInView(cardRef, { amount: 0.3 });
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia("(max-width: 1023px)").matches || window.matchMedia("(hover: none)").matches);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: cardRef,
@@ -85,15 +97,15 @@ const ArtistCard = ({ artist, index }: { artist: FeaturedArtist; index: number }
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isHovered) {
+    if (isHovered || (isMobile && isInView)) {
       interval = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % artist.artworks.length);
       }, 1500); // Change image every 1.5 seconds
     } else {
-      setCurrentImageIndex(0); // Reset to main image when not hovered
+      setCurrentImageIndex(0); // Reset to main image when not hovered/in-view
     }
     return () => clearInterval(interval);
-  }, [isHovered, artist.artworks.length]);
+  }, [isHovered, isMobile, isInView, artist.artworks.length]);
 
   return (
     <motion.div
@@ -153,7 +165,7 @@ const ArtistCard = ({ artist, index }: { artist: FeaturedArtist; index: number }
         <div className="absolute -inset-1 rounded-lg border border-primary/10 pointer-events-none z-20" />
 
         {/* Slider Indicator Dots (Optional, but nice for UX) */}
-        {isHovered && (
+        {(isHovered || isMobile) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -197,15 +209,15 @@ const ArtistCard = ({ artist, index }: { artist: FeaturedArtist; index: number }
           </div>
 
           {/* CTA */}
-          <motion.button
-            className=" text-primary font-mono text-sm tracking-wider uppercase rounded transition-all duration-300"
+          <motion.div
+            className=" text-primary font-mono text-sm tracking-wider uppercase rounded transition-all duration-300 inline-block"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <GradientButton variant="primary" label='Back This Artist'>
 
             </GradientButton>
-          </motion.button>
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>
@@ -256,7 +268,7 @@ const ArtistSpotlight = () => {
           whileInView={{ opacity: 1 }}
           className="text-center mt-20"
         >
-          <motion.button
+          <motion.div
             className="group inline-flex items-center gap-3  font-mono text-sm tracking-wider uppercase rounded hover:border-primary hover:text-primary transition-all duration-300"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -267,7 +279,7 @@ const ArtistSpotlight = () => {
               </svg>
             </GradientButton>
 
-          </motion.button>
+          </motion.div>
         </motion.div>
 
 
