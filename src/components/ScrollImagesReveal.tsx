@@ -1,27 +1,43 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+function useColumns() {
+    const [cols, setCols] = useState(5);
+    useEffect(() => {
+        const update = () => {
+            if (window.innerWidth < 768) setCols(2);
+            else if (window.innerWidth < 1024) setCols(4);
+            else setCols(5);
+        };
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return cols;
+}
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 const IMAGES = [
-    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1614728263952-84ea256f9d1d?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600&h=750&fit=crop",
-    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=750&fit=crop",
+    "https://images.unsplash.com/photo-1774280474652-c3bcfd423a0e?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDV8aG1lbnZRaFVteE18fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1773493082457-ce42ded2b664?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDcyfGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1773698719619-51e67f93a39f?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDJ8aG1lbnZRaFVteE18fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1773814776704-6551ec7809ca?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDgxfGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1774279922162-7519ca5f0cdc?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDR8aG1lbnZRaFVteE18fGVufDB8fHx8fA%3D%3D",
+    "https://plus.unsplash.com/premium_photo-1749499938590-40291c621d2d?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDUzfGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1773698709216-873151dc89ae?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDN8aG1lbnZRaFVteE18fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1774008717634-4fe7961d0f59?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDQ3fGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1774105618837-21ea179aef8a?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDIzfGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1774178149444-73bea28a0bab?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDM4fGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1774124916928-c2a97a29f1c7?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDMwfGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
+    "https://images.unsplash.com/photo-1774008593957-89bcc55ffcc4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDQ2fGhtZW52UWhVbXhNfHxlbnwwfHx8fHw%3D",
 ];
 
 export default function ScrollImagesReveal({ bgClass = "bg-background" }: { bgClass?: string }) {
     const gridRef = useRef<HTMLDivElement>(null);
+    const cols = useColumns();
 
     useEffect(() => {
         gsap.registerPlugin(ScrollTrigger);
@@ -92,22 +108,31 @@ export default function ScrollImagesReveal({ bgClass = "bg-background" }: { bgCl
             ScrollTrigger.getAll().forEach((t) => t.kill());
             gsap.globalTimeline.clear();
         };
-    }, []);
+    }, [cols]);
+
+    const items = [...IMAGES, ...IMAGES.slice(0, 8)];
 
     return (
         <div className={`relative w-full overflow-hidden pb-24 top-0 ${bgClass}`}>
             <div className="relative w-full overflow-hidden">
                 <section className="relative grid w-full place-items-center">
-                    <div ref={gridRef} className="relative grid w-full max-w-[95vw] grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 py-10 px-4">
-                        {[...IMAGES, ...IMAGES.slice(0, 8)].map((src, i) => (
-                            <figure key={i} className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
-                                <div className="grid-item-imgwrap relative aspect-[4/5] w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-muted dark:bg-card">
-                                    <div
-                                        className="grid-item-img absolute -left-0 -top-0 h-full w-full bg-cover bg-center will-change-transform"
-                                        style={{ backgroundImage: `url(${src})`, backfaceVisibility: "hidden" }}
-                                    />
-                                </div>
-                            </figure>
+                    <div ref={gridRef} className="relative flex items-start gap-4 sm:gap-6 py-10 px-4 mx-auto w-full max-w-[95vw]">
+                        {Array.from({ length: cols }).map((_, c) => (
+                            <div key={c} className="flex flex-col gap-4 sm:gap-6 flex-1">
+                                {items.filter((_, i) => i % cols === c).map((src, r) => (
+                                    <figure key={`${c}-${r}`} className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
+                                        <div className="grid-item-imgwrap relative w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-muted dark:bg-card shadow-lg">
+                                            <img
+                                                src={src}
+                                                alt=""
+                                                className="grid-item-img w-full h-auto block will-change-transform"
+                                                style={{ backfaceVisibility: "hidden" }}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    </figure>
+                                ))}
+                            </div>
                         ))}
                     </div>
                 </section>
