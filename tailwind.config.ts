@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ['GT Alpina', 'Editorial New', 'Playfair Display', 'Georgia', 'serif'],
-        mono: ['Aeonik Mono', 'Space Mono', 'Courier New', 'monospace'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"],
+        // Backup Serif configuration: ['GT Alpina', 'Editorial New', 'Playfair Display', 'Georgia', 'serif']
+        serif: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -44,14 +45,14 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-          gold: {
-      DEFAULT: "hsl(45, 90%, 55%)",
-      glow: "hsla(45, 90%, 55%, 0.4)"
-    },
-    cyber: {
-      DEFAULT: "hsl(190, 100%, 50%)",
-      glow: "hsla(190, 100%, 50%, 0.4)"
-    },
+        gold: {
+          DEFAULT: "hsl(45, 90%, 55%)",
+          glow: "hsla(45, 90%, 55%, 0.4)"
+        },
+        cyber: {
+          DEFAULT: "hsl(190, 100%, 50%)",
+          glow: "hsla(190, 100%, 50%, 0.4)"
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

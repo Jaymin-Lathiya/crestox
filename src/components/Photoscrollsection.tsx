@@ -1,12 +1,11 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const TOTAL = 20;
-const GAP = 10;
 const PAD_X = 24;
 
 interface Image {
@@ -19,23 +18,6 @@ interface PhotoScrollSectionProps {
   images: Image[];
 }
 
-// Responsive vertical padding — more padding on tall screens, less on short/mobile
-function getResponsivePadY(): number {
-  const h = window.innerHeight;
-  if (h < 600) return 8;   // very small (mobile landscape)
-  if (h < 768) return 14;  // small tablets / phones
-  if (h < 900) return 20;  // medium
-  return 28;                 // large desktop
-}
-
-// Responsive gap — tighter on small screens
-function getResponsiveGap(): number {
-  const h = window.innerHeight;
-  if (h < 600) return 6;
-  if (h < 768) return 8;
-  return GAP;
-}
-
 export default function PhotoScrollSection({
   bgClass = "bg-black",
   images,
@@ -43,36 +25,104 @@ export default function PhotoScrollSection({
   const sectionRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement[]>([]);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   useEffect(() => {
+    // Wait for all images to load to accurately calculate their *true original* sizes
+    const cardNodes = cardsRef.current.filter(Boolean);
+    if (!cardNodes.length) return;
+
+    let loadedCount = 0;
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= cardNodes.length) {
+        setImagesLoaded(true);
+      }
+    };
+
+    // Failsafe timeout so the gallery never stays hidden
+    const timeoutId = setTimeout(() => setImagesLoaded(true), 800);
+
+    cardNodes.forEach((card) => {
+      const img = card.querySelector("img");
+      if (!img) {
+        checkAllLoaded();
+        return;
+      }
+      if (img.complete) {
+        checkAllLoaded();
+      } else {
+        const handleLoad = () => checkAllLoaded();
+        img.addEventListener('load', handleLoad);
+        img.addEventListener('error', handleLoad);
+      }
+    });
+
+    return () => clearTimeout(timeoutId);
+  }, [images]);
+
+  useEffect(() => {
+    // Only run GSAP after original sizes are known!
+    if (!imagesLoaded) return;
+
     const section = sectionRef.current;
     const wrapper = wrapperRef.current;
     if (!section || !wrapper) return;
 
     function computeLayout() {
-      const padY = getResponsivePadY();
-      const gap = getResponsiveGap();
+      // Masonry Layout logic to strictly preserve the exact original image aspect ratio!
+      const cols = window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 3 : 4;
+      const colHeights = new Array(cols).fill(0);
 
-      const cols = window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 4 : 5;
-      const rows = Math.ceil(TOTAL / cols);
+      const gap = 24;
+      const availableW = window.innerWidth - PAD_X * 2 - (cols - 1) * gap;
+      const cw = availableW / cols;
 
-      const cw = Math.floor((window.innerWidth - PAD_X * 2 - (cols - 1) * gap) / cols);
-      const ch = Math.floor((window.innerHeight - padY * 2 - (rows - 1) * gap) / rows);
+      const layout = Array.from({ length: TOTAL }).map((_, i) => {
+        const cardNode = cardsRef.current[i];
+        const imgNode = cardNode?.querySelector("img");
 
-      const totalW = cols * cw + (cols - 1) * gap;
-      const totalH = rows * ch + (rows - 1) * gap;
+        // Exact original aspect ratio
+        let ratio = 1;
+        if (imgNode && imgNode.naturalWidth && imgNode.naturalHeight) {
+          ratio = imgNode.naturalWidth / imgNode.naturalHeight;
+        } else {
+          // Fallback array if somehow natural size fails
+          const aspectRatios = [1.5, 0.8, 1.25, 0.66, 1, 1.77, 0.75, 1.33, 0.8, 1.5];
+          ratio = aspectRatios[i % aspectRatios.length];
+        }
 
-      return Array.from({ length: TOTAL }).map((_, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const x = col * (cw + gap) - totalW / 2 + cw / 2;
-        const y = row * (ch + gap) - totalH / 2 + ch / 2;
+        // Height calculates natively based on cell width and true ratio
+        const ch = Math.floor(cw / ratio);
+
+        // Find shortest column to place the next image (Masonry stacking)
+        let smallestCol = 0;
+        let minH = colHeights[0];
+        for (let c = 1; c < cols; c++) {
+          if (colHeights[c] < minH) {
+            minH = colHeights[c];
+            smallestCol = c;
+          }
+        }
+
+        const x = smallestCol * (cw + gap) - (cols * cw + (cols - 1) * gap) / 2 + cw / 2;
+        const y = colHeights[smallestCol] + ch / 2;
+
+        colHeights[smallestCol] += ch + gap;
+
         return { x, y, cw, ch };
       });
+
+      const totalH = Math.max(...colHeights) - gap;
+      return layout.map(item => ({
+        ...item,
+        y: item.y - totalH / 2
+      }));
     }
 
     function applyLayout(layout: ReturnType<typeof computeLayout>) {
       cardsRef.current.forEach((card, i) => {
+        if (!card) return;
         const { x, y, cw, ch } = layout[i];
         gsap.set(card, { x, y, width: cw, height: ch });
       });
@@ -80,8 +130,9 @@ export default function PhotoScrollSection({
 
     let layout = computeLayout();
 
-    // Set initial state — all cards as 1px dots
+    // Set initial state
     cardsRef.current.forEach((card, i) => {
+      if (!card) return;
       const { x, y } = layout[i];
       gsap.set(card, { x, y, width: 1, height: 1, opacity: 0 });
     });
@@ -98,7 +149,6 @@ export default function PhotoScrollSection({
         },
       });
 
-      // Wrapper zoom out
       tl.fromTo(
         wrapper,
         { scale: 4, transformOrigin: "center center" },
@@ -106,8 +156,8 @@ export default function PhotoScrollSection({
         0
       );
 
-      // Cards grow from 1px dot to full size
       cardsRef.current.forEach((card, i) => {
+        if (!card) return;
         const { x, y, cw, ch } = layout[i];
         tl.fromTo(
           card,
@@ -129,7 +179,7 @@ export default function PhotoScrollSection({
       ctx.revert();
       window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [imagesLoaded]);
 
   return (
     <div
@@ -138,8 +188,8 @@ export default function PhotoScrollSection({
       style={{ height: "100vh" }}
     >
       <div
-        className="sticky top-0 w-full overflow-hidden flex items-center justify-center"
-        style={{ height: "100vh" }}
+        className="sticky top-0 w-full overflow-hidden flex items-center justify-center transition-opacity duration-1000"
+        style={{ height: "100vh", opacity: imagesLoaded ? 1 : 0 }}
       >
         <div
           ref={wrapperRef}
@@ -161,7 +211,7 @@ export default function PhotoScrollSection({
                 ref={(el) => { if (el) cardsRef.current[i] = el; }}
                 style={{
                   position: "absolute",
-                  borderRadius: "6px",
+                  borderRadius: "12px",
                   overflow: "hidden",
                   willChange: "transform, width, height, opacity",
                 }}
