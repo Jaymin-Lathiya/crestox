@@ -12,4 +12,6 @@ export const ARTIST_URLS = {
     BUFFER_PRICE_QUOTE: (id: number, qty?: number) =>
         qty != null ? `/trading/price-quote/${id}?quantity=${qty}` : `/trading/price-quote/${id}`,
     COLLECT_FRACTALS: `/trading/buy`,
+    INITIATE_BUY: `/trading/buy/initiate`,
+    COMPLETE_BUY: `/trading/buy/complete`,
 }

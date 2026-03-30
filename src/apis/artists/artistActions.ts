@@ -165,3 +165,39 @@ export const collectFractals = (data: any) => async () => {
     const response = await instance.post(ARTIST_URLS.COLLECT_FRACTALS, data);
     return response.data?.data ?? null;
 };
+
+export interface InitiateBuyResponse {
+    razorpay_order_id: string;
+    razorpay_key_id: string;
+    amount: string;
+    currency: string;
+    receipt: string;
+    artwork_id: number;
+    quantity: number;
+    current_fractal_price: string;
+    cost_breakdown: Array<{
+        source: 'SECONDARY_SALE' | 'PRIMARY_SALE';
+        quantity: number;
+        price_per_share: string;
+        subtotal: string;
+        buyer_pays: string;
+    }>;
+}
+
+export const initiateBuyOrder = (data: { artwork_id: number; quantity: number; max_slippage_pct?: number; quoted_price?: number }) => async (): Promise<InitiateBuyResponse> => {
+    const response = await instance.post(ARTIST_URLS.INITIATE_BUY, data);
+    return response.data?.data;
+};
+
+export const completeBuyOrder = (data: {
+    artwork_id: number;
+    quantity: number;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    max_slippage_pct?: number;
+    quoted_price?: number;
+}) => async () => {
+    const response = await instance.post(ARTIST_URLS.COMPLETE_BUY, data);
+    return response.data?.data;
+};

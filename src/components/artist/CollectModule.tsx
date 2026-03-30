@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Info } from 'lucide-react';
-import { getBufferPriceQuote, collectFractals } from '@/apis/artists/artistActions';
+import { getBufferPriceQuote, initiateBuyOrder, completeBuyOrder } from '@/apis/artists/artistActions';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -15,6 +15,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import GradientButton from '../ui/gradiant-button';
+
+// Feature flag: Set to true when Razorpay is configured
+const ENABLE_RAZORPAY = false;
+
+// Razorpay types (for when ENABLE_RAZORPAY is true)
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface CollectModuleProps {
   pricePerFractal?: number;
@@ -48,6 +58,24 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
+  // Load Razorpay script (only when ENABLE_RAZORPAY is true)
+  useEffect(() => {
+    if (ENABLE_RAZORPAY) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => setRazorpayLoaded(true);
+      document.body.appendChild(script);
+      return () => {
+        document.body.removeChild(script);
+      };
+    } else {
+      // In demo mode, mark as "loaded" immediately
+      setRazorpayLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     const id = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
@@ -84,28 +112,97 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null;
 
-  const handleCollectConfirm = () => {
+  const handleCollectConfirm = async () => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     if (artworkId == null) {
       toast.error('No artwork selected');
       return;
     }
+
     setCollecting(true);
-    collectFractals({
-      artwork_id: artworkId,
-      quantity: effectiveQty,
-      buffer_percent: bufferPercent ?? 0,
-      current_price: currentPrice,
-    })()
-      .then((result) => {
+    setConfirmOpen(false);
+
+    try {
+      // Step 1: Initiate buy order
+      const orderData = await initiateBuyOrder({
+        artwork_id: artworkId,
+        quantity: effectiveQty,
+        max_slippage_pct: 5,
+        quoted_price: currentPrice,
+      })();
+
+      if (ENABLE_RAZORPAY) {
+        // ─── RAZORPAY FLOW (Production) ───────────────────────────────────
+        // Step 2: Open Razorpay checkout
+        const options = {
+          key: orderData.razorpay_key_id,
+          amount: parseFloat(orderData.amount) * 100, // Convert to paise
+          currency: orderData.currency,
+          name: 'Crestox',
+          description: `Purchase ${effectiveQty} fractals`,
+          order_id: orderData.razorpay_order_id,
+          handler: async function (response: any) {
+            try {
+              // Step 3: Complete the order after successful payment
+              await completeBuyOrder({
+                artwork_id: artworkId,
+                quantity: effectiveQty,
+                razorpay_order_id: orderData.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                max_slippage_pct: 5,
+                quoted_price: currentPrice,
+              })();
+
+              toast.success('Fractals collected successfully');
+              if (onCollectSuccess) onCollectSuccess();
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message ?? 'Failed to complete purchase');
+            } finally {
+              setCollecting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setCollecting(false);
+              toast.info('Payment cancelled');
+            },
+          },
+          theme: {
+            color: '#3B82F6',
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } else {
+        // ─── DEMO MODE (Bypass Razorpay) ──────────────────────────────────
+        // Step 2: Simulate successful payment
+        toast.info('Processing payment...');
+        
+        // Generate mock payment credentials
+        const mockPaymentId = `pay_mock_${Date.now()}`;
+        const mockSignature = `mock_signature_${Date.now()}`;
+
+        // Step 3: Complete the order with mock payment data
+        await completeBuyOrder({
+          artwork_id: artworkId,
+          quantity: effectiveQty,
+          razorpay_order_id: orderData.razorpay_order_id,
+          razorpay_payment_id: mockPaymentId,
+          razorpay_signature: mockSignature,
+          max_slippage_pct: 5,
+          quoted_price: currentPrice,
+        })();
+
         toast.success('Fractals collected successfully');
-        setConfirmOpen(false);
-        if (result != null && result !== false && onCollectSuccess) onCollectSuccess();
-      })
-      .catch((err: any) => {
-        toast.error(err?.response?.data?.message ?? 'Failed to collect fractals');
-      })
-      .finally(() => setCollecting(false));
+        if (onCollectSuccess) onCollectSuccess();
+        setCollecting(false);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to complete purchase');
+      setCollecting(false);
+    }
   };
 
   return (
@@ -143,7 +240,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         <div className="space-y-3">
           <div className="flex justify-between text-sm font-sans">
             <span className="text-slate-500 dark:text-zinc-400">Minted Supply</span>
-            <span className="text-slate-500 dark:text-zinc-400">{sold} / {totalSupply}</span>
+            <span className="text-slate-500 dark:text-zinc-400">{available} / {totalSupply}</span>
           </div>
 
           <div className="h-2 w-full bg-slate-200 dark:bg-[#1E293B] rounded-full overflow-hidden">
@@ -226,17 +323,17 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          disabled={firstArtworkId == null || (Number(artist_profile_id) === id) || !isAtwork}
+          // disabled={firstArtworkId == null || (Number(artist_profile_id) === id) || !isAtwork || !razorpayLoaded}
           className="group w-full h-12 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
         >
           <span className="font-sans font-medium text-base">
-            Collect Fractal
+            {!razorpayLoaded ? 'Loading...' : 'Collect Fractal'}
           </span>
           <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
         </button>
 
         <p className="text-center font-sans text-xs text-slate-400 dark:text-zinc-500">
-          Gas fees included in final calculation
+          {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
         </p>
 
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -244,7 +341,10 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             <AlertDialogHeader>
               <AlertDialogTitle>Collect fractal</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to collect the fractal? This will purchase {effectiveQty} fractal(s) at the current price.
+                Are you sure you want to collect {effectiveQty} fractal(s)? 
+                {ENABLE_RAZORPAY 
+                  ? ' You will be redirected to Razorpay to complete the payment securely.'
+                  : ' Payment will be processed automatically (Demo mode).'}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className='flex justify-end items-center gap-2'>
