@@ -75,7 +75,10 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   const currentPrice = quote?.current_price ?? pricePerFractal;
   const bufferPercent = quote?.buffer_percent ?? 0;
-  const effectiveQty = Math.max(1, typeof quantity === 'number' && !Number.isNaN(quantity) ? quantity : parseInt(String(quantity), 10) || 1);
+  
+  const parsedQty = parseInt(String(quantity), 10);
+  const effectiveQty = !isAtwork ? 0 : (quantity === "" ? 0 : (Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty)));
+
   const baseAmount = effectiveQty * currentPrice;
   const bufferAdjustment = baseAmount * (bufferPercent / 100);
   const subTotal = baseAmount;
@@ -83,6 +86,16 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const total = gst + subTotal;
 
   const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null;
+
+  const formatCurrencyWithSmallDecimals = (val: number) => {
+    const parts = val.toFixed(2).split('.');
+    if (parts.length !== 2) return val.toFixed(2);
+    return (
+      <>
+        {parts[0]}<span className="text-[0.7em] opacity-70">.{parts[1]}</span>
+      </>
+    );
+  };
 
   const handleCollectConfirm = () => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
@@ -203,11 +216,11 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         <div className="flex flex-col gap-3 font-sans pt-2">
           <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
             <span className="text-sm">Sub Total</span>
-            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{subTotal.toFixed(2)}</span>}
+            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(subTotal)}</span>}
           </div>
           <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
             <span className="text-sm">GST (18%)</span>
-            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{gst.toFixed(2)}</span>}
+            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(gst)}</span>}
           </div>
           <div className="w-full h-px bg-slate-200 dark:bg-[#1E293B] my-1" />
           <div className="flex justify-between items-center">
@@ -216,7 +229,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               <Skeleton className="h-6 w-20" />
             ) : (
               <span className="text-xl text-slate-900 dark:text-white font-bold tracking-tight">
-                ₹{total.toFixed(2)}
+                ₹{formatCurrencyWithSmallDecimals(total)}
               </span>
             )}
           </div>

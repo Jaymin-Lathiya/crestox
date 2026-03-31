@@ -5,19 +5,19 @@ import ScrollImagesReveal from "../ScrollImagesReveal";
 
 const ARTWORK_IMAGES = [
     "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1723952776528-b5f783f91127?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyNHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1516247524857-8dc5f4786cb3?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0fHx8ZW58MHx8fHx8",
+    "https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1561214115-f2f134cc4912?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1558603668-6570496b66f8?q=80&w=400&fit=crop",
-    "https://plus.unsplash.com/premium_photo-1664438942574-e56510dc5ce5?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop",
+    "https://images.unsplash.com/photo-1579783902614-a3fb392796a5?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=400&fit=crop",
+    "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1518998053901-5348d3961a04?q=80&w=400&fit=crop",
-    "https://plus.unsplash.com/premium_photo-1772277194095-ecaab9a3e7d3?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw2fHx8ZW58MHx8fHx8",
+    "https://images.unsplash.com/photo-1531315630201-bb15dbef0390?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1582201942988-13e60e4556ee?q=80&w=400&fit=crop",
-    "https://plus.unsplash.com/premium_photo-1747851576159-8d483776648d?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyfHx8ZW58MHx8fHx8",
+    "https://images.unsplash.com/photo-1573521193826-58c7dc2e13e3?q=80&w=400&fit=crop",
     "https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=400&fit=crop",
 ];
 
@@ -83,7 +83,7 @@ function GridCard({
 
     // Stronger offsets on mobile (2 cols) to keep the pyramid feel
     const colMultiplier = cols === 2 ? 120 : 55;
-    const rowMultiplier = cols === 2 ? 100 : 60;
+    const rowMultiplier = cols === 2 ? 50 : 25;
 
     const yOffset = distance * distance * colMultiplier + row * rowMultiplier;
     const scaleStart = 1 - distance * 0.04;
@@ -95,13 +95,13 @@ function GridCard({
     return (
         <Link href="/art" className="block relative w-full">
             <motion.div
-                className="relative overflow-hidden bg-card w-full rounded-md shadow-md"
+                className="relative overflow-hidden bg-card w-full"
                 style={{ y, scale, borderRadius }}
             >
                 <img
                     src={src}
                     alt=""
-                    className="w-full h-auto block"
+                    className="w-full h-auto object-cover"
                     loading="lazy"
                     draggable={false}
                 />
@@ -124,21 +124,25 @@ export default function ScrollRevealGrid() {
 
     const items = ARTWORK_IMAGES.slice(0, total);
 
+    // Create masonry columns
+    const columns = Array.from({ length: cols }, () => [] as string[]);
+    items.forEach((item, i) => {
+        columns[i % cols].push(item);
+    });
+
     return (
         <>
             <div ref={containerRef} className="relative h-[350vh] bg-background">
                 <div className="sticky top-0 flex flex-col items-center justify-center overflow-hidden">
-                    <div
-                        className="flex gap-4 px-4 w-full max-w-[95vw] mx-auto items-start"
-                    >
-                        {Array.from({ length: cols }).map((_, c) => (
-                            <div key={c} className="flex flex-col gap-4 flex-1">
-                                {items.filter((_, i) => i % cols === c).map((src, r) => (
+                    <div className="flex gap-4 px-4 w-full max-w-[95vw] mx-auto items-start">
+                        {columns.map((colItems, colIndex) => (
+                            <div key={colIndex} className="flex flex-col gap-4 flex-1">
+                                {colItems.map((src, rowIndex) => (
                                     <GridCard
-                                        key={`${c}-${r}`}
+                                        key={`${colIndex}-${rowIndex}`}
                                         src={src}
-                                        col={c}
-                                        row={r}
+                                        col={colIndex}
+                                        row={rowIndex}
                                         cols={cols}
                                         scrollYProgress={scrollYProgress}
                                     />
