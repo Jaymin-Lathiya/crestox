@@ -56,27 +56,40 @@ const advisoryBoard: Member[] = [
   }
 ];
 
-function MemberCard({ member }: { member: Member }) {
+function MemberCard({ member, index }: { member: typeof coreTeam[0], index: number }) {
   const [isActive, setIsActive] = useState(false);
 
   return (
     <div
-      className="group bg-gray-100 dark:bg-gray-900 rounded-3xl overflow-hidden flex flex-col h-full border border-gray-100 dark:border-gray-800 transition-all hover:shadow-lg cursor-pointer"
+      className="group overflow-hidden"
       onClick={() => setIsActive(prev => !prev)}
     >
       <img
+        className={`h-96 w-full rounded-md object-cover object-top transition-all duration-500
+          ${isActive ? 'grayscale-0 h-[22.5rem] rounded-xl' : 'grayscale'}
+          md:grayscale md:group-hover:grayscale-0 md:group-hover:h-[22.5rem] md:group-hover:rounded-xl`}
         src={member.avatar}
         alt={member.name}
-        className={`w-full h-56 md:h-64 object-cover object-center transition-all duration-500
-          ${isActive ? 'grayscale-0' : 'grayscale'}
-          md:grayscale md:group-hover:grayscale-0`}
+        width="826"
+        height="1239"
       />
-      <div className="p-6 md:p-8 flex flex-col items-center flex-grow">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{member.name}</h3>
-        <p className="text-gray-500 font-medium text-sm mb-6">{member.role}</p>
-        <p className="text-[13px] text-gray-600 dark:text-gray-400 text-center leading-relaxed">
-          {member.description}
-        </p>
+      <div className="px-2 pt-2 sm:pb-0 sm:pt-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-base font-medium transition-all duration-500">
+            {member.role}
+          </h3>
+          {/* <span className="text-xs">_0{index + 1}</span> */}
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span
+            className={`inline-block text-sm transition-all duration-500
+              ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}
+              md:translate-y-6 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100`}
+          >
+            {member.name} <br />
+            <span className='mt-4'>{member.description}</span>
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -92,7 +105,7 @@ export default function TeamSection() {
           <h2 className="text-3xl md:text-4xl font-bold mb-10 text-gray-900 dark:text-white">Core Team</h2>
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {coreTeam.map((member, index) => (
-              <MemberCard key={index} member={member} />
+              <MemberCard member={member} index={index} key={index} />
             ))}
           </div>
         </div>
@@ -102,7 +115,7 @@ export default function TeamSection() {
           <h2 className="text-3xl md:text-4xl font-bold mb-10 text-gray-900 dark:text-white">Advisory Board</h2>
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {advisoryBoard.map((member, index) => (
-              <MemberCard key={index} member={member} />
+              <MemberCard key={index} member={member} index={index} />
             ))}
           </div>
         </div>
