@@ -8,6 +8,7 @@ import Link from 'next/link';
 import ProcessConstellation from '../ProcessConstellation';
 import PhotoScrollSection from '../Photoscrollsection';
 import { IMAGES } from '@/views/LandingPage';
+import instance from '@/utils/apiCalls';
 
 const ARTWORKS = [
     { id: 1, title: 'The Liquid Abstract', artist: 'Elena V.', price: '₹18,284.75', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=1000&auto=format&fit=crop', aspectRatio: 'aspect-[3/4]' },
@@ -62,6 +63,34 @@ const InfiniteColumn = ({
 };
 
 export function GallerySection() {
+    const [images, setImages] = useState<{ src: string, alt: string }[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchMasterpieces = async () => {
+            try {
+                const res = await instance.get('/artwork/curated-masterpieces');
+                if (res.status === 200 || res.status === 201) {
+                    const data = res.data;
+                    if (data && data.length > 0) {
+                        const formattedImages = data.map((item: any) => ({
+                            src: item.primary_image_url,
+                            alt: item.artwork_name
+                        }));
+                        setImages(formattedImages);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch curated masterpieces", error);
+            }
+            // fallback to IMAGES if fetch fails or is empty
+            setImages(IMAGES);
+            setIsLoading(false);
+        };
+        fetchMasterpieces();
+    }, []);
 
     return (
         <section className="py-24 overflow-hidden bg-background">
@@ -70,7 +99,13 @@ export function GallerySection() {
                 <h2 className="font-serif text-3xl md:text-5xl">Curated Masterpieces</h2>
             </div>
 
-            <PhotoScrollSection bgClass='bg-background' images={IMAGES} />
+            {!isLoading ? (
+                <PhotoScrollSection bgClass='bg-background' images={images} />
+            ) : (
+                <div className="h-[100vh] w-full flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                </div>
+            )}
 
             {/* <div className="md:hidden">
                 <InfiniteColumn artworks={[...COLUMN_1, ...COLUMN_2]} duration={30} />
