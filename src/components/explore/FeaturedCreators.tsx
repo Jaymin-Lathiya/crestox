@@ -70,38 +70,8 @@ const MOCK_CREATORS = {
             stats: { label: 'Fractals Available', value: 150, max: 300 }
         },
     ],
-    curators: [
-        {
-            name: 'Arthouse Global',
-            role: 'Gallery',
-            image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&h=300&fit=crop',
-            bio: 'Curating the finest digital collections from around the globe for discerning investors.',
-            stats: { label: 'Collections Managed', value: 45, max: 50 }
-        },
-        {
-            name: 'MetaMuseum',
-            role: 'Digital Archive',
-            image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop',
-            bio: 'Preserving digital history through meticulous archiving and display.',
-            stats: { label: 'Artworks Archived', value: 1200, max: 2000 }
-        },
-    ],
-    owners: [
-        {
-            name: 'CryptoWhale',
-            role: 'Collector',
-            image: 'https://images.unsplash.com/photo-1522075469751-3a3694fb60ed?w=300&h=300&fit=crop',
-            bio: 'Early adopter and major patron of the decentralized art movement.',
-            stats: { label: 'Portfolio Value', value: 95, max: 100 } // percentage for visual
-        },
-        {
-            name: 'ArtFlipper',
-            role: 'Investor',
-            image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&h=300&fit=crop',
-            bio: 'Analytical approach to art investment, focusing on emerging talent.',
-            stats: { label: 'ROI YTD', value: 82, max: 100 }
-        },
-    ]
+    curators: [],
+    owners: []
 };
 
 function CreatorCardSkeleton() {
@@ -250,7 +220,13 @@ export function FeaturedCreators() {
                     Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={i} />)
                 ) : (
                     <>
-                        {visibleCreators.map((creator, idx) => (
+                        {visibleCreators.length === 0 ? (
+                            <div className="col-span-full py-16 flex justify-center">
+                                <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
+                                    No {activeTab} available
+                                </p>
+                            </div>
+                        ) : visibleCreators.map((creator, idx) => (
                             <div
                                 key={creator.id ?? idx}
                                 className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"

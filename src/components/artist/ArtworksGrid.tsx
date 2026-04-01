@@ -99,20 +99,15 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
   }, [artworkId]);
 
   const displayValue = bufferPrice ?? artwork.valuation;
-  const aspectClass = {
-    portrait: 'aspect-[3/4]',
-    landscape: 'aspect-[4/3]',
-    square: 'aspect-square',
-  }[artwork.aspectRatio || 'portrait'];
 
   return (
     <div className="group relative overflow-hidden rounded-sm cursor-pointer">
       {/* Image Container */}
-      <div className={`relative ${aspectClass} overflow-hidden`}>
+      <div className="relative w-full overflow-hidden">
         <img 
           src={artwork.image} 
           alt={artwork.title}
-          className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-105"
+          className="w-full h-auto object-cover transition-all duration-700 ease-out group-hover:scale-105"
         />
         
         {/* Overlay on Hover */}
