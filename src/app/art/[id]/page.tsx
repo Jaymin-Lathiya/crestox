@@ -106,10 +106,10 @@ function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; v
       label: "Created",
       value: artwork.created_at
         ? new Date(artwork.created_at).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
         : null,
     },
   ];
@@ -158,9 +158,9 @@ const Index = () => {
   const fetchPriceHistory = async () => {
     if (!id || typeof id !== "string") return;
     let params = {
-        price_type: "VALUATION",
+      price_type: "VALUATION",
     }
-    const res = await getPriceHistory(id as string,params)();
+    const res = await getPriceHistory(id as string, params)();
     console.log("res", res);
   }
 

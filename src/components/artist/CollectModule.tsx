@@ -75,7 +75,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   const currentPrice = quote?.current_price ?? pricePerFractal;
   const bufferPercent = quote?.buffer_percent ?? 0;
-  
+
   const parsedQty = parseInt(String(quantity), 10);
   const effectiveQty = !isAtwork ? 0 : (quantity === "" ? 0 : (Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty)));
 
@@ -216,7 +216,16 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         <div className="flex flex-col gap-3 font-sans pt-2">
           <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
             <span className="text-sm">Sub Total</span>
-            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(subTotal)}</span>}
+            <div className="flex items-center gap-1">
+              {quoteLoading ? <Skeleton className="h-5 w-16" /> : (
+                <>
+                  <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(subTotal)}</span>
+                  <span className="text-[10px] uppercase font-mono tracking-wider opacity-70">
+                    +-{bufferPercent.toFixed(2)}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
             <span className="text-sm">GST (18%)</span>
@@ -225,13 +234,20 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           <div className="w-full h-px bg-slate-200 dark:bg-[#1E293B] my-1" />
           <div className="flex justify-between items-center">
             <span className="text-base text-slate-600 dark:text-zinc-300">Total</span>
-            {quoteLoading ? (
-              <Skeleton className="h-6 w-20" />
-            ) : (
-              <span className="text-xl text-slate-900 dark:text-white font-bold tracking-tight">
-                ₹{formatCurrencyWithSmallDecimals(total)}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {quoteLoading ? (
+                <Skeleton className="h-6 w-20" />
+              ) : (
+                <>
+                  <span className="text-xl text-slate-900 dark:text-white font-bold tracking-tight">
+                    ₹{formatCurrencyWithSmallDecimals(total)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-mono tracking-wider font-medium">
+                    +-{bufferPercent.toFixed(2)}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
