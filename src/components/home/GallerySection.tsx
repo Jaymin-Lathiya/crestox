@@ -63,7 +63,7 @@ const InfiniteColumn = ({
 };
 
 export function GallerySection() {
-    const [images, setImages] = useState<{ src: string, alt: string }[]>([]);
+    const [images, setImages] = useState<{ src: string; alt: string; href?: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -73,11 +73,16 @@ export function GallerySection() {
                 if (res.status === 200 || res.status === 201) {
                     const data = res.data.data;
                     if (data && data.length > 0) {
-                        const formattedImages = data.map((item: any) => ({
-                            src: item.primary_image_url,
-                            alt: item.artwork_name
-                        }));
-                        console.log(formattedImages);
+                        const formattedImages = data.map((item: any) => {
+                            const base = {
+                                src: item.primary_image_url,
+                                alt: item.artwork_name ?? "Artwork",
+                            };
+                            if (item.artwork_id != null) {
+                                return { ...base, href: `/art/${item.artwork_id}` };
+                            }
+                            return base;
+                        });
                         setImages(formattedImages);
                         setIsLoading(false);
                         return;

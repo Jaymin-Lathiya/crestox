@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -10,6 +11,8 @@ const PAD_X = 24;
 interface Image {
   src: string;
   alt: string;
+  /** When set, the tile navigates to this path (e.g. `/art/123`) */
+  href?: string;
 }
 
 interface PhotoScrollSectionProps {
@@ -281,6 +284,7 @@ export default function PhotoScrollSection({
               <div
                 key={i}
                 ref={(el) => { if (el) cardsRef.current[i] = el; }}
+                className={img.href ? "cursor-pointer" : undefined}
                 style={{
                   position: "absolute",
                   borderRadius: "12px",
@@ -303,6 +307,16 @@ export default function PhotoScrollSection({
                   }}
                   draggable={false}
                 />
+                {img.href ? (
+                  <Link
+                    href={img.href}
+                    className="absolute inset-0 z-10"
+                    aria-label={`View artwork: ${img.alt}`}
+                    prefetch={false}
+                  >
+                    <span className="sr-only">View artwork</span>
+                  </Link>
+                ) : null}
               </div>
           ))}
         </div>
