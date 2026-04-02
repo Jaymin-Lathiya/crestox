@@ -32,11 +32,11 @@ export const ArtworkCard = ({ artwork, index }: ArtworkCardProps) => {
       }}
     >
       {/* Image Container */}
-      <div className="relative aspect-[3/4] overflow-hidden">
+      <div className="relative overflow-hidden">
         <img
           src={artwork.imageUrl}
           alt={artwork.title}
-          className="w-full h-full object-cover"
+          className="w-full h-auto"
         />
         
         {/* Status Beacon */}
