@@ -71,12 +71,13 @@ export function GallerySection() {
             try {
                 const res = await instance.get('/artwork/curated-masterpieces');
                 if (res.status === 200 || res.status === 201) {
-                    const data = res.data;
+                    const data = res.data.data;
                     if (data && data.length > 0) {
                         const formattedImages = data.map((item: any) => ({
                             src: item.primary_image_url,
                             alt: item.artwork_name
                         }));
+                        console.log(formattedImages);
                         setImages(formattedImages);
                         setIsLoading(false);
                         return;

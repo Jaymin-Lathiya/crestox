@@ -85,7 +85,7 @@ export default function GradientButton({
   const [isDark, setIsDark] = useState(false)
   const colors = gradientColors[variant]
 
-  console.log("[GradientButton] Rendered with:", { label, type, disabled })
+  // console.log("[GradientButton] Rendered with:", { label, type, disabled })
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"))

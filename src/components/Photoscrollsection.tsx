@@ -5,7 +5,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const TOTAL = 20;
 const PAD_X = 24;
 
 interface Image {
@@ -61,15 +60,28 @@ export default function PhotoScrollSection({
     return () => clearTimeout(timeoutId);
   }, [images]);
 
+  // Native `scroll-behavior: smooth` on <html> fights ScrollTrigger scrub and causes stutter.
+  useEffect(() => {
+    const html = document.documentElement;
+    const prev = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    return () => {
+      html.style.scrollBehavior = prev;
+    };
+  }, []);
+
   useEffect(() => {
     // Only run GSAP after original sizes are known!
-    if (!imagesLoaded) return;
+    if (!imagesLoaded || images.length === 0) return;
 
     const section = sectionRef.current;
     const wrapper = wrapperRef.current;
     if (!section || !wrapper) return;
 
-    function computeLayout() {
+    function computeLayout(): {
+      layout: { x: number; y: number; cw: number; ch: number }[];
+      totalH: number;
+    } {
       // Masonry Layout logic to strictly preserve the exact original image aspect ratio!
       const cols = window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 3 : 4;
       const colHeights = new Array(cols).fill(0);
@@ -78,7 +90,7 @@ export default function PhotoScrollSection({
       const availableW = window.innerWidth - PAD_X * 2 - (cols - 1) * gap;
       const cw = availableW / cols;
 
-      const layout = Array.from({ length: TOTAL }).map((_, i) => {
+      const layout = Array.from({ length: images.length }).map((_, i) => {
         const cardNode = cardsRef.current[i];
         const imgNode = cardNode?.querySelector("img");
 
@@ -114,13 +126,16 @@ export default function PhotoScrollSection({
       });
 
       const totalH = Math.max(...colHeights) - gap;
-      return layout.map(item => ({
+      const centered = layout.map(item => ({
         ...item,
-        y: item.y - totalH / 2
+        y: item.y - totalH / 2,
       }));
+      return { layout: centered, totalH };
     }
 
-    function applyLayout(layout: ReturnType<typeof computeLayout>) {
+    function applyLayout(
+      layout: { x: number; y: number; cw: number; ch: number }[]
+    ) {
       cardsRef.current.forEach((card, i) => {
         if (!card) return;
         const { x, y, cw, ch } = layout[i];
@@ -128,13 +143,34 @@ export default function PhotoScrollSection({
       });
     }
 
-    let layout = computeLayout();
+    let { layout, totalH } = computeLayout();
+    const vh = window.innerHeight;
+    // When masonry is taller than the viewport, pan the wrapper so scroll reveals top → bottom
+    const excess = Math.max(0, totalH - vh);
+    const panYTop = excess > 0 ? totalH / 2 - vh / 2 : 0;
+    const panYBottom = excess > 0 ? vh / 2 - totalH / 2 : 0;
 
-    // Set initial state
+    // Set initial state — use scale for reveal (transform-only) instead of animating width/height
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
-      const { x, y } = layout[i];
-      gsap.set(card, { x, y, width: 1, height: 1, opacity: 0 });
+      const { x, y, cw, ch } = layout[i];
+      gsap.set(card, {
+        x,
+        y,
+        width: cw,
+        height: ch,
+        scale: 0,
+        opacity: 0,
+        transformOrigin: "center center",
+        force3D: true,
+      });
+    });
+
+    gsap.set(wrapper, {
+      y: panYTop,
+      scale: 4,
+      transformOrigin: "center center",
+      force3D: true,
     });
 
     const ctx = gsap.context(() => {
@@ -142,34 +178,70 @@ export default function PhotoScrollSection({
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: "+=250%",
+          end: () => {
+            const h = window.innerHeight;
+            const { totalH: th } = computeLayout();
+            const ex = Math.max(0, th - h);
+            return "+=" + (h * 2.5 + ex * 1.25);
+          },
           pin: true,
-          scrub: 2,
+          // Light smoothing — large values (e.g. 2) lag behind scroll and feel stepped
+          scrub: 0.55,
           anticipatePin: 1,
         },
       });
 
       tl.fromTo(
         wrapper,
-        { scale: 4, transformOrigin: "center center" },
-        { scale: 1, ease: "power1.inOut", duration: 0.5 },
+        { scale: 4, y: panYTop, transformOrigin: "center center", force3D: true },
+        { scale: 1, y: panYTop, ease: "power1.inOut", duration: 0.28, force3D: true },
         0
       );
+
+      if (excess > 0) {
+        tl.fromTo(
+          wrapper,
+          { y: panYTop, force3D: true },
+          { y: panYBottom, ease: "none", duration: 0.72, force3D: true },
+          0.28
+        );
+      }
 
       cardsRef.current.forEach((card, i) => {
         if (!card) return;
         const { x, y, cw, ch } = layout[i];
         tl.fromTo(
           card,
-          { x, y, width: 1, height: 1, opacity: 0 },
-          { x, y, width: cw, height: ch, opacity: 1, ease: "expo.out", duration: 1 },
+          {
+            x,
+            y,
+            width: cw,
+            height: ch,
+            scale: 0,
+            opacity: 0,
+            transformOrigin: "center center",
+            force3D: true,
+          },
+          {
+            x,
+            y,
+            width: cw,
+            height: ch,
+            scale: 1,
+            opacity: 1,
+            ease: "expo.out",
+            duration: 1,
+            force3D: true,
+          },
           0
         );
       });
     }, section);
 
     const onResize = () => {
-      layout = computeLayout();
+      const next = computeLayout();
+      layout = next.layout;
+      totalH = next.totalH;
       applyLayout(layout);
       ScrollTrigger.refresh();
     };
@@ -179,7 +251,7 @@ export default function PhotoScrollSection({
       ctx.revert();
       window.removeEventListener("resize", onResize);
     };
-  }, [imagesLoaded]);
+  }, [imagesLoaded, images]);
 
   return (
     <div
@@ -201,11 +273,11 @@ export default function PhotoScrollSection({
             alignItems: "center",
             justifyContent: "center",
             transformOrigin: "center center",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {Array.from({ length: TOTAL }).map((_, i) => {
-            const img = images[i % images.length];
-            return (
+          {images.map((img, i) => (
               <div
                 key={i}
                 ref={(el) => { if (el) cardsRef.current[i] = el; }}
@@ -213,7 +285,9 @@ export default function PhotoScrollSection({
                   position: "absolute",
                   borderRadius: "12px",
                   overflow: "hidden",
-                  willChange: "transform, width, height, opacity",
+                  willChange: "transform, opacity",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
                 }}
               >
                 <img
@@ -230,8 +304,7 @@ export default function PhotoScrollSection({
                   draggable={false}
                 />
               </div>
-            );
-          })}
+          ))}
         </div>
       </div>
     </div>

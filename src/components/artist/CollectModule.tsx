@@ -125,7 +125,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     );
   };
 
-  const handleCollectConfirm = () => {
+  const handleCollectConfirm = async () => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     if (artworkId == null) {
       toast.error('No artwork selected');

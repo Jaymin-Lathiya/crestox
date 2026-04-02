@@ -1,12 +1,23 @@
 import axios from "axios";
 import { strings } from "./strings";
 import { clearCookie, getCookie } from "./cookieUtils";
-const instance = axios.create({ baseURL: strings.base_url });
-console.log(strings.base_url)
-const token = "token"
+
+const baseUrl = strings.base_url ?? "";
+const instance = axios.create({ baseURL: baseUrl });
+
+const token = "token";
+
+function isNgrokApiBase(): boolean {
+    return typeof baseUrl === "string" && baseUrl.toLowerCase().includes("ngrok");
+}
 
 instance.interceptors.request.use(
     (config: any) => {
+        // Ngrok Free shows an HTML warning page to browsers unless this header is set.
+        // Only needed when NEXT_PUBLIC_BASE_URL points at an ngrok tunnel.
+        if (isNgrokApiBase()) {
+            config.headers["ngrok-skip-browser-warning"] = "true";
+        }
         const accessToken = getCookie(token);
         if (accessToken) {
             config.headers["Authorization"] = `Bearer ${accessToken}`;
