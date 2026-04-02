@@ -61,7 +61,9 @@ export const ArtworkCard = ({ artwork, index }: ArtworkCardProps) => {
           <div className="mt-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Fractal Price</span>
             <span className="text-sm font-mono text-foreground">
-              ${(artwork.price / artwork.fractalsTotal).toFixed(2)}
+              {artwork.fractalsTotal > 0
+                ? `$${(artwork.price / artwork.fractalsTotal).toFixed(2)}`
+                : "—"}
             </span>
           </div>
           

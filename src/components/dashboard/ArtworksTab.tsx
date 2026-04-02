@@ -1,108 +1,95 @@
-import { useState } from "react";
+"use client";
+
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ArtworkCard } from "./ArtworkCard";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
+import {
+  getMyPortfolioArtworks,
+  type MyPortfolioArtworkItem,
+} from "@/apis/my-portfolio/myPortfolioActions";
+import { strings } from "@/utils/strings";
 
 type FilterStatus = "all" | "live" | "pending" | "draft";
 
-// Mock artwork data
-const mockArtworks = [
-  {
-    id: "1",
-    title: "Ethereal Dawn",
-    imageUrl: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=600&h=800&fit=crop",
-    status: "live" as const,
-    grade: "A+",
-    fractalsTotal: 100,
-    fractalsSold: 67,
-    price: 4250,
-  },
-  {
-    id: "2",
-    title: "Midnight Bloom",
-    imageUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600&h=800&fit=crop",
-    status: "live" as const,
-    grade: "A",
-    fractalsTotal: 100,
-    fractalsSold: 42,
-    price: 3800,
-  },
-  {
-    id: "3",
-    title: "Urban Decay III",
-    imageUrl: "https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=600&h=800&fit=crop",
-    status: "pending" as const,
-    grade: "B+",
-    fractalsTotal: 100,
-    fractalsSold: 0,
-    price: 2500,
-  },
-  {
-    id: "4",
-    title: "Solitude",
-    imageUrl: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&h=800&fit=crop",
-    status: "live" as const,
-    grade: "A",
-    fractalsTotal: 100,
-    fractalsSold: 89,
-    price: 5200,
-  },
-  {
-    id: "5",
-    title: "Chromatic Fusion",
-    imageUrl: "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=600&h=800&fit=crop",
-    status: "draft" as const,
-    grade: "-",
-    fractalsTotal: 100,
+const PLACEHOLDER_IMAGE = "/placeholder.svg";
+
+function buildMediaUrl(filePath: string | null | undefined): string {
+  if (!filePath) return PLACEHOLDER_IMAGE;
+  if (filePath.startsWith("http")) return filePath;
+  const base = strings.base_url?.replace(/\/api\/?$/, "") ?? "";
+  return filePath.startsWith("/") ? `${base}${filePath}` : `${base}/${filePath}`;
+}
+
+/** Card UI status: Live = APPROVED, Pending = PENDING, Draft unused (API has no drafts). */
+function apiStatusToCardStatus(
+  status: MyPortfolioArtworkItem["status"]
+): "live" | "pending" | "draft" {
+  if (status === "APPROVED") return "live";
+  return "pending";
+}
+
+function mapToCardArtwork(item: MyPortfolioArtworkItem) {
+  return {
+    id: String(item.artwork_id),
+    title: `Artwork #${item.artwork_id}`,
+    imageUrl: buildMediaUrl(item.primary_image_url),
+    status: apiStatusToCardStatus(item.status),
+    grade: "—",
+    fractalsTotal: 0,
     fractalsSold: 0,
     price: 0,
-  },
-  {
-    id: "6",
-    title: "The Observer",
-    imageUrl: "https://images.unsplash.com/photo-1578926288207-a90a5366759d?w=600&h=800&fit=crop",
-    status: "live" as const,
-    grade: "A+",
-    fractalsTotal: 100,
-    fractalsSold: 100,
-    price: 8500,
-  },
-  {
-    id: "7",
-    title: "Fragments of Time",
-    imageUrl: "https://images.unsplash.com/photo-1482160549825-59d1b23cb208?w=600&h=800&fit=crop",
-    status: "pending" as const,
-    grade: "A",
-    fractalsTotal: 100,
-    fractalsSold: 0,
-    price: 4800,
-  },
-  {
-    id: "8",
-    title: "Abstract Motion",
-    imageUrl: "https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=600&h=800&fit=crop",
-    status: "draft" as const,
-    grade: "-",
-    fractalsTotal: 100,
-    fractalsSold: 0,
-    price: 0,
-  },
-];
+  };
+}
 
 export const ArtworksTab = () => {
   const router = useRouter();
   const { user } = useUserStore();
   const [filter, setFilter] = useState<FilterStatus>("all");
 
-  const canAddArtwork = user?.artist_profile_approved === true;
+  const artistProfileId = user?.artist_profile_id ?? null;
 
-  const filteredArtworks = filter === "all" 
-    ? mockArtworks 
-    : mockArtworks.filter(a => a.status === filter);
+  const { data: portfolioItems = [], isLoading, isError, error } = useQuery({
+    queryKey: ["my-portfolio", artistProfileId],
+    queryFn: async () => {
+      const res = await getMyPortfolioArtworks(artistProfileId!)();
+      const payload = res?.data as { data?: MyPortfolioArtworkItem[] };
+      return payload?.data ?? [];
+    },
+    enabled: typeof artistProfileId === "number" && !Number.isNaN(artistProfileId),
+  });
+
+  useEffect(() => {
+    if (!isError || !error) return;
+    const msg =
+      (error as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message ?? "Failed to load artworks";
+    toast.error(msg, { id: "my-portfolio-load-error" });
+  }, [isError, error]);
+
+  const filteredArtworks = useMemo(() => {
+    if (filter === "all") return portfolioItems;
+    if (filter === "live") {
+      return portfolioItems.filter((a) => a.status === "APPROVED");
+    }
+    if (filter === "pending") {
+      return portfolioItems.filter((a) => a.status === "PENDING");
+    }
+    // Draft: not returned by this API
+    return [];
+  }, [portfolioItems, filter]);
+
+  const cardArtworks = useMemo(
+    () => filteredArtworks.map(mapToCardArtwork),
+    [filteredArtworks]
+  );
+
+  const canAddArtwork = user?.artist_profile_approved === true;
 
   const filterButtons: { value: FilterStatus; label: string }[] = [
     { value: "all", label: "All" },
@@ -115,11 +102,11 @@ export const ArtworksTab = () => {
     <div className="space-y-8 md:px-20">
       {/* Header */}
       <motion.div
-  className="flex gap-1 p-1 bg-card/40 backdrop-blur-sm border border-border w-fit max-w-full overflow-x-auto scrollbar-hide" 
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.1 }}
->
+        className="flex gap-1 p-1 bg-card/40 backdrop-blur-sm border border-border w-fit max-w-full overflow-x-auto scrollbar-hide"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
         <div>
           <h1 className="text-3xl font-light text-foreground tracking-tight mb-2">
             My Artworks
@@ -144,7 +131,11 @@ export const ArtworksTab = () => {
               toast.error("Your artist profile is not verified yet");
             }
           }}
-          title={!canAddArtwork ? "Your artist profile must be approved to add artworks" : undefined}
+          title={
+            !canAddArtwork
+              ? "Your artist profile must be approved to add artworks"
+              : undefined
+          }
         >
           <Plus className="w-4 h-4" />
           <span className="text-sm uppercase tracking-wider">Add Artwork</span>
@@ -174,19 +165,25 @@ export const ArtworksTab = () => {
         ))}
       </motion.div>
 
+      {!artistProfileId && (
+        <p className="text-sm text-muted-foreground">
+          Create or link an artist profile to see your artworks here.
+        </p>
+      )}
+
+      {isLoading && artistProfileId ? (
+        <p className="text-sm text-muted-foreground">Loading artworks…</p>
+      ) : null}
+
       {/* Masonry Grid */}
       <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
-        {filteredArtworks.map((artwork, index) => (
-          <ArtworkCard 
-            key={artwork.id} 
-            artwork={artwork} 
-            index={index}
-          />
+        {cardArtworks.map((artwork, index) => (
+          <ArtworkCard key={artwork.id} artwork={artwork} index={index} />
         ))}
       </div>
 
       {/* Empty State */}
-      {filteredArtworks.length === 0 && (
+      {artistProfileId && !isLoading && cardArtworks.length === 0 && (
         <motion.div
           className="flex flex-col items-center justify-center py-20 text-center"
           initial={{ opacity: 0 }}
