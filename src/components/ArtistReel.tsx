@@ -2,12 +2,14 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { aspect, image_size } from './ScrollImagesReveal';
 
 interface Artwork {
   id: string;
   title: string;
   imageUrl: string;
   price: number;
+  primary_image_orientation: image_size
 }
 
 interface ArtistReelProps {
@@ -21,12 +23,13 @@ const formatCurrency = (val: number) =>
 
 const ArtworkCard: React.FC<{ artwork: Artwork }> = ({ artwork }) => {
   return (
-    <Link href={`/art/${artwork.id}`} className="block flex-shrink-0 w-[300px] h-[450px]">
+    <Link href={`/art/${artwork.id}`} className={`block flex-shrink-0 w-[300px] ${aspect[artwork.primary_image_orientation]} `}>
       <motion.div
         className="relative w-full h-full cursor-pointer group overflow-hidden"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
+        <div className="text-white text-xs">{artwork.primary_image_orientation} → {aspect[artwork.primary_image_orientation]}</div>
         {/* Image */}
         <Image
           src={artwork.imageUrl}
@@ -63,6 +66,9 @@ const ArtistReel: React.FC<ArtistReelProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollXProgress } = useScroll({ container: containerRef });
+
+  console.log({ artworks });
+
 
   return (
     <motion.section
@@ -101,7 +107,7 @@ const ArtistReel: React.FC<ArtistReelProps> = ({
       {/* Horizontal Scroll Container */}
       <div
         ref={containerRef}
-        className="flex gap-4 overflow-x-auto custom-scrollbar pb-8 px-8 md:px-16"
+        className=" flex items-start gap-4 overflow-x-auto custom-scrollbar pb-8 px-8 md:px-16"
         style={{ scrollbarWidth: 'thin' }}
       >
         {artworks.map((artwork) => (

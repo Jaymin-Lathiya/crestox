@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getArtworkById, getArtworksByArtist, getPriceHistory } from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
+import { image_size } from "@/components/ScrollImagesReveal";
 
 /** API artwork media item */
 interface ArtworkMediaItem {
@@ -115,7 +116,7 @@ function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; v
   ];
 }
 
-function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; imageUrl: string; price: number } {
+function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; imageUrl: string; price: number, primary_image_orientation: image_size } {
   const filePath = a.artwork_media?.[0]?.media?.file_path ?? "";
   const price = parseFloat(a.valuation ?? a.starting_price ?? "0") || 0;
   return {
@@ -123,6 +124,7 @@ function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; 
     title: a.name,
     imageUrl: filePath,
     price,
+    primary_image_orientation: a.artwork_media[0].media.orientation as image_size
   };
 }
 
