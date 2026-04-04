@@ -2,6 +2,7 @@ export const ARTIST_URLS = {
     CREATE_ARTIST: "/artists",
     GET_ALL_ARTISTS: "/artists",
     FEATURED_ARTISTS: "/artists/featured",
+    HOMEPAGE_ARTISTS: "/artists/homepage",
     BASIC_DETAILS: (id: number) => `/artists/${id}/basic`,
     ACHIEVEMENTS: (id: number) => `/artists/${id}/achievements`,
     HISTORY: (id: number) => `/artists/${id}/history`,

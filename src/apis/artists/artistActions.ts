@@ -51,7 +51,6 @@ export interface ArtistArtwork {
     artistProfileId: number;
 }
 
-
 export interface FeaturedArtist {
     artist_profile_id: number;
     artist_id: number;
@@ -60,6 +59,18 @@ export interface FeaturedArtist {
     avatar_url: string | null;
     total_fractals: number;
     available_fractals: number;
+}
+
+/** GET /artists/homepage — spotlight section */
+export interface HomepageArtist {
+    artist_id: number;
+    artist_profile_id: number;
+    artist_name: string;
+    description: string | null;
+    fractal_price: number;
+    fractals_sold_percentage: number;
+    total_portfolio_value: number;
+    artworks: string[];
 }
 
 interface FeaturedArtistsResponse {
@@ -73,6 +84,17 @@ export const getFeaturedArtists = () => async (): Promise<FeaturedArtist[]> => {
     try {
         const response = await instance.get<FeaturedArtistsResponse>(ARTIST_URLS.FEATURED_ARTISTS);
         return response.data?.data ?? [];
+    } catch (err: any) {
+        console.error({ err });
+        throw err;
+    }
+};
+
+export const getHomepageArtists = () => async (): Promise<HomepageArtist[]> => {
+    try {
+        const response = await instance.get<{ data?: HomepageArtist[] }>(ARTIST_URLS.HOMEPAGE_ARTISTS);
+        const list = response.data?.data;
+        return Array.isArray(list) ? list : [];
     } catch (err: any) {
         console.error({ err });
         throw err;
