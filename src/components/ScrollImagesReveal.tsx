@@ -20,13 +20,15 @@ const IMAGES = [
     "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=750&fit=crop",
 ];
 
-export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgClass?: string }) {
+import Link from "next/link";
+
+export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks }: { bgClass?: string, artworks?: any[] }) {
     const gridRef = useRef<HTMLDivElement>(null);
 
+    // 1. Initialize Lenis smooth scroll once on mount
     useEffect(() => {
         gsap.registerPlugin(ScrollTrigger);
 
-        // Lenis smooth scroll
         const lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
         lenis.on("scroll", ScrollTrigger.update);
         let rafId: number;
@@ -37,12 +39,23 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgCla
         rafId = requestAnimationFrame(raf);
         gsap.ticker.lagSmoothing(0);
 
+        return () => {
+            cancelAnimationFrame(rafId);
+            lenis.destroy();
+            ScrollTrigger.getAll().forEach((t) => t.kill());
+            gsap.globalTimeline.clear();
+        };
+    }, []);
+
+    // 2. Apply GSAP animations progressively as new artworks are loaded
+    useEffect(() => {
         // Delay to allow DOM layout to settle before calculating positions
         const timeout = setTimeout(() => {
-            const gridWrappers = gridRef.current?.querySelectorAll<HTMLElement>(".grid-item-imgwrap");
-            if (!gridWrappers) return;
+            const gridWrappers = gridRef.current?.querySelectorAll<HTMLElement>(".grid-item-imgwrap:not(.gsap-applied)");
+            if (!gridWrappers || gridWrappers.length === 0) return;
 
             gridWrappers.forEach((wrapper) => {
+                wrapper.classList.add("gsap-applied");
                 const img = wrapper.querySelector(".grid-item-img");
                 const rect = wrapper.getBoundingClientRect();
                 const isLeft = (rect.left + rect.width / 2) < (window.innerWidth / 2);
@@ -67,19 +80,19 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgCla
                     filter: "blur(7px) brightness(0%) contrast(400%)",
                     ease: "sine"
                 })
-                    .to(wrapper, {
-                        z: 300,
-                        rotateX: -50,
-                        rotateZ: isLeft ? -1 : 1,
-                        xPercent: isLeft ? -20 : 20,
-                        skewX: isLeft ? 10 : -10,
-                        filter: "blur(4px) brightness(0%) contrast(500%)",
-                        ease: "sine.in"
-                    });
+                .to(wrapper, {
+                    z: 300,
+                    rotateX: -50,
+                    rotateZ: isLeft ? -1 : 1,
+                    xPercent: isLeft ? -20 : 20,
+                    skewX: isLeft ? 10 : -10,
+                    filter: "blur(4px) brightness(0%) contrast(500%)",
+                    ease: "sine.in"
+                });
 
                 if (img) {
                     tl.from(img, { scaleY: 1.8, ease: "sine" }, 0)
-                        .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
+                      .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
                 }
             });
             ScrollTrigger.refresh();
@@ -87,27 +100,61 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]" }: { bgCla
 
         return () => {
             clearTimeout(timeout);
-            cancelAnimationFrame(rafId);
-            lenis.destroy();
-            ScrollTrigger.getAll().forEach((t) => t.kill());
-            gsap.globalTimeline.clear();
         };
-    }, []);
+    }, [artworks]);
+
+    // 5 columns × 4 rows = 20 images; define varying aspect ratios per column per row
+    const COLS = 5;
+    const dynamicImages = artworks && artworks.length > 0 
+        ? artworks.map(a => ({ src: a.primary_image_url, id: a.artwork_id })) 
+        : IMAGES.map(src => ({ src, id: null }));
+    
+    // Repeat images if there are too few to fill the aesthetic correctly, or just use what we have
+    const allImages = dynamicImages.length >= 20 ? dynamicImages : [...dynamicImages, ...dynamicImages, ...dynamicImages].slice(0, 20);
+    const COL_ASPECTS = [
+        ["aspect-[3/4]", "aspect-[4/3]", "aspect-[3/4]", "aspect-[4/5]"],
+        ["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]", "aspect-[3/5]"],
+        ["aspect-[4/5]", "aspect-[3/4]", "aspect-[4/5]", "aspect-[4/3]"],
+        ["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]", "aspect-[3/5]"],
+        ["aspect-[3/4]", "aspect-[4/3]", "aspect-[3/4]", "aspect-[4/5]"],
+    ];
+
+    // Group images into columns
+    const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: COLS }, () => []);
+    allImages.forEach(({ src, id }, i) => {
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        columns[col].push({ src, aspect: COL_ASPECTS[col][row % COL_ASPECTS[col].length], id });
+    });
 
     return (
         <div className={`relative w-full overflow-hidden pb-24 top-0 ${bgClass}`}>
             <div className="relative w-full overflow-hidden">
                 <section className="relative grid w-full place-items-center">
-                    <div ref={gridRef} className="relative grid w-full max-w-[95vw] grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 py-10 px-4">
-                        {[...IMAGES, ...IMAGES.slice(0, 8)].map((src, i) => (
-                            <figure key={i} className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
-                                <div className="grid-item-imgwrap relative aspect-[4/5] w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-[#1c1c1c]">
-                                    <div
-                                        className="grid-item-img absolute -left-0 -top-0 h-full w-full bg-cover bg-center will-change-transform"
-                                        style={{ backgroundImage: `url(${src})`, backfaceVisibility: "hidden" }}
-                                    />
-                                </div>
-                            </figure>
+                    <div ref={gridRef} className="relative flex w-full max-w-[95vw] gap-4 sm:gap-6 py-10 px-4 items-start">
+                        {columns.map((colItems, colIndex) => (
+                            <div key={colIndex} className="flex flex-col gap-4 sm:gap-6 flex-1">
+                                {colItems.map(({ src, aspect, id }, rowIndex) => {
+                                    const content = (
+                                        <figure className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
+                                            <div className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-[#1c1c1c]`}>
+                                                <div
+                                                    className="grid-item-img absolute -left-0 -top-0 h-full w-full bg-cover bg-center will-change-transform"
+                                                    style={{ backgroundImage: `url(${src})`, backfaceVisibility: "hidden" }}
+                                                />
+                                            </div>
+                                        </figure>
+                                    );
+                                    
+                                    return id ? (
+                                        <Link key={`col-${colIndex}-row-${rowIndex}-id-${id}`} href={`/art/${id}`} className="block w-full">
+                                            {content}
+                                        </Link>
+                                    ) : (
+                                        <div key={`col-${colIndex}-row-${rowIndex}`}>{content}</div>
+                                    );
+                                })}
+                            </div>
                         ))}
                     </div>
                 </section>

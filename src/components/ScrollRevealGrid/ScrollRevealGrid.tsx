@@ -3,23 +3,9 @@ import { useRef } from "react";
 import Link from "next/link";
 import ScrollImagesReveal from "../ScrollImagesReveal";
 
-const ARTWORK_IMAGES = [
-    "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1561214115-f2f134cc4912?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1558603668-6570496b66f8?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1579783902614-a3fb392796a5?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1518998053901-5348d3961a04?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1531315630201-bb15dbef0390?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1582201942988-13e60e4556ee?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1573521193826-58c7dc2e13e3?q=80&w=400&fit=crop",
-    "https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=400&fit=crop",
-];
+import { cn } from "@/lib/utils";
+import instance from "@/utils/apiCalls";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const COLS = 5;
 const ROWS = 3;
@@ -67,12 +53,16 @@ function getRowOffset(row: number): number {
 // ─── Individual card ────────────────────────────────────────────────
 function GridCard({
     src,
+    artwork_id,
+    isLoading,
     col,
     row,
     cols,
     scrollYProgress,
 }: {
-    src: string;
+    src?: string;
+    artwork_id?: number;
+    isLoading?: boolean;
     col: number;
     row: number;
     cols: number;
@@ -93,18 +83,22 @@ function GridCard({
     const borderRadius = useTransform(scrollYProgress, [0, 0.55], [14, 4]);
 
     return (
-        <Link href="/art" className="block relative w-full">
+        <Link href={artwork_id ? `/art/${artwork_id}` : "#"} className={cn("block relative w-full", isLoading && "pointer-events-none")}>
             <motion.div
-                className="relative overflow-hidden bg-card w-full"
+                className="relative overflow-hidden bg-card w-full aspect-[4/5]"
                 style={{ y, scale, borderRadius }}
             >
-                <img
-                    src={src}
-                    alt=""
-                    className="w-full h-auto object-cover"
-                    loading="lazy"
-                    draggable={false}
-                />
+                {isLoading ? (
+                    <Skeleton className="absolute inset-0 w-full h-full" />
+                ) : (
+                    <img
+                        src={src}
+                        alt=""
+                        className="w-full h-full object-cover absolute inset-0"
+                        loading="lazy"
+                        draggable={false}
+                    />
+                )}
             </motion.div>
         </Link>
     );
@@ -117,15 +111,81 @@ export default function ScrollRevealGrid() {
     const rows = cols === 2 ? 5 : 3;
     const total = cols * rows;
 
+    const [artworks, setArtworks] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchArtworks = async () => {
+            try {
+                let allArtworks: any[] = [];
+                let nextCursor: string | null = null;
+                let isFetching = true;
+
+                while (isFetching) {
+                    const res = await instance.get('/artwork/verified', {
+                        params: {
+                            take: 20, // Fetch in chunks of 20
+                            ...(nextCursor ? { cursor: nextCursor } : {})
+                        }
+                    });
+
+                    const data = res.data?.data || res.data;
+                    let list: any[] = [];
+                    if (data && data.list) {
+                        list = data.list;
+                    } else if (Array.isArray(data)) {
+                        list = data;
+                    }
+
+                    allArtworks = [...allArtworks, ...list];
+                    
+                    // Update state incrementally so the UI starts displaying items as they come in.
+                    setArtworks(allArtworks);
+
+                    // Check for next_cursor indicating more pages. Break loop if null.
+                    if (data?.next_cursor) {
+                        nextCursor = data.next_cursor;
+                    } else {
+                        nextCursor = null;
+                        isFetching = false;
+                    }
+
+                    // On the first chunk, we can disable the primary isLoading state.
+                    if (isLoading) {
+                        setIsLoading(false);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch verified artworks", error);
+                setIsLoading(false);
+            }
+        };
+        fetchArtworks();
+    }, []);
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end end"],
     });
 
-    const items = ARTWORK_IMAGES.slice(0, total);
+    if (!isLoading && artworks.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-background text-muted-foreground font-serif text-2xl md:text-3xl">
+                Not any verified artwork yet
+            </div>
+        );
+    }
+
+    const halfLength = Math.ceil(artworks.length / 2);
+    const firstHalfList = artworks.slice(0, halfLength);
+    const secondHalfList = artworks.slice(halfLength);
+
+    const items = isLoading
+        ? Array.from({ length: total }).map((_, i) => ({ isPlaceholder: true }))
+        : firstHalfList;
 
     // Create masonry columns
-    const columns = Array.from({ length: cols }, () => [] as string[]);
+    const columns = Array.from({ length: cols }, () => [] as any[]);
     items.forEach((item, i) => {
         columns[i % cols].push(item);
     });
@@ -137,10 +197,12 @@ export default function ScrollRevealGrid() {
                     <div className="flex gap-4 px-4 w-full max-w-[95vw] mx-auto items-start">
                         {columns.map((colItems, colIndex) => (
                             <div key={colIndex} className="flex flex-col gap-4 flex-1">
-                                {colItems.map((src, rowIndex) => (
+                                {colItems.map((item, rowIndex) => (
                                     <GridCard
                                         key={`${colIndex}-${rowIndex}`}
-                                        src={src}
+                                        src={item.primary_image_url}
+                                        artwork_id={item.artwork_id}
+                                        isLoading={isLoading || item.isPlaceholder}
                                         col={colIndex}
                                         row={rowIndex}
                                         cols={cols}
@@ -152,7 +214,9 @@ export default function ScrollRevealGrid() {
                     </div>
                 </div>
             </div>
-            <ScrollImagesReveal bgClass="bg-background" />
+            {!isLoading && secondHalfList.length > 0 && (
+                <ScrollImagesReveal bgClass="bg-background" artworks={secondHalfList} />
+            )}
         </>
     );
 }

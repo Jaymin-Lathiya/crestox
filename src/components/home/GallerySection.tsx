@@ -9,6 +9,7 @@ import ProcessConstellation from '../ProcessConstellation';
 import PhotoScrollSection from '../Photoscrollsection';
 import { IMAGES } from '@/views/LandingPage';
 import instance from '@/utils/apiCalls';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ARTWORKS = [
     { id: 1, title: 'The Liquid Abstract', artist: 'Elena V.', price: '₹18,284.75', image: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=1000&auto=format&fit=crop', aspectRatio: 'aspect-[3/4]' },
@@ -92,7 +93,7 @@ export function GallerySection() {
                 console.error("Failed to fetch curated masterpieces", error);
             }
             // fallback to IMAGES if fetch fails or is empty
-            setImages(IMAGES);
+            // setImages(IMAGES);
             setIsLoading(false);
         };
         fetchMasterpieces();
@@ -105,11 +106,21 @@ export function GallerySection() {
                 <h2 className="font-serif text-3xl md:text-5xl">Curated Masterpieces</h2>
             </div>
 
-            {!isLoading ? (
+            {(!isLoading && images.length > 0) ? (
                 <PhotoScrollSection bgClass='bg-background' images={images} />
             ) : (
-                <div className="h-[100vh] w-full flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                <div className="h-[100vh] w-full flex flex-col items-center justify-center px-4 md:px-12 py-10 overflow-hidden">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl">
+                        {Array.from({ length: 8 }).map((_, idx) => (
+                            <Skeleton
+                                key={idx}
+                                className={cn(
+                                    "w-full rounded-2xl",
+                                    idx % 3 === 0 ? "h-[300px]" : idx % 2 === 0 ? "h-[400px]" : "h-[250px]"
+                                )}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
