@@ -1,7 +1,7 @@
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
-import ScrollImagesReveal from "../ScrollImagesReveal";
+import ScrollImagesReveal, { aspect, image_size } from "../ScrollImagesReveal";
 
 import { cn } from "@/lib/utils";
 import instance from "@/utils/apiCalls";
@@ -59,6 +59,7 @@ function GridCard({
     row,
     cols,
     scrollYProgress,
+    image_size
 }: {
     src?: string;
     artwork_id?: number;
@@ -67,6 +68,7 @@ function GridCard({
     row: number;
     cols: number;
     scrollYProgress: MotionValue<number>;
+    image_size: image_size
 }) {
     const center = (cols - 1) / 2;
     const distance = Math.abs(col - center);
@@ -85,7 +87,7 @@ function GridCard({
     return (
         <Link href={artwork_id ? `/art/${artwork_id}` : "#"} className={cn("block relative w-full", isLoading && "pointer-events-none")}>
             <motion.div
-                className="relative overflow-hidden bg-card w-full aspect-[4/5]"
+                className={cn("relative overflow-hidden bg-card w-full", aspect[image_size])}
                 style={{ y, scale, borderRadius }}
             >
                 {isLoading ? (
@@ -138,7 +140,7 @@ export default function ScrollRevealGrid() {
                     }
 
                     allArtworks = [...allArtworks, ...list];
-                    
+
                     // Update state incrementally so the UI starts displaying items as they come in.
                     setArtworks(allArtworks);
 
@@ -190,6 +192,9 @@ export default function ScrollRevealGrid() {
         columns[i % cols].push(item);
     });
 
+    console.log(columns[0]);
+
+
     return (
         <>
             <div ref={containerRef} className="relative h-[350vh] bg-background">
@@ -207,6 +212,7 @@ export default function ScrollRevealGrid() {
                                         row={rowIndex}
                                         cols={cols}
                                         scrollYProgress={scrollYProgress}
+                                        image_size={item.primary_image_orientation}
                                     />
                                 ))}
                             </div>

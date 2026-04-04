@@ -22,6 +22,18 @@ const IMAGES = [
 
 import Link from "next/link";
 
+export enum image_size {
+    PORTRAIT = "PORTRAIT",
+    LANDSCAPE = "LANDSCAPE",
+    SQUARE = "SQUARE"
+}
+
+export const aspect = {
+    [image_size.PORTRAIT]: "aspect-[3/4]",
+    [image_size.LANDSCAPE]: "aspect-[4/3]",
+    [image_size.SQUARE]: "aspect-[1/1]"
+}
+
 export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks }: { bgClass?: string, artworks?: any[] }) {
     const gridRef = useRef<HTMLDivElement>(null);
 
@@ -80,19 +92,19 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
                     filter: "blur(7px) brightness(0%) contrast(400%)",
                     ease: "sine"
                 })
-                .to(wrapper, {
-                    z: 300,
-                    rotateX: -50,
-                    rotateZ: isLeft ? -1 : 1,
-                    xPercent: isLeft ? -20 : 20,
-                    skewX: isLeft ? 10 : -10,
-                    filter: "blur(4px) brightness(0%) contrast(500%)",
-                    ease: "sine.in"
-                });
+                    .to(wrapper, {
+                        z: 300,
+                        rotateX: -50,
+                        rotateZ: isLeft ? -1 : 1,
+                        xPercent: isLeft ? -20 : 20,
+                        skewX: isLeft ? 10 : -10,
+                        filter: "blur(4px) brightness(0%) contrast(500%)",
+                        ease: "sine.in"
+                    });
 
                 if (img) {
                     tl.from(img, { scaleY: 1.8, ease: "sine" }, 0)
-                      .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
+                        .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
                 }
             });
             ScrollTrigger.refresh();
@@ -105,10 +117,14 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
 
     // 5 columns × 4 rows = 20 images; define varying aspect ratios per column per row
     const COLS = 5;
-    const dynamicImages = artworks && artworks.length > 0 
-        ? artworks.map(a => ({ src: a.primary_image_url, id: a.artwork_id })) 
-        : IMAGES.map(src => ({ src, id: null }));
-    
+    const dynamicImages = artworks.map(a => {
+        return {
+            src: a.primary_image_url,
+            id: a.artwork_id,
+            aspect: aspect[a.primary_image_orientation]
+        }
+    });
+
     // Repeat images if there are too few to fill the aesthetic correctly, or just use what we have
     const allImages = dynamicImages.length >= 20 ? dynamicImages : [...dynamicImages, ...dynamicImages, ...dynamicImages].slice(0, 20);
     const COL_ASPECTS = [
@@ -121,10 +137,14 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
 
     // Group images into columns
     const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: COLS }, () => []);
-    allImages.forEach(({ src, id }, i) => {
+    allImages.forEach(({ src, id, aspect }, i) => {
         const col = i % COLS;
         const row = Math.floor(i / COLS);
-        columns[col].push({ src, aspect: COL_ASPECTS[col][row % COL_ASPECTS[col].length], id });
+        columns[col].push({
+            src,
+            aspect,
+            id
+        });
     });
 
     return (
@@ -145,7 +165,7 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
                                             </div>
                                         </figure>
                                     );
-                                    
+
                                     return id ? (
                                         <Link key={`col-${colIndex}-row-${rowIndex}-id-${id}`} href={`/art/${id}`} className="block w-full">
                                             {content}
