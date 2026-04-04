@@ -48,35 +48,6 @@ export const ArtworkCard = ({ artwork, index }: ArtworkCardProps) => {
             )}
           />
         </div>
-
-        {/* Hover Overlay */}
-        <div className="artwork-overlay">
-          <h3 className="text-editorial mb-2">{artwork.title}</h3>
-          <div className="flex items-center justify-between">
-            <span className="grade-badge">{artwork.grade}</span>
-            <span className="text-xs font-mono text-muted-foreground">
-              {artwork.fractalsSold}/{artwork.fractalsTotal} sold
-            </span>
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Fractal Price</span>
-            <span className="text-sm font-mono text-foreground">
-              {artwork.fractalsTotal > 0
-                ? `$${(artwork.price / artwork.fractalsTotal).toFixed(2)}`
-                : "—"}
-            </span>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="mt-4 flex gap-2">
-            <button className="flex-1 py-2 text-xs uppercase tracking-wider border border-border text-foreground hover:bg-zinc-900 transition-colors">
-              Edit
-            </button>
-            <button className="flex-1 py-2 text-xs uppercase tracking-wider border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-900 transition-colors">
-              View
-            </button>
-          </div>
-        </div>
       </div>
     </motion.div>
   );

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -54,7 +54,10 @@ const artworkFormSchema = z.object({
     dimensions_unit: z.enum(["cm", "inches", "m", "ft"], {
         required_error: "Please select a unit.",
     }),
-    artist_profile_id: z.number().int().positive(),
+    artist_profile_id: z
+        .number()
+        .int()
+        .positive({ message: "Artist profile is missing. Open your artist dashboard or sign in again." }),
     number_of_shares: z.number().int().min(1, { message: "Number of shares must be at least 1." }),
     starting_price: z.number().min(0.01, { message: "Starting price must be greater than 0." }),
 })
@@ -71,8 +74,6 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
 
     const router = useRouter()
 
-    const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null
-
     const form = useForm<ArtworkFormValues>({
         resolver: zodResolver(artworkFormSchema),
         defaultValues: {
@@ -84,11 +85,21 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
             length: 0,
             breadth: 0,
             dimensions_unit: "cm",
-            artist_profile_id: Number(artist_profile_id),
+            artist_profile_id: 0,
             number_of_shares: 100,
             starting_price: 0,
         },
     })
+
+    useEffect(() => {
+        const raw = localStorage.getItem("artist_profile_id")
+        if (!raw) return
+        console.log("raw: ", raw)
+        const id = parseInt(raw, 10)
+        if (!Number.isNaN(id) && id > 0) {
+            form.setValue("artist_profile_id", id)
+        }
+    }, [form.setValue])
 
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
         const files = e.target.files
@@ -151,8 +162,6 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
 
             if (onSubmit) {
                 await onSubmit(values)
-            } else {
-                router.push("/portfolio")
             }
 
             form.reset()
@@ -180,6 +189,15 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+                        <FormField
+                            control={form.control}
+                            name="artist_profile_id"
+                            render={() => (
+                                <FormItem>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         {/* Artwork Name */}
                         <FormField
                             control={form.control}
@@ -218,7 +236,16 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
 
                         {/* Photo Uploads */}
                         <div className="space-y-4">
-                            <FormLabel className="text-base text-foreground/90">Photos</FormLabel>
+                            <FormField
+                                control={form.control}
+                                name="media"
+                                render={() => (
+                                    <FormItem className="space-y-0">
+                                        <FormLabel className="text-base text-foreground/90">Photos</FormLabel>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                             {form.watch("media")?.map((item, index) => (
                                 <div key={`${item.media_id}-${index}`} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
                                     <div className="flex gap-4">
