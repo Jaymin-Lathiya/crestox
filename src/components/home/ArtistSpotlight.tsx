@@ -77,7 +77,7 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
         onHoverEnd={() => setIsHovered(false)}
         transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 rounded-lg overflow-hidden bg-muted">
+        <div className="absolute inset-0 rounded-sm overflow-hidden bg-muted">
           {len > 0 ? (
             <AnimatePresence mode="wait">
               <motion.img
@@ -100,7 +100,7 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
         </div>
 
         <motion.div
-          className="absolute -bottom-4 -right-4 md:right-auto md:-left-4 glass-card rounded-lg p-4 z-10"
+          className="absolute -bottom-4 -right-4 md:right-auto md:-left-4 glass-card rounded-sm p-4 z-10"
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -119,8 +119,8 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
           </div>
         </motion.div>
 
-        <div className="absolute inset-0 rounded-lg border border-primary/20 pointer-events-none z-20" />
-        <div className="absolute -inset-1 rounded-lg border border-primary/10 pointer-events-none z-20" />
+        <div className="absolute inset-0 rounded-sm border border-primary/20 pointer-events-none z-20" />
+        <div className="absolute -inset-1 rounded-sm border border-primary/10 pointer-events-none z-20" />
 
         {len > 0 && (isHovered || isMobile) && (
           <motion.div
@@ -205,7 +205,7 @@ function SpotlightSkeleton() {
           key={i}
           className={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 md:gap-16 items-center`}
         >
-          <Skeleton className="w-full md:w-1/2 aspect-[3/4] max-w-md rounded-lg" />
+          <Skeleton className="w-full md:w-1/2 aspect-[3/4] max-w-md rounded-sm" />
           <div className="w-full md:w-1/2 max-w-lg space-y-4">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-full" />

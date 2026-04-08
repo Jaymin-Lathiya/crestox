@@ -76,25 +76,19 @@ const MOCK_CREATORS = {
 
 function CreatorCardSkeleton() {
     return (
-        <div className="group relative bg-card/40 border border-border/50 rounded-2xl p-6 flex flex-col items-center text-center">
-            <div className="relative mb-6">
-                <Skeleton className="w-24 h-24 rounded-full" />
-                <Skeleton className="absolute -bottom-2 -right-2 w-8 h-5 rounded-full" />
+        <div className="group relative bg-card/40 border border-border/50 rounded-2xl p-4 flex flex-col items-center text-center">
+            <div className="relative mb-4">
+                <Skeleton className="w-16 h-16 rounded-full" />
             </div>
-            <Skeleton className="h-6 w-32 mb-2" />
-            <div className="w-full space-y-2 mb-8 min-h-[4.5em]">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-            </div>
-            <div className="w-full mt-auto mb-6">
+            <Skeleton className="h-5 w-24 mb-3" />
+            <div className="w-full mt-auto mb-4">
                 <div className="flex justify-between items-end mb-2">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-2 w-16" />
+                    <Skeleton className="h-2 w-8" />
                 </div>
-                <Skeleton className="h-1.5 w-full rounded-full" />
+                <Skeleton className="h-1 w-full rounded-full" />
             </div>
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-8 w-full rounded-md" />
         </div>
     );
 }
@@ -181,15 +175,15 @@ export function FeaturedCreators() {
             } else {
                 // Collapse back to original featured artists list
                 setIsExpanded(false);
-                // Slice the displayed creators back to the first 4 (original featured artists)
-                setDisplayedCreators(prev => prev.slice(0, 4));
+                // Slice the displayed creators back to the first 6 (original featured artists)
+                setDisplayedCreators(prev => prev.slice(0, 6));
             }
         } else {
             setIsExpanded(!isExpanded);
         }
     };
 
-    const visibleCreators = (!isExpanded && activeTab === 'artists') ? displayedCreators.slice(0, 4) : displayedCreators;
+    const visibleCreators = (!isExpanded && activeTab === 'artists') ? displayedCreators.slice(0, 6) : displayedCreators;
 
     return (
         <section className="mb-16 animate-fade-in-up delay-100">
@@ -214,10 +208,10 @@ export function FeaturedCreators() {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {isLoadingArtists && activeTab === 'artists' && !isExpanded ? (
                     // Initial load or tab switch: full skeletons
-                    Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={i} />)
+                    Array.from({ length: 6 }).map((_, i) => <CreatorCardSkeleton key={i} />)
                 ) : (
                     <>
                         {visibleCreators.length === 0 ? (
@@ -229,37 +223,33 @@ export function FeaturedCreators() {
                         ) : visibleCreators.map((creator, idx) => (
                             <div
                                 key={creator.id ?? idx}
-                                className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
+                                className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
                             >
-                                <div className="relative mb-6">
-                                    <div className="w-24 h-24 rounded-full p-1 border border-border/50 group-hover:border-primary/50 transition-colors">
+                                <div className="relative mb-4">
+                                    <div className="w-16 h-16 rounded-full p-0.5 border border-border/50 group-hover:border-primary/50 transition-colors">
                                         <img
                                             src={creator.image}
                                             alt={creator.name}
                                             className="w-full h-full rounded-full object-cover"
                                         />
                                     </div>
-                                    <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                    <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
                                         {creator.name.slice(0, 2)}
                                     </div>
                                 </div>
 
-                                <h3 className="font-serif text-xl font-medium mb-1 group-hover:text-primary transition-colors">
+                                <h3 className="font-serif text-lg font-medium mb-3 group-hover:text-primary transition-colors line-clamp-1">
                                     {creator.name}
                                 </h3>
 
-                                <p className="text-sm text-muted-foreground leading-relaxed mb-8 line-clamp-3 min-h-[4.5em] font-sans">
-                                    {creator.bio}
-                                </p>
-
-                                <div className="w-full mt-auto mb-6">
-                                    <div className="flex justify-between items-end mb-2 text-xs">
+                                <div className="w-full mt-auto mb-4">
+                                    <div className="flex justify-between items-end mb-1.5 text-[10px]">
                                         <span className="text-muted-foreground">{creator.stats.label}</span>
                                         <span className="font-mono font-medium text-foreground">
                                             {creator.stats.value} / {creator.stats.max}
                                         </span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
                                             style={{ width: `${creator.stats.max > 0 ? (creator.stats.value / creator.stats.max) * 100 : 0}%` }}
@@ -270,7 +260,8 @@ export function FeaturedCreators() {
                                 {creator.id != null ? (
                                     <Button
                                         variant="outline"
-                                        className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                        size="sm"
+                                        className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
                                         asChild
                                     >
                                         <Link href={`/artist/${creator.id}`}>View Profile</Link>
@@ -278,7 +269,8 @@ export function FeaturedCreators() {
                                 ) : (
                                     <Button
                                         variant="outline"
-                                        className="w-full border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                        size="sm"
+                                        className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
                                     >
                                         View Profile
                                     </Button>
@@ -288,7 +280,7 @@ export function FeaturedCreators() {
 
                         {isLoadingArtists && activeTab === 'artists' && isExpanded && (
                             // Appended skeletons when fetching more
-                            Array.from({ length: 4 }).map((_, i) => <CreatorCardSkeleton key={`skeleton-${i}`} />)
+                            Array.from({ length: 6 }).map((_, i) => <CreatorCardSkeleton key={`skeleton-${i}`} />)
                         )}
                     </>
                 )}

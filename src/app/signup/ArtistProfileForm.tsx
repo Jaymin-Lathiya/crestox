@@ -182,20 +182,20 @@ export default function ArtistProfileForm() {
         try {
             const uploadAction = uploadMedia(file);
             const response = await uploadAction();
-            
+
             const mediaId = extractMediaIdFromResponse(response);
-            
+
             if (mediaId) {
                 form.setValue("avatar_media_id", mediaId);
                 setAvatarFile(file);
-                
+
                 // Create preview
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     setAvatarPreview(reader.result as string);
                 };
                 reader.readAsDataURL(file);
-                
+
                 toast.success("Avatar uploaded successfully");
             } else {
                 console.warn("Upload succeeded but media ID not found. Response:", response?.data);
@@ -261,7 +261,7 @@ export default function ArtistProfileForm() {
 
     const uploadFileAndGetMediaId = async (file: File | FileList | null | undefined): Promise<string | null> => {
         if (!file) return null;
-        
+
         // Handle FileList (multiple files) - take first file
         const fileToUpload = file instanceof FileList ? file[0] : file instanceof File ? file : null;
         if (!fileToUpload) return null;
@@ -269,7 +269,7 @@ export default function ArtistProfileForm() {
         try {
             const uploadAction = uploadMedia(fileToUpload);
             const response = await uploadAction();
-            
+
             const mediaId = extractMediaIdFromResponse(response);
             return mediaId;
         } catch (error: any) {
@@ -323,7 +323,7 @@ export default function ArtistProfileForm() {
                 (values.soldArtworks || []).map(async (artwork) => {
                     const artworkImageMediaId = await uploadFileAndGetMediaId(artwork.image);
                     const proofOfSaleMediaId = await uploadFileAndGetMediaId(artwork.proofOfSale);
-                    
+
                     return {
                         artwork_name: artwork.name,
                         artwork_image_media_id: artworkImageMediaId ? parseInt(artworkImageMediaId, 10) : undefined,
@@ -434,11 +434,11 @@ export default function ArtistProfileForm() {
                         <div className="space-y-3">
                             <FormLabel>Avatar</FormLabel>
                             <div className="flex items-center gap-6">
-                                <div className="relative w-20 h-20 rounded-full border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden">
+                                <div className="relative w-20 h-20 rounded-sm border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden">
                                     {avatarPreview ? (
-                                        <img 
-                                            src={avatarPreview} 
-                                            alt="Avatar preview" 
+                                        <img
+                                            src={avatarPreview}
+                                            alt="Avatar preview"
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -451,10 +451,10 @@ export default function ArtistProfileForm() {
                                     )}
                                 </div>
                                 <div className="relative">
-                                    <Button 
-                                        variant="outline" 
-                                        type="button" 
-                                        size="sm" 
+                                    <Button
+                                        variant="outline"
+                                        type="button"
+                                        size="sm"
                                         className="font-sans"
                                         disabled={isUploadingAvatar}
                                         onClick={() => {
@@ -570,7 +570,7 @@ export default function ArtistProfileForm() {
                                                             <FormLabel className="text-xs text-muted-foreground">Award Certificate / Image</FormLabel>
                                                             <FormControl>
                                                                 <div className="flex items-center gap-4">
-                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                    <div className="relative w-16 h-16 rounded-sm border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
                                                                         {preview ? (
                                                                             <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                                                                         ) : (
@@ -647,7 +647,7 @@ export default function ArtistProfileForm() {
                         <div className="space-y-4">
                             <FormLabel className="text-base text-foreground/90">Exhibitions</FormLabel>
                             {exhibitionFields.map((exhibitionField, index) => (
-                                <div key={exhibitionField.id} className="p-4 border border-border/40 rounded-lg space-y-4 relative group">
+                                <div key={exhibitionField.id} className="p-4 border border-border/40 rounded-sm space-y-4 relative group">
                                     <div className="flex gap-4">
                                         <div className="flex-1 space-y-4">
                                             <FormField
@@ -674,7 +674,7 @@ export default function ArtistProfileForm() {
                                                             <FormLabel className="text-xs text-muted-foreground">Exhibition Image</FormLabel>
                                                             <FormControl>
                                                                 <div className="flex items-center gap-4">
-                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                    <div className="relative w-16 h-16 rounded-sm border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
                                                                         {preview ? (
                                                                             <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                                                                         ) : (
@@ -866,7 +866,7 @@ export default function ArtistProfileForm() {
                                                         <FormLabel className="text-xs text-muted-foreground">Proof of Sale</FormLabel>
                                                         <FormControl>
                                                             <div className="flex items-center gap-4">
-                                                                    <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                                <div className="relative w-16 h-16 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
                                                                     {preview === "document" ? (
                                                                         <FileText className="w-6 h-6 text-muted-foreground" />
                                                                     ) : preview ? (

@@ -75,14 +75,15 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: wrapper,
-                        start: "top bottom+=10%",
-                        end: "bottom top-=25%",
+                        start: "top 95%",
+                        end: "bottom 5%",
                         scrub: true,
                     }
                 });
 
                 tl.from(wrapper, {
                     startAt: { filter: "blur(0px) brightness(100%) contrast(100%)" },
+                    duration: 1,
                     z: 300,
                     rotateX: 70,
                     rotateZ: isLeft ? 5 : -5,
@@ -90,9 +91,11 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
                     skewX: isLeft ? -20 : 20,
                     yPercent: 100,
                     filter: "blur(7px) brightness(0%) contrast(400%)",
-                    ease: "sine"
+                    ease: "sine.out"
                 })
+                    .to(wrapper, { duration: 1.5 }) // Holds the image in its crystal clear default state across the center of the screen
                     .to(wrapper, {
+                        duration: 1,
                         z: 300,
                         rotateX: -50,
                         rotateZ: isLeft ? -1 : 1,
@@ -103,8 +106,9 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
                     });
 
                 if (img) {
-                    tl.from(img, { scaleY: 1.8, ease: "sine" }, 0)
-                        .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
+                    tl.from(img, { duration: 1, scaleY: 1.8, ease: "sine.out" }, 0)
+                      .to(img, { duration: 1.5 }, ">")
+                      .to(img, { duration: 1, scaleY: 1.8, ease: "sine.in" }, ">");
                 }
             });
             ScrollTrigger.refresh();
@@ -115,8 +119,8 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
         };
     }, [artworks]);
 
-    // 5 columns × 4 rows = 20 images; define varying aspect ratios per column per row
-    const COLS = 5;
+    // 4 columns
+    const COLS = 4;
     const dynamicImages = artworks.map(a => {
         return {
             src: a.primary_image_url,
@@ -151,13 +155,13 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
         <div className={`relative w-full overflow-hidden pb-24 top-0 ${bgClass}`}>
             <div className="relative w-full overflow-hidden">
                 <section className="relative grid w-full place-items-center">
-                    <div ref={gridRef} className="relative flex w-full max-w-[95vw] gap-4 sm:gap-6 py-10 px-4 items-start">
+                    <div ref={gridRef} className="relative flex w-full max-w-[95vw] gap-6 sm:gap-9 py-10 px-4 items-start">
                         {columns.map((colItems, colIndex) => (
-                            <div key={colIndex} className="flex flex-col gap-4 sm:gap-6 flex-1">
+                            <div key={colIndex} className="flex flex-col gap-6 sm:gap-9 flex-1">
                                 {colItems.map(({ src, aspect, id }, rowIndex) => {
                                     const content = (
                                         <figure className="relative z-10 m-0" style={{ perspective: "800px", willChange: "transform" }}>
-                                            <div className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-[8px] sm:rounded-[4px] will-change-[filter] bg-[#1c1c1c]`}>
+                                            <div className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-sm will-change-[filter] bg-[#1c1c1c]`}>
                                                 <div
                                                     className="grid-item-img absolute -left-0 -top-0 h-full w-full bg-cover bg-center will-change-transform"
                                                     style={{ backgroundImage: `url(${src})`, backfaceVisibility: "hidden" }}

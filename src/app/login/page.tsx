@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form"
 import GradientButton from "@/components/ui/gradiant-button"
 import { useAuthStore } from "@/store/useAuthStore"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Mail, Pencil, Check } from "lucide-react"
 
 const formSchema = z.object({
     email: z.string().email({
@@ -38,6 +38,7 @@ const formSchema = z.object({
 function LoginFormContent() {
     const { requestMagicLink, isLoading, isSuccess, error } = useAuthStore()
     const searchParams = useSearchParams()
+    const [isEditing, setIsEditing] = useState(false)
 
     const rawType = searchParams.get("user_type")
     const userType = Object.values(UserType).includes(rawType as UserType)
@@ -65,6 +66,7 @@ function LoginFormContent() {
         }
 
         await requestMagicLink(values.email, undefined, userType || undefined)
+        setIsEditing(false)
     }
 
     return (
@@ -83,13 +85,68 @@ function LoginFormContent() {
                 </CardHeader>
                 <CardContent>
                     {isSuccess ? (
-                        <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                            <CheckCircle2 className="h-16 w-16 text-primary" />
-                            <p className="text-center text-muted-foreground">
-                                We've sent a secure login link to <strong>{form.getValues("email")}</strong>.
-                                Please check your inbox.
-                            </p>
-                        </div>
+                        !isEditing ? (
+                            <div className="flex flex-col items-center justify-center space-y-6 py-8">
+                                <div className="text-center text-[17px] text-muted-foreground w-full">
+                                    We've sent a secure login link to
+                                </div>
+                                <div className="flex items-center space-x-3 text-[19px]">
+                                    <Mail className="h-6 w-6 text-[#3B82F6]" />
+                                    <span className="font-semibold tracking-wide text-foreground">{form.getValues("email")}</span>
+                                    <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground transition-colors ml-2">
+                                        <Pencil className="h-5 w-5" />
+                                    </button>
+                                </div>
+                                <div className="text-center text-[15px] text-muted-foreground mt-4">
+                                    Didn't get the email? Check spam or edit your email.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center space-y-8 py-4">
+                                <div className="rounded-full border-[3px] border-[#2563EB] p-3 mb-2 flex items-center justify-center h-16 w-16 bg-background">
+                                    <Check className="h-8 w-8 text-[#2563EB]" strokeWidth={3} />
+                                </div>
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-sm">
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Input placeholder="m@example.com" {...field} disabled={isLoading} className="bg-transparent border-input text-[15px] h-12 rounded-lg pl-4" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="flex items-center justify-center space-x-4 pt-2">
+                                            <Button
+                                                type="submit"
+                                                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium px-6 h-11 rounded-lg"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? "Updating..." : "Update Email"}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => setIsEditing(false)}
+                                                disabled={isLoading}
+                                                className="text-muted-foreground hover:text-foreground px-6 h-11 rounded-lg"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                        {error && (
+                                            <div className="text-sm font-medium text-destructive mt-2 text-center">
+                                                {error}
+                                            </div>
+                                        )}
+                                    </form>
+                                </Form>
+                            </div>
+                        )
                     ) : (
                         <>
                             <Form {...form}>
