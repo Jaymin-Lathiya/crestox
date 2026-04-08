@@ -53,21 +53,21 @@ export function Header() {
     {
       title: "Explore",
       icon: (
-        <Compass className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+        <Compass className="h-full w-full text-foreground/80" />
       ),
       href: "/explore",
     },
     {
       title: "Products",
       icon: (
-        <WandSparkles className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+        <WandSparkles className="h-full w-full text-foreground/80" />
       ),
       href: "/ai-curator",
     },
     {
       title: "About Us",
       icon: (
-        <Info className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+        <Info className="h-full w-full text-foreground/80" />
       ),
       href: "/about-us",
     },
@@ -76,9 +76,9 @@ export function Header() {
       icon:
         mounted ?
           theme === "dark" ?
-            <Moon className="h-full w-full text-neutral-600 dark:text-neutral-300" />
-            : <Sun className="h-full w-full text-neutral-600 dark:text-neutral-300" />
-          : <SunMoon className="h-full w-full text-neutral-600 dark:text-neutral-300" />,
+            <Moon className="h-full w-full text-foreground/80" />
+            : <Sun className="h-full w-full text-foreground/80" />
+          : <SunMoon className="h-full w-full text-foreground/80" />,
       type: "theme",
     },
   ];
@@ -122,7 +122,7 @@ export function Header() {
               {data.map((item, idx) => (
                 <DockItem
                   key={idx}
-                  className="aspect-square rounded-full bg-gray-200 dark:bg-neutral-800"
+                  className="aspect-square rounded-full bg-card border border-border/60"
                   onClick={() => {
                     if (item.type === "theme") {
                       toggleTheme();
@@ -186,12 +186,12 @@ export function Header() {
               }}
               className="flex flex-col items-center gap-1 shrink-0 w-12" // 👈 fixed width
             >
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-800">
-                <div className="w-5 h-5 text-neutral-600 dark:text-neutral-300">
+              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-card border border-border/60">
+                <div className="w-5 h-5 text-foreground/80">
                   {item.icon}
                 </div>
               </div>
-              <span className="text-[10px] text-neutral-600 dark:text-neutral-300 leading-none text-center w-full">
+              <span className="text-[10px] text-muted-foreground leading-none text-center w-full">
                 {item.title}
               </span>
             </button>

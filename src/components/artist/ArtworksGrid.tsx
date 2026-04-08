@@ -115,22 +115,24 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
           router.push(`/art/${artwork.id}`);
         }} />
         
-        {/* Glass Capsule - Financial Data */}
-        <motion.div 
-          initial={{ opacity: 0, x: -10 }}
+        {/* Value pill — high contrast on any image; tuned for light + dark app theme */}
+        <motion.div
           animate={{ opacity: 1, x: 0 }}
-          className="absolute bottom-4 left-4 glass-subtle px-4 py-2.5 rounded-full flex items-center space-x-3 transition-all duration-300 group-hover:pr-6"
+          className="absolute bottom-4 left-4 z-[2] flex items-center space-x-3 rounded-full px-3 py-1 transition-all duration-300 group-hover:pr-6 backdrop-blur-xl backdrop-saturate-150 border shadow-lg bg-white/93 text-neutral-900 border-black/12 shadow-black/25 ring-1 ring-inset ring-black/[0.05] dark:bg-neutral-950/90 dark:text-white dark:border-white/20 dark:shadow-black/70 dark:ring-white/10"
+          initial={{ opacity: 0, x: -10 }}
         >
           <div className="flex flex-col">
-            <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Value</span>
-            <span className="font-mono text-sm text-foreground">
-              {priceLoading ? '—' : `₹${displayValue.toLocaleString() || "-"}`}
+            <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-600 dark:text-white/70">
+              Value
+            </span>
+            <span className="font-mono text-sm font-semibold tabular-nums tracking-tight text-neutral-900 dark:text-white dark:[text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
+              {priceLoading ? '—' : `₹${displayValue.toLocaleString() || '-'}`}
             </span>
           </div>
-          <div className="w-px h-6 bg-border" />
+          <div className="h-6 w-px shrink-0 bg-neutral-900/18 dark:bg-white/25" />
           <div className="flex items-center space-x-1">
-            <TrendingUp size={12} className="text-primary" />
-            <span className="font-mono text-xs text-primary">{artwork.roi}</span>
+            <TrendingUp size={12} className="shrink-0 text-primary drop-shadow-sm" strokeWidth={2.25} />
+            <span className="font-mono text-xs font-semibold text-primary drop-shadow-sm">{artwork.roi}</span>
           </div>
         </motion.div>
       </div>

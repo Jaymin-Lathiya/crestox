@@ -5,6 +5,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
+const EXPLORE_LAYOUT = "crestox:explore-layout";
+
 const IMAGES = [
     "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=750&fit=crop",
     "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=750&fit=crop",
@@ -45,7 +47,16 @@ function useGridColumns() {
     return cols;
 }
 
-export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks }: { bgClass?: string, artworks?: any[] }) {
+export default function ScrollImagesReveal({
+    bgClass = "bg-[#0a0a0a]",
+    artworks,
+    layoutSync = 0,
+}: {
+    bgClass?: string;
+    artworks?: any[];
+    /** Bump when page layout above changes (e.g. explore artists expand) so GSAP ScrollTriggers rebuild like first paint. */
+    layoutSync?: number;
+}) {
     const gridRef = useRef<HTMLDivElement>(null);
     const cols = useGridColumns();
 
@@ -61,73 +72,90 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
             rafId = requestAnimationFrame(raf);
         };
         rafId = requestAnimationFrame(raf);
+
+        const onExploreLayout = () => {
+            requestAnimationFrame(() => {
+                ScrollTrigger.refresh();
+                lenis.resize?.();
+            });
+        };
+        window.addEventListener(EXPLORE_LAYOUT, onExploreLayout);
+
         gsap.ticker.lagSmoothing(0);
 
         return () => {
             cancelAnimationFrame(rafId);
+            window.removeEventListener(EXPLORE_LAYOUT, onExploreLayout);
             lenis.destroy();
             ScrollTrigger.getAll().forEach((t) => t.kill());
             gsap.globalTimeline.clear();
         };
     }, []);
 
-    // 2. Apply GSAP animations progressively as new artworks are loaded
+    // 2. GSAP + ScrollTrigger scoped with gsap.context — revert when `layoutSync` / data changes so behavior matches first load.
     useEffect(() => {
-        // Delay to allow DOM layout to settle before calculating positions
-        const timeout = setTimeout(() => {
-            const gridWrappers = gridRef.current?.querySelectorAll<HTMLElement>(".grid-item-imgwrap:not(.gsap-applied)");
-            if (!gridWrappers || gridWrappers.length === 0) return;
+        let ctx: gsap.Context | null = null;
+        const timeout = window.setTimeout(() => {
+            const root = gridRef.current;
+            if (!root) return;
 
-            gridWrappers.forEach((wrapper) => {
-                wrapper.classList.add("gsap-applied");
-                const img = wrapper.querySelector(".grid-item-img");
-                const rect = wrapper.getBoundingClientRect();
-                const isLeft = (rect.left + rect.width / 2) < (window.innerWidth / 2);
+            ctx = gsap.context(() => {
+                const gridWrappers = root.querySelectorAll<HTMLElement>(".grid-item-imgwrap");
+                gridWrappers.forEach((wrapper) => {
+                    wrapper.classList.add("gsap-applied");
+                    const img = wrapper.querySelector(".grid-item-img");
+                    const rect = wrapper.getBoundingClientRect();
+                    const isLeft = rect.left + rect.width / 2 < window.innerWidth / 2;
 
-                const tl = gsap.timeline({
-                    scrollTrigger: {
-                        trigger: wrapper,
-                        start: "top bottom+=10%",
-                        end: "bottom top-=25%",
-                        scrub: true,
-                    }
-                });
+                    const tl = gsap.timeline({
+                        scrollTrigger: {
+                            trigger: wrapper,
+                            start: "top bottom+=10%",
+                            end: "bottom top-=25%",
+                            scrub: true,
+                        },
+                    });
 
-                tl.from(wrapper, {
-                    startAt: { filter: "blur(0px) brightness(100%) contrast(100%)" },
-                    z: 300,
-                    rotateX: 70,
-                    rotateZ: isLeft ? 5 : -5,
-                    xPercent: isLeft ? -40 : 40,
-                    skewX: isLeft ? -20 : 20,
-                    yPercent: 100,
-                    filter: "blur(7px) brightness(0%) contrast(400%)",
-                    ease: "sine"
-                })
-                    .to(wrapper, {
+                    tl.from(wrapper, {
+                        startAt: { filter: "blur(0px) brightness(100%) contrast(100%)" },
+                        z: 300,
+                        rotateX: 70,
+                        rotateZ: isLeft ? 5 : -5,
+                        xPercent: isLeft ? -40 : 40,
+                        skewX: isLeft ? -20 : 20,
+                        yPercent: 100,
+                        filter: "blur(7px) brightness(0%) contrast(400%)",
+                        ease: "sine",
+                    }).to(wrapper, {
                         z: 300,
                         rotateX: -50,
                         rotateZ: isLeft ? -1 : 1,
                         xPercent: isLeft ? -20 : 20,
                         skewX: isLeft ? 10 : -10,
                         filter: "blur(4px) brightness(0%) contrast(500%)",
-                        ease: "sine.in"
+                        ease: "sine.in",
                     });
 
-                if (img) {
-                    tl.from(img, { scaleY: 1.8, ease: "sine" }, 0)
-                        .to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
-                }
-            });
+                    if (img) {
+                        tl.from(img, { scaleY: 1.8, ease: "sine" }, 0).to(img, { scaleY: 1.8, ease: "sine.in" }, ">");
+                    }
+                });
+            }, root);
+
             ScrollTrigger.refresh();
         }, 100);
 
         return () => {
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
+            ctx?.revert();
+            gridRef.current?.querySelectorAll(".grid-item-imgwrap").forEach((el) => {
+                el.classList.remove("gsap-applied");
+            });
         };
-    }, [artworks, cols]);
+    }, [artworks, cols, layoutSync]);
 
-    const dynamicImages = artworks.map(a => {
+    const safeArtworks = artworks ?? [];
+    const dynamicImages = safeArtworks.map((a) => {
         return {
             src: a.primary_image_url,
             id: a.artwork_id,

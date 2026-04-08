@@ -1,8 +1,9 @@
 import { Instagram, Link2, Linkedin, Twitter } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const PLATFORM_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
     instagram: Instagram,
@@ -16,17 +17,22 @@ export interface SocialMediaLink {
     url: string;
 }
 
-interface SocialButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+interface SocialButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
     links?: SocialMediaLink[];
 }
 
 export default function SocialButton({
     links = [],
     className,
+    onClick: onClickProp,
     ...props
 }: SocialButtonProps) {
-    const [isVisible, setIsVisible] = useState(false);
+    const [isHoverOpen, setIsHoverOpen] = useState(false);
+    const [isTapOpen, setIsTapOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
+    const isMobileLayout = useMediaQuery("(max-width: 767px)");
+    const expanded = isMobileLayout ? isTapOpen : isHoverOpen;
 
     const buttons = links.length > 0
         ? links.map(({ platform, url }) => ({
@@ -41,7 +47,18 @@ export default function SocialButton({
             { icon: Link2, label: "Copy link", url: "" },
         ];
 
-    const handleClick = (index: number) => {
+    useEffect(() => {
+        if (!isMobileLayout || !isTapOpen) return;
+        const handler = (e: PointerEvent) => {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+                setIsTapOpen(false);
+            }
+        };
+        document.addEventListener("pointerdown", handler);
+        return () => document.removeEventListener("pointerdown", handler);
+    }, [isMobileLayout, isTapOpen]);
+
+    const handleIconClick = (index: number) => {
         setActiveIndex(index);
         setTimeout(() => setActiveIndex(null), 300);
         const item = buttons[index];
@@ -50,26 +67,46 @@ export default function SocialButton({
         } else if (links.length === 0 && index === 3) {
             navigator.clipboard?.writeText(typeof window !== "undefined" ? window.location.href : "");
         }
+        if (isMobileLayout) {
+            setIsTapOpen(false);
+        }
+    };
+
+    const handleMainButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (isMobileLayout) {
+            e.preventDefault();
+            setIsTapOpen((v) => !v);
+        }
+        onClickProp?.(e);
     };
 
     return (
         <div
+            ref={rootRef}
             className="relative"
-            onMouseEnter={() => setIsVisible(true)}
-            onMouseLeave={() => setIsVisible(false)}
+            data-social-root
+            onMouseEnter={() => {
+                if (!isMobileLayout) setIsHoverOpen(true);
+            }}
+            onMouseLeave={() => {
+                if (!isMobileLayout) setIsHoverOpen(false);
+            }}
         >
             <motion.div
                 animate={{
-                    opacity: isVisible ? 0 : 1,
+                    opacity: expanded ? 0 : 1,
                 }}
+                className="relative"
+                style={{ pointerEvents: expanded ? "none" : "auto" }}
                 transition={{
                     duration: 0.2,
                     ease: "easeInOut",
                 }}
             >
                 <Button
+                    type="button"
                     className={cn(
-                        "relative min-w-40 rounded-full ",
+                        "relative min-w-40 rounded-full",
                         "bg-white dark:bg-card/50",
                         "hover:bg-gray-50 dark:hover:bg-gray-950",
                         "text-black dark:text-white",
@@ -77,7 +114,9 @@ export default function SocialButton({
                         "transition-colors duration-200",
                         className
                     )}
+                    aria-expanded={isMobileLayout ? isTapOpen : undefined}
                     {...props}
+                    onClick={handleMainButtonClick}
                 >
                     <span className="flex items-center gap-2 font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
                         <Link2 className="h-4 w-4" />
@@ -88,9 +127,12 @@ export default function SocialButton({
 
             <motion.div
                 animate={{
-                    width: isVisible ? "auto" : 0,
+                    width: expanded ? "auto" : 0,
                 }}
-                className="absolute top-0 left-0 flex h-10 overflow-hidden"
+                className={cn(
+                    "absolute top-0 left-0 flex h-10 overflow-hidden",
+                    expanded ? "z-20" : "z-0"
+                )}
                 transition={{
                     duration: 0.3,
                     ease: [0.23, 1, 0.32, 1],
@@ -101,13 +143,14 @@ export default function SocialButton({
                     return (
                         <motion.button
                             animate={{
-                                opacity: isVisible ? 1 : 0,
-                                x: isVisible ? 0 : -20,
+                                opacity: expanded ? 1 : 0,
+                                x: expanded ? 0 : -20,
                             }}
                             aria-label={button.label}
                             className={cn(
                                 "h-10",
                                 "w-10",
+                                "shrink-0",
                                 "flex items-center justify-center",
                                 "bg-black dark:bg-white",
                                 "text-white dark:text-black",
@@ -120,11 +163,11 @@ export default function SocialButton({
                                 "transition-colors duration-200"
                             )}
                             key={`social-${button.label}-${i}`}
-                            onClick={() => handleClick(i)}
+                            onClick={() => handleIconClick(i)}
                             transition={{
                                 duration: 0.3,
                                 ease: [0.23, 1, 0.32, 1],
-                                delay: isVisible ? i * 0.05 : 0,
+                                delay: expanded ? i * 0.05 : 0,
                             }}
                             type="button"
                         >

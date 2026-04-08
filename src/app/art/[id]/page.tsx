@@ -116,6 +116,16 @@ function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; v
   ];
 }
 
+function aspectRatioFromPrimaryMedia(artwork: ArtworkDetail | null): number | undefined {
+  const orientation = artwork?.artwork_media?.[0]?.media?.orientation;
+  if (!orientation) return undefined;
+  const o = String(orientation).toUpperCase();
+  if (o === "LANDSCAPE") return 4 / 3;
+  if (o === "PORTRAIT") return 3 / 4;
+  if (o === "SQUARE") return 1;
+  return undefined;
+}
+
 function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; imageUrl: string; price: number, primary_image_orientation: image_size } {
   const filePath = a.artwork_media?.[0]?.media?.file_path ?? "";
   const price = parseFloat(a.valuation ?? a.starting_price ?? "0") || 0;
@@ -209,6 +219,8 @@ const Index = () => {
           onToggle={() => setExploded(!exploded)}
           artworkUrl={artworkImageUrl || "/placeholder-art.jpg"}
           artworkName={artwork?.name}
+          initialMaxZoom
+          imageAspectRatio={aspectRatioFromPrimaryMedia(artwork)}
         />
       </div>
 

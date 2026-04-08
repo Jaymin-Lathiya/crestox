@@ -64,7 +64,7 @@ const InfiniteColumn = ({
 };
 
 export function GallerySection() {
-    const [images, setImages] = useState<{ src: string; alt: string; href?: string }[]>([]);
+    const [images, setImages] = useState<{ src: string; alt: string; title?: string; href?: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -78,6 +78,7 @@ export function GallerySection() {
                             const base = {
                                 src: item.primary_image_url,
                                 alt: item.artwork_name ?? "Artwork",
+                                title: item.artwork_name ?? "Artwork",
                             };
                             if (item.artwork_id != null) {
                                 return { ...base, href: `/art/${item.artwork_id}` };

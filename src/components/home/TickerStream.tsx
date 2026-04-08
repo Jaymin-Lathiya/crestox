@@ -83,13 +83,29 @@ const artPieces: ArtPiece[] = [
   },
 ];
 
-const TickerItem = ({ piece, onHover }: { piece: ArtPiece; onHover: (piece: ArtPiece | null) => void }) => {
+interface HoveredCardState {
+  piece: ArtPiece;
+  anchorRect: DOMRect;
+}
+
+const TickerItem = ({
+  piece,
+  onHover,
+}: {
+  piece: ArtPiece;
+  onHover: (data: HoveredCardState | null) => void;
+}) => {
   const isPositive = piece.change24h >= 0;
 
   return (
     <motion.div
       className="flex items-center gap-4 px-6 py-3 cursor-pointer group"
-      onMouseEnter={() => onHover(piece)}
+      onMouseEnter={(e) => {
+        onHover({
+          piece,
+          anchorRect: e.currentTarget.getBoundingClientRect(),
+        });
+      }}
       onMouseLeave={() => onHover(null)}
       whileHover={{ scale: 1.02 }}
     >
@@ -131,7 +147,7 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-80 glass-card rounded-lg p-6 holographic z-50"
+      className="w-80 glass-card rounded-lg p-6 holographic z-50"
     >
       {/* Image */}
       <div className="relative w-full h-40 rounded overflow-hidden mb-4">
@@ -185,7 +201,7 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
 };
 
 const TickerStream = () => {
-  const [hoveredPiece, setHoveredPiece] = useState<ArtPiece | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<HoveredCardState | null>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
 
   // Duplicate items for seamless loop
@@ -214,16 +230,27 @@ const TickerStream = () => {
           <TickerItem
             key={`${piece.id}-${index}`}
             piece={piece}
-            onHover={setHoveredPiece}
+            onHover={setHoveredCard}
           />
         ))}
       </div>
 
       {/* Holographic card on hover */}
       <AnimatePresence>
-        {hoveredPiece && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
-            <HolographicCard piece={hoveredPiece} />
+        {hoveredCard && (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              // Keep card anchored to hovered item and clamped within viewport.
+              left: Math.min(
+                Math.max(hoveredCard.anchorRect.left + hoveredCard.anchorRect.width / 2, 176),
+                (typeof window !== "undefined" ? window.innerWidth : 1200) - 176
+              ),
+              top: Math.max(hoveredCard.anchorRect.top - 16, 16),
+              transform: "translate(-50%, -100%)",
+            }}
+          >
+            <HolographicCard piece={hoveredCard.piece} />
           </div>
         )}
       </AnimatePresence>

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OrbitControls, Html, useTexture } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import { useTheme } from 'next-themes';
 
 // DLS Constants
@@ -11,9 +11,16 @@ const GRID_SIZE = 50;
 const TOTAL_SHARDS = GRID_SIZE * GRID_SIZE;
 const ANIMATION_SPEED = 2.0;
 
+/** Orbit zoom limits — min = closest / “max zoom”. */
+const ORBIT_MIN_DISTANCE = 40;
+const ORBIT_MAX_DISTANCE = 150;
+const ORBIT_DEFAULT_DISTANCE = 80;
+
 interface ArtworkShardsProps {
   exploded: boolean;
   textureUrl: string;
+  /** width/height from API (e.g. `4/3` landscape) until texture loads */
+  aspectHint?: number;
 }
 
 // GLSL Shaders
@@ -97,10 +104,18 @@ const fragmentShader = `
   }
 `;
 
-function ArtworkShards({ exploded, textureUrl }: ArtworkShardsProps) {
+function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [imageAspect, setImageAspect] = useState(() =>
+    THREE.MathUtils.clamp(aspectHint || 1, 0.2, 5)
+  );
+
+  useEffect(() => {
+    setTexture(null);
+    setImageAspect(THREE.MathUtils.clamp(aspectHint || 1, 0.2, 5));
+  }, [textureUrl, aspectHint]);
 
   // Load texture with crossOrigin
   useEffect(() => {
@@ -112,6 +127,12 @@ function ArtworkShards({ exploded, textureUrl }: ArtworkShardsProps) {
         tex.minFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
         setTexture(tex);
+        const img = tex.image as HTMLImageElement | undefined;
+        const w = img?.naturalWidth || img?.width || 0;
+        const h = img?.naturalHeight || img?.height || 0;
+        if (w > 0 && h > 0) {
+          setImageAspect(THREE.MathUtils.clamp(w / h, 0.25, 4));
+        }
       },
       undefined,
       (error) => {
@@ -189,17 +210,20 @@ function ArtworkShards({ exploded, textureUrl }: ArtworkShardsProps) {
     );
   }
 
+  // Preserve intrinsic aspect: landscape = wider (scale X), portrait = narrower (scale X < 1)
   return (
-    <instancedMesh ref={meshRef} args={[geometry, undefined, TOTAL_SHARDS]}>
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        side={THREE.DoubleSide}
-        transparent={true}
-      />
-    </instancedMesh>
+    <group scale={[imageAspect, 1, 1]}>
+      <instancedMesh ref={meshRef} args={[geometry, undefined, TOTAL_SHARDS]}>
+        <shaderMaterial
+          ref={materialRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={uniforms}
+          side={THREE.DoubleSide}
+          transparent={true}
+        />
+      </instancedMesh>
+    </group>
   );
 }
 
@@ -208,17 +232,29 @@ interface ExplodedCanvasProps {
   onToggle: () => void;
   artworkUrl: string;
   artworkName?: string;
+  /** Start at closest orbit distance (largest artwork). */
+  initialMaxZoom?: boolean;
+  /** Image width/height (e.g. from `naturalWidth/naturalHeight`); improves first paint before texture decodes. */
+  imageAspectRatio?: number;
 }
 
-export default function ExplodedCanvas({ exploded, onToggle, artworkUrl, artworkName }: ExplodedCanvasProps) {
+export default function ExplodedCanvas({
+  exploded,
+  onToggle,
+  artworkUrl,
+  artworkName,
+  initialMaxZoom = false,
+  imageAspectRatio,
+}: ExplodedCanvasProps) {
   const { resolvedTheme } = useTheme();
   const backgroundColor = resolvedTheme === 'light' ? '#EBE6D6' : '#050505';
+  const cameraZ = initialMaxZoom ? ORBIT_MIN_DISTANCE : ORBIT_DEFAULT_DISTANCE;
 
   return (
     <div className="relative w-full h-full">
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 0, 80], fov: 45 }}
+        camera={{ position: [0, 0, cameraZ], fov: 45 }}
         gl={{ antialias: true, alpha: false }}
         onClick={onToggle}
         className="cursor-pointer"
@@ -227,17 +263,21 @@ export default function ExplodedCanvas({ exploded, onToggle, artworkUrl, artwork
         <ambientLight intensity={1.5} />
         <pointLight position={[10, 10, 10]} />
 
-        <ArtworkShards exploded={exploded} textureUrl={artworkUrl} />
+        <ArtworkShards
+          exploded={exploded}
+          textureUrl={artworkUrl}
+          aspectHint={imageAspectRatio}
+        />
 
         <OrbitControls
-        enablePan={false}
-        enableZoom={true}
-        minDistance={40}
-        maxDistance={150}
-        autoRotate={exploded}
-        autoRotateSpeed={0.5}
-        dampingFactor={0.05}
-      />
+          enablePan={false}
+          enableZoom={true}
+          minDistance={ORBIT_MIN_DISTANCE}
+          maxDistance={ORBIT_MAX_DISTANCE}
+          autoRotate={exploded}
+          autoRotateSpeed={0.5}
+          dampingFactor={0.05}
+        />
       </Canvas>
       {artworkName && (
         <div className="absolute bottom-6 left-8 md:left-16 z-10 pointer-events-none">

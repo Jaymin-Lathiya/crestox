@@ -11,6 +11,7 @@ const PAD_X = 24;
 interface Image {
   src: string;
   alt: string;
+  title?: string;
   /** When set, the tile navigates to this path (e.g. `/art/123`) */
   href?: string;
 }
@@ -42,8 +43,8 @@ export default function PhotoScrollSection({
       }
     };
 
-    // Failsafe timeout so the gallery never stays hidden
-    const timeoutId = setTimeout(() => setImagesLoaded(true), 800);
+    // Failsafe timeout so the gallery never stays hidden for long
+    const timeoutId = setTimeout(() => setImagesLoaded(true), 250);
 
     cardNodes.forEach((card) => {
       const img = card.querySelector("img");
@@ -153,7 +154,7 @@ export default function PhotoScrollSection({
     const panYTop = excess > 0 ? totalH / 2 - vh / 2 : 0;
     const panYBottom = excess > 0 ? vh / 2 - totalH / 2 : 0;
 
-    // Set initial state — use scale for reveal (transform-only) instead of animating width/height
+    // Set initial state — keep cards partially visible so section doesn't look empty
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
       const { x, y, cw, ch } = layout[i];
@@ -162,8 +163,8 @@ export default function PhotoScrollSection({
         y,
         width: cw,
         height: ch,
-        scale: 0,
-        opacity: 0,
+        scale: 0.65,
+        opacity: 0.35,
         transformOrigin: "center center",
         force3D: true,
       });
@@ -171,7 +172,7 @@ export default function PhotoScrollSection({
 
     gsap.set(wrapper, {
       y: panYTop,
-      scale: 4,
+      scale: 1.8,
       transformOrigin: "center center",
       force3D: true,
     });
@@ -196,7 +197,7 @@ export default function PhotoScrollSection({
 
       tl.fromTo(
         wrapper,
-        { scale: 4, y: panYTop, transformOrigin: "center center", force3D: true },
+        { scale: 1.8, y: panYTop, transformOrigin: "center center", force3D: true },
         { scale: 1, y: panYTop, ease: "power1.inOut", duration: 0.28, force3D: true },
         0
       );
@@ -220,8 +221,8 @@ export default function PhotoScrollSection({
             y,
             width: cw,
             height: ch,
-            scale: 0,
-            opacity: 0,
+            scale: 0.65,
+            opacity: 0.35,
             transformOrigin: "center center",
             force3D: true,
           },
@@ -264,7 +265,7 @@ export default function PhotoScrollSection({
     >
       <div
         className="sticky top-0 w-full overflow-hidden flex items-center justify-center transition-opacity duration-1000"
-        style={{ height: "100vh", opacity: imagesLoaded ? 1 : 0 }}
+        style={{ height: "100vh", opacity: imagesLoaded ? 1 : 0.8 }}
       >
         <div
           ref={wrapperRef}
@@ -284,7 +285,7 @@ export default function PhotoScrollSection({
               <div
                 key={i}
                 ref={(el) => { if (el) cardsRef.current[i] = el; }}
-                className={img.href ? "cursor-pointer" : undefined}
+                className={`${img.href ? "cursor-pointer" : ""} group`}
                 style={{
                   position: "absolute",
                   borderRadius: "12px",
@@ -307,10 +308,16 @@ export default function PhotoScrollSection({
                   }}
                   draggable={false}
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+                <div className="absolute left-0 right-0 bottom-0 p-4 md:p-5 z-[11] pointer-events-none opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                  <h3 className="text-white font-serif text-base md:text-xl leading-tight">
+                    {img.title ?? img.alt}
+                  </h3>
+                </div>
                 {img.href ? (
                   <Link
                     href={img.href}
-                    className="absolute inset-0 z-10"
+                    className="absolute inset-0 z-20"
                     aria-label={`View artwork: ${img.alt}`}
                     prefetch={false}
                   >

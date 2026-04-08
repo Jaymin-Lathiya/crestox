@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, User, Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getFeaturedArtists, getAllArtists, type FeaturedArtist } from '@/apis/artists/artistActions';
+import { createPortal } from 'react-dom';
 
 const PLACEHOLDER_AVATAR = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop';
 
@@ -123,6 +124,27 @@ export function FeaturedCreators() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [displayedCreators, setDisplayedCreators] = useState<CreatorItem[]>([]);
     const [isLoadingArtists, setIsLoadingArtists] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // When artists grid height changes (browse all / collapse), scroll-linked sections below must remeasure.
+    useEffect(() => {
+        let cancelled = false;
+        const id = requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (!cancelled) {
+                    window.dispatchEvent(new CustomEvent("crestox:explore-layout"));
+                }
+            });
+        });
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(id);
+        };
+    }, [isExpanded, isLoadingArtists, activeTab, displayedCreators.length]);
 
     useEffect(() => {
         if (activeTab === 'artists') {
@@ -190,10 +212,32 @@ export function FeaturedCreators() {
     };
 
     const visibleCreators = (!isExpanded && activeTab === 'artists') ? displayedCreators.slice(0, 4) : displayedCreators;
+    const showStickyCollapse = mounted && isExpanded && activeTab === "artists";
+
+    const collapseButton = (
+        <button
+            onClick={handleBrowseAllClick}
+            className={cn(
+                "flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest border border-border/50 rounded-full px-8 py-3 hover:bg-secondary/50 group",
+                showStickyCollapse && "bg-background/85 backdrop-blur-md shadow-lg"
+            )}
+        >
+            {isExpanded ? (
+                <>Collapse <ChevronUp className="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" /></>
+            ) : (
+                <>Browse All {CREATOR_TABS.find(t => t.id === activeTab)?.label.replace('Featured ', '')} <ChevronDown className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" /></>
+            )}
+        </button>
+    );
 
     return (
         <section className="mb-16 animate-fade-in-up delay-100">
-            <div className="flex items-center justify-center gap-8 mb-12 border-b border-border/40 pb-4 overflow-x-auto no-scrollbar">
+            <div
+                className={cn(
+                    "flex items-center justify-center gap-8 mb-12 border-b border-border/40 pb-4 overflow-x-auto no-scrollbar",
+                    isExpanded && activeTab === "artists" && "sticky top-20 z-30 bg-background/95 backdrop-blur-md pt-3"
+                )}
+            >
                 {CREATOR_TABS.map((tab) => (
                     <button
                         key={tab.id}
@@ -294,18 +338,17 @@ export function FeaturedCreators() {
                 )}
             </div>
 
-            <div className="mt-10 flex justify-center">
-                <button
-                    onClick={handleBrowseAllClick}
-                    className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest border border-border/50 rounded-full px-8 py-3 hover:bg-secondary/50 group"
-                >
-                    {isExpanded ? (
-                        <>Collapse <ChevronUp className="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" /></>
-                    ) : (
-                        <>Browse All {CREATOR_TABS.find(t => t.id === activeTab)?.label.replace('Featured ', '')} <ChevronDown className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" /></>
-                    )}
-                </button>
-            </div>
+            {!showStickyCollapse && (
+                <div className="mt-10 flex justify-center">
+                    {collapseButton}
+                </div>
+            )}
+            {showStickyCollapse && createPortal(
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]">
+                    {collapseButton}
+                </div>,
+                document.body
+            )}
         </section>
     );
 }
