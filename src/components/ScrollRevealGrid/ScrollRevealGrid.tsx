@@ -1,7 +1,6 @@
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
-import { useRef } from "react";
 import Link from "next/link";
-import ScrollImagesReveal, { aspect, image_size } from "../ScrollImagesReveal";
+import ScrollImagesReveal, { ASPECT_RATIOS, ImageOrientation } from "../ScrollImagesReveal";
 
 import { cn } from "@/lib/utils";
 import instance from "@/utils/apiCalls";
@@ -68,7 +67,7 @@ function GridCard({
     row: number;
     cols: number;
     scrollYProgress: MotionValue<number>;
-    image_size: image_size
+    image_size: ImageOrientation
 }) {
     const center = (cols - 1) / 2;
     const distance = Math.abs(col - center);
@@ -87,7 +86,7 @@ function GridCard({
     return (
         <Link href={artwork_id ? `/art/${artwork_id}` : "#"} className={cn("block relative w-full", isLoading && "pointer-events-none")}>
             <motion.div
-                className={cn("relative overflow-hidden bg-card w-full", aspect[image_size])}
+                className={cn("relative overflow-hidden bg-card w-full", ASPECT_RATIOS[image_size])}
                 style={{ y, scale, borderRadius }}
             >
                 {isLoading ? (
