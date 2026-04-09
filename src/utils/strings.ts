@@ -1,4 +1,4 @@
 export const strings = {
     // base_url: process.env.NEXT_PUBLIC_BASE_URL,
-    base_url: "https://fccc-2409-40c1-47-7473-304b-5695-51c2-c7e9.ngrok-free.app/api",
+    base_url: "https://d1cc-2402-a00-10a-3e9a-c046-bd30-c9e2-f5f0.ngrok-free.app/api",
 };

@@ -271,7 +271,7 @@ export default function ExplodedCanvas({
 
         <OrbitControls
           enablePan={false}
-          enableZoom={true}
+          enableZoom={exploded}
           minDistance={ORBIT_MIN_DISTANCE}
           maxDistance={ORBIT_MAX_DISTANCE}
           autoRotate={exploded}
