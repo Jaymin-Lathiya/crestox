@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { aspect, image_size } from './ScrollImagesReveal';
+import { ASPECT_RATIOS as aspect, ImageOrientation as image_size } from './ScrollImagesReveal';
 
 interface Artwork {
   id: string;

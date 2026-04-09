@@ -1,7 +1,7 @@
 "use client";
 
 import ExplodedCanvas from "@/components/canvas/ExplodedCanvas";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FinancialHUD from "@/components/FinancialHUD";
 import AnalyticsTab from "@/components/artist/AnalyticsTab";
 import ManifestoBlock from "@/components/ManifestoBlock";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getArtworkById, getArtworksByArtist, getPriceHistory } from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
-import { image_size } from "@/components/ScrollImagesReveal";
+import { ImageOrientation } from "@/components/ScrollImagesReveal";
 
 /** API artwork media item */
 interface ArtworkMediaItem {
@@ -116,7 +116,7 @@ function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; v
   ];
 }
 
-function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; imageUrl: string; price: number, primary_image_orientation: image_size } {
+function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; imageUrl: string; price: number, primary_image_orientation: ImageOrientation } {
   const filePath = a.artwork_media?.[0]?.media?.file_path ?? "";
   const price = parseFloat(a.valuation ?? a.starting_price ?? "0") || 0;
   return {
@@ -124,7 +124,7 @@ function mapArtworkToReelItem(a: ArtworkListItem): { id: string; title: string; 
     title: a.name,
     imageUrl: filePath,
     price,
-    primary_image_orientation: a.artwork_media[0].media.orientation as image_size
+    primary_image_orientation: a.artwork_media[0].media.orientation as ImageOrientation
   };
 }
 
@@ -135,6 +135,29 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
   const router = useRouter();
+
+  const [activeTab, setActiveTab] = useState('Analytics');
+  const interactionRef = useRef<HTMLDivElement>(null);
+  const [mouseDownPos, setMouseDownPos] = useState<{ x: number, y: number } | null>(null);
+
+  const toggleExplode = () => setExploded(!exploded);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setMouseDownPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!mouseDownPos) return;
+    const dist = Math.sqrt(
+      Math.pow(e.clientX - mouseDownPos.x, 2) +
+      Math.pow(e.clientY - mouseDownPos.y, 2)
+    );
+    // Only toggle if it was a quick click (moved less than 5px)
+    if (dist < 5) {
+      toggleExplode();
+    }
+    setMouseDownPos(null);
+  };
 
   const fetchArtworkById = useCallback(async () => {
     if (!id || typeof id !== "string") return;
@@ -206,9 +229,17 @@ const Index = () => {
       <div className="w-full h-[90vh] relative z-20">
         <ExplodedCanvas
           exploded={exploded}
-          onToggle={() => setExploded(!exploded)}
-          artworkUrl={artworkImageUrl || "/placeholder-art.jpg"}
+          onToggle={toggleExplode}
+          artworkUrl={artworkImageUrl}
+          eventSource={interactionRef}
           artworkName={artwork?.name}
+          orientation={artwork?.artwork_media?.[0]?.media?.orientation as ImageOrientation}
+        />
+        <div
+          ref={interactionRef}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          className="absolute top-0 left-0 w-full h-[66vh] z-20 pointer-events-auto cursor-pointer"
         />
       </div>
 
