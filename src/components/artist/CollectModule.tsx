@@ -14,7 +14,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { getCookie } from '@/utils/cookieUtils';
 import GradientButton from '../ui/gradiant-button';
+
+const NOT_LOGGED_IN_BUY_MESSAGE =
+  'You are not logged in. Log in to buy the fractal.';
+
+function hasAuthToken(): boolean {
+  if (typeof document === 'undefined') return false;
+  return Boolean(getCookie('token')?.trim());
+}
 
 // Feature flag: Set to true when Razorpay is configured
 const ENABLE_RAZORPAY = false;
@@ -126,6 +135,11 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   };
 
   const handleCollectConfirm = async () => {
+    if (!hasAuthToken()) {
+      toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
+      return;
+    }
+
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     if (artworkId == null) {
       toast.error('No artwork selected');
@@ -170,7 +184,12 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               toast.success('Fractals collected successfully');
               if (onCollectSuccess) onCollectSuccess();
             } catch (err: any) {
-              toast.error(err?.response?.data?.message ?? 'Failed to complete purchase');
+              const s = err?.response?.status;
+              toast.error(
+                s === 401 || s === 403
+                  ? NOT_LOGGED_IN_BUY_MESSAGE
+                  : err?.response?.data?.message ?? 'Failed to complete purchase',
+              );
             } finally {
               setCollecting(false);
             }
@@ -213,7 +232,12 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         setCollecting(false);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to complete purchase');
+      const s = err?.response?.status;
+      toast.error(
+        s === 401 || s === 403
+          ? NOT_LOGGED_IN_BUY_MESSAGE
+          : err?.response?.data?.message ?? 'Failed to complete purchase',
+      );
       setCollecting(false);
     }
   };
@@ -351,7 +375,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         {/* Primary Button */}
         <button
           type="button"
-          onClick={() => setConfirmOpen(true)}
+          onClick={() => {
+            if (!hasAuthToken()) {
+              toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
+              return;
+            }
+            setConfirmOpen(true);
+          }}
           // disabled={firstArtworkId == null || (Number(artist_profile_id) === id) || !isAtwork || !razorpayLoaded}
           className="group w-full h-12 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
         >
