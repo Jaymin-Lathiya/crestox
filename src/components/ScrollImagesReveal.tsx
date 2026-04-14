@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -34,8 +34,20 @@ export const aspect = {
     [image_size.SQUARE]: "aspect-[1/1]"
 }
 
+function useGridColumns() {
+    const [cols, setCols] = useState(5);
+    useEffect(() => {
+        const update = () => setCols(window.innerWidth < 768 ? 2 : 5);
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return cols;
+}
+
 export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks }: { bgClass?: string, artworks?: any[] }) {
     const gridRef = useRef<HTMLDivElement>(null);
+    const cols = useGridColumns();
 
     // 1. Initialize Lenis smooth scroll once on mount
     useEffect(() => {
@@ -113,10 +125,8 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
         return () => {
             clearTimeout(timeout);
         };
-    }, [artworks]);
+    }, [artworks, cols]);
 
-    // 5 columns × 4 rows = 20 images; define varying aspect ratios per column per row
-    const COLS = 5;
     const dynamicImages = artworks.map(a => {
         return {
             src: a.primary_image_url,
@@ -127,19 +137,11 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#0a0a0a]", artworks 
 
     // Repeat images if there are too few to fill the aesthetic correctly, or just use what we have
     const allImages = dynamicImages.length >= 20 ? dynamicImages : [...dynamicImages, ...dynamicImages, ...dynamicImages].slice(0, 20);
-    const COL_ASPECTS = [
-        ["aspect-[3/4]", "aspect-[4/3]", "aspect-[3/4]", "aspect-[4/5]"],
-        ["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]", "aspect-[3/5]"],
-        ["aspect-[4/5]", "aspect-[3/4]", "aspect-[4/5]", "aspect-[4/3]"],
-        ["aspect-[4/3]", "aspect-[3/4]", "aspect-[4/3]", "aspect-[3/5]"],
-        ["aspect-[3/4]", "aspect-[4/3]", "aspect-[3/4]", "aspect-[4/5]"],
-    ];
 
-    // Group images into columns
-    const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: COLS }, () => []);
+    // Group images into masonry columns (2 on phone, 5 from md up)
+    const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: cols }, () => []);
     allImages.forEach(({ src, id, aspect }, i) => {
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
+        const col = i % cols;
         columns[col].push({
             src,
             aspect,
