@@ -1,33 +1,47 @@
-"use client";
-
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitControls, Html } from '@react-three/drei';
-import { useTheme } from 'next-themes';
+
 
 // DLS Constants
 const GRID_SIZE = 50;
 const TOTAL_SHARDS = GRID_SIZE * GRID_SIZE;
 const ANIMATION_SPEED = 2.0;
+const DEFAULT_CAMERA_POS = new THREE.Vector3(0, 0, 80);
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 
-/** Orbit zoom limits — min = closest / “max zoom”. */
-const ORBIT_MIN_DISTANCE = 40;
-const ORBIT_MAX_DISTANCE = 150;
-const ORBIT_DEFAULT_DISTANCE = 80;
+export enum ImageOrientation {
+  PORTRAIT = "PORTRAIT",
+  LANDSCAPE = "LANDSCAPE",
+  SQUARE = "SQUARE"
+}
+
+export const ASPECT_RATIOS = {
+  [ImageOrientation.PORTRAIT]: "aspect-[3/4]",
+  [ImageOrientation.LANDSCAPE]: "aspect-[4/3]",
+  [ImageOrientation.SQUARE]: "aspect-[1/1]"
+}
+
+export const ASPECT_VALUES = {
+  [ImageOrientation.PORTRAIT]: 3 / 4,
+  [ImageOrientation.LANDSCAPE]: 4 / 3,
+  [ImageOrientation.SQUARE]: 1 / 1
+}
+
 
 interface ArtworkShardsProps {
   exploded: boolean;
   textureUrl: string;
-  /** width/height from API (e.g. `4/3` landscape) until texture loads */
-  aspectHint?: number;
+  aspect: number;
 }
 
-// GLSL Shaders
+// ... (vertexShader and fragmentShader remain the same)
 const vertexShader = `
   uniform float uProgress;
   uniform float uTime;
   uniform vec2 uGridSize;
+  uniform float uAspect;
 
   attribute vec2 aGridPosition;
   attribute float aRandom;
@@ -62,7 +76,7 @@ const vertexShader = `
 
     vec3 transformed = position;
 
-    vec3 explodeDir = vec3(aGridPosition - 0.5, 0.0);
+    vec3 explodeDir = vec3((aGridPosition.x - 0.5) * uAspect, aGridPosition.y - 0.5, 0.0);
     explodeDir.x += (aRandom - 0.5) * 0.2;
     explodeDir.y += (aRandom - 0.5) * 0.2;
 
@@ -70,15 +84,19 @@ const vertexShader = `
     explodeDir.z += zDepth;
 
     float easedProgress = cubicOut(uProgress);
-    vec3 movement = normalize(explodeDir) * uProgress * 20.0;
+    vec3 movement = normalize(explodeDir) * easedProgress * 20.0;
 
-    float rotationAngle = uProgress * aRandom * 15.0;
+    float rotationAngle = easedProgress * aRandom * 15.0;
     vec3 rotationAxis = vec3(aRandom, random(vec2(aRandom, 1.0)), random(vec2(aRandom, 2.0)));
     mat4 rotMat = rotationMatrix(rotationAxis, rotationAngle);
 
     transformed = (rotMat * vec4(transformed, 1.0)).xyz;
 
-    vec3 gridOffset = vec3((aGridPosition * uGridSize) - (uGridSize * 0.5), 0.0);
+    vec3 gridOffset = vec3(
+      ((aGridPosition.x * uGridSize.x) - (uGridSize.x * 0.5)) * uAspect,
+      (aGridPosition.y * uGridSize.y) - (uGridSize.y * 0.5),
+      0.0
+    );
     vec3 finalPosition = gridOffset + transformed + movement;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(finalPosition, 1.0);
@@ -93,7 +111,7 @@ const fragmentShader = `
   void main() {
     vec4 color = texture2D(uTexture, vUv);
 
-    if (uProgress > 0.1) {
+    if (uProgress > 0.01) {
       float edge = 0.02;
       if (vUv.x < edge || vUv.y < edge || vUv.x > 1.0 - edge || vUv.y > 1.0 - edge) {
         color.rgb += vec3(0.8, 1.0, 0.0) * uProgress * 0.5;
@@ -104,20 +122,47 @@ const fragmentShader = `
   }
 `;
 
-function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsProps) {
+function CameraController({ exploded }: { exploded: boolean }) {
+  const { camera, controls } = useThree();
+  const [isResetting, setIsResetting] = useState(false);
+
+  // Trigger reset when exploded becomes false
+  useEffect(() => {
+    if (!exploded) {
+      setIsResetting(true);
+    } else {
+      setIsResetting(false);
+    }
+  }, [exploded]);
+
+  useFrame((state, delta) => {
+    if (isResetting && !exploded) {
+      // Smoothly interpolate camera back to default position
+      camera.position.lerp(DEFAULT_CAMERA_POS, delta * 4);
+
+      if (controls) {
+        // @ts-ignore - OrbitControls target is a Vector3
+        controls.target.lerp(DEFAULT_TARGET, delta * 4);
+        // @ts-ignore
+        controls.update();
+      }
+
+      // Stop resetting if we are very close to the target
+      if (camera.position.distanceTo(DEFAULT_CAMERA_POS) < 0.01) {
+        setIsResetting(false);
+      }
+    }
+  });
+
+  return null;
+}
+
+function ArtworkShards({ exploded, textureUrl, aspect }: ArtworkShardsProps) {
+  // ... (ArtworkShards implementation remains the same)
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  const [imageAspect, setImageAspect] = useState(() =>
-    THREE.MathUtils.clamp(aspectHint || 1, 0.2, 5)
-  );
 
-  useEffect(() => {
-    setTexture(null);
-    setImageAspect(THREE.MathUtils.clamp(aspectHint || 1, 0.2, 5));
-  }, [textureUrl, aspectHint]);
-
-  // Load texture with crossOrigin
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
@@ -127,12 +172,6 @@ function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsPr
         tex.minFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
         setTexture(tex);
-        const img = tex.image as HTMLImageElement | undefined;
-        const w = img?.naturalWidth || img?.width || 0;
-        const h = img?.naturalHeight || img?.height || 0;
-        if (w > 0 && h > 0) {
-          setImageAspect(THREE.MathUtils.clamp(w / h, 0.25, 4));
-        }
       },
       undefined,
       (error) => {
@@ -175,11 +214,11 @@ function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsPr
       uProgress: { value: 0 },
       uGridSize: { value: new THREE.Vector2(GRID_SIZE, GRID_SIZE) },
       uTime: { value: 0 },
+      uAspect: { value: aspect },
     }),
-    [texture]
+    [texture, aspect]
   );
 
-  // Update texture uniform when loaded
   useEffect(() => {
     if (materialRef.current && texture) {
       materialRef.current.uniforms.uTexture.value = texture;
@@ -187,8 +226,14 @@ function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsPr
     }
   }, [texture]);
 
+  useEffect(() => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.uAspect.value = aspect;
+    }
+  }, [aspect]);
+
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(1, 1);
+    const geo = new THREE.PlaneGeometry(aspect, 1);
     geo.setAttribute(
       'aGridPosition',
       new THREE.InstancedBufferAttribute(gridPositions, 2)
@@ -198,32 +243,29 @@ function ArtworkShards({ exploded, textureUrl, aspectHint = 1 }: ArtworkShardsPr
       new THREE.InstancedBufferAttribute(randoms, 1)
     );
     return geo;
-  }, [gridPositions, randoms]);
+  }, [gridPositions, randoms, aspect]);
 
   if (!texture) {
     return (
       <Html center>
-        <div className="text-primary font-mono text-sm tracking-widest animate-pulse">
+        <div className="text-white font-mono text-sm tracking-widest animate-pulse">
           LOADING ASSET...
         </div>
       </Html>
     );
   }
 
-  // Preserve intrinsic aspect: landscape = wider (scale X), portrait = narrower (scale X < 1)
   return (
-    <group scale={[imageAspect, 1, 1]}>
-      <instancedMesh ref={meshRef} args={[geometry, undefined, TOTAL_SHARDS]}>
-        <shaderMaterial
-          ref={materialRef}
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
-          uniforms={uniforms}
-          side={THREE.DoubleSide}
-          transparent={true}
-        />
-      </instancedMesh>
-    </group>
+    <instancedMesh ref={meshRef} args={[geometry, undefined, TOTAL_SHARDS]}>
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        side={THREE.DoubleSide}
+        transparent={true}
+      />
+    </instancedMesh>
   );
 }
 
@@ -231,52 +273,55 @@ interface ExplodedCanvasProps {
   exploded: boolean;
   onToggle: () => void;
   artworkUrl: string;
-  artworkName?: string;
-  /** Start at closest orbit distance (largest artwork). */
-  initialMaxZoom?: boolean;
-  /** Image width/height (e.g. from `naturalWidth/naturalHeight`); improves first paint before texture decodes. */
-  imageAspectRatio?: number;
+  eventSource?: React.RefObject<HTMLDivElement | null>;
+  orientation?: ImageOrientation;
+  artworkName: string;
 }
 
 export default function ExplodedCanvas({
   exploded,
   onToggle,
   artworkUrl,
-  artworkName,
-  initialMaxZoom = false,
-  imageAspectRatio,
+  eventSource,
+  orientation = ImageOrientation.SQUARE,
+  artworkName
 }: ExplodedCanvasProps) {
-  const { resolvedTheme } = useTheme();
-  const backgroundColor = resolvedTheme === 'light' ? '#EBE6D6' : '#050505';
-  const cameraZ = initialMaxZoom ? ORBIT_MIN_DISTANCE : ORBIT_DEFAULT_DISTANCE;
+  const aspect = ASPECT_VALUES[orientation];
+
+  // Use a state to force re-render when the ref is populated
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (eventSource?.current) {
+      setTick(t => t + 1);
+    }
+  }, [eventSource]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-black">
       <Canvas
         dpr={[1, 2]}
-        camera={{ position: [0, 0, cameraZ], fov: 45 }}
+        camera={{ position: [0, 0, 80], fov: 45 }}
         gl={{ antialias: true, alpha: false }}
-        onClick={onToggle}
+        eventSource={eventSource?.current || undefined}
         className="cursor-pointer"
       >
-        <color attach="background" args={[backgroundColor]} />
+        <color attach="background" args={['#050505']} />
         <ambientLight intensity={1.5} />
         <pointLight position={[10, 10, 10]} />
 
-        <ArtworkShards
-          exploded={exploded}
-          textureUrl={artworkUrl}
-          aspectHint={imageAspectRatio}
-        />
+        <CameraController exploded={exploded} />
+        <ArtworkShards exploded={exploded} textureUrl={artworkUrl} aspect={aspect} />
 
         <OrbitControls
+          makeDefault
           enablePan={false}
-          enableZoom={exploded}
-          minDistance={ORBIT_MIN_DISTANCE}
-          maxDistance={ORBIT_MAX_DISTANCE}
+          enableZoom={true}
+          minDistance={40}
+          maxDistance={150}
           autoRotate={exploded}
           autoRotateSpeed={0.5}
           dampingFactor={0.05}
+          domElement={eventSource?.current || undefined}
         />
       </Canvas>
       {artworkName && (

@@ -15,7 +15,7 @@ import gallery1 from "@/assets/gallery-1.jpg";
 import gallery2 from "@/assets/gallery-2.jpg";
 import gallery3 from "@/assets/gallery-3.jpg";
 import gallery4 from "@/assets/gallery-4.jpg";
-
+import { ImageOrientation } from "@/components/ScrollImagesReveal";
 // Mock Data
 const artistStatement = `The genesis of this work began in the liminal space between computation and consciousness. I sought to capture the moment when pure mathematics crosses the threshold into aesthetic experience—when the algorithm becomes the artist. Each fractal is a fingerprint of infinity, a proof that beauty can emerge from the coldest logic. In an age where attention is currency, I offer you a meditation on permanence.`;
 
@@ -56,6 +56,8 @@ const Index = () => {
                     exploded={exploded}
                     onToggle={() => setExploded(!exploded)}
                     artworkUrl={typeof heroArtwork === 'string' ? heroArtwork : (heroArtwork as any).src}
+                    orientation={ImageOrientation.SQUARE}
+                    artworkName="Kaelo X"
                 />
             </div>
 

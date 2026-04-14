@@ -30,15 +30,10 @@ export default function CardFlip({
     step = "1",
 }: CardFlipProps) {
     const [isFlipped, setIsFlipped] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-
-    const flipped = isHovered || isFlipped; // 👈 either hover OR click triggers flip
 
     return (
         <div
-            className="group relative h-[320px] w-full max-w-[280px] [perspective:2000px]"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            className="group relative h-[380px] w-full max-w-[320px] [perspective:2000px]"
             onClick={() => setIsFlipped(prev => !prev)}
         >
             <div
@@ -47,8 +42,9 @@ export default function CardFlip({
                     "[transform-style:preserve-3d]",
                     "transition-all duration-700",
                     isFlipped
-                        ? "[transform:rotateY(180deg)]"
-                        : "[transform:rotateY(0deg)]"
+                        ? "[transform:rotateY(180deg)] md:[transform:rotateY(0deg)]"
+                        : "[transform:rotateY(0deg)]",
+                    "md:group-hover:[transform:rotateY(180deg)]"
                 )}
             >
                 <div
@@ -61,7 +57,8 @@ export default function CardFlip({
                         "shadow-lg",
                         "transition-all duration-700",
                         "group-hover:shadow-xl group-hover:border-primary/40",
-                        isFlipped ? "opacity-0" : "opacity-100"
+                        isFlipped ? "opacity-0 md:opacity-100" : "opacity-100",
+                        "md:group-hover:opacity-0"
                     )}
                 >
                     <div className="relative h-full overflow-hidden bg-gradient-to-b from-background to-surface">
@@ -125,7 +122,8 @@ export default function CardFlip({
                         "flex flex-col",
                         "transition-all duration-700",
                         "group-hover:shadow-lg dark:group-hover:shadow-xl",
-                        isFlipped ? "opacity-100" : "opacity-0"
+                        isFlipped ? "opacity-100 md:opacity-0" : "opacity-0",
+                        "md:group-hover:opacity-100"
                     )}
                 >
                     <div className="flex-1 space-y-6">

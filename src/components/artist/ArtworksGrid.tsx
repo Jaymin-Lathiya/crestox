@@ -43,8 +43,8 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
             key={artwork.id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              delay: index * 0.1, 
+            transition={{
+              delay: index * 0.1,
               duration: 0.6,
               ease: [0.22, 1, 0.36, 1]
             }}
@@ -60,7 +60,7 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
           <p className="text-muted-foreground">No artworks found</p>
         </div>
       )}
-     
+
     </div>
   );
 };
@@ -104,14 +104,14 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
     <div className="group relative overflow-hidden rounded-sm cursor-pointer">
       {/* Image Container */}
       <div className="relative w-full overflow-hidden">
-        <img 
-          src={artwork.image} 
+        <img
+          src={artwork.image}
           alt={artwork.title}
           className="w-full h-auto object-cover transition-all duration-700 ease-out group-hover:scale-105"
         />
-        
+
         {/* Overlay on Hover */}
-        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" onClick={()=>{
+        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" onClick={() => {
           router.push(`/art/${artwork.id}`);
         }} />
         
@@ -136,7 +136,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
           </div>
         </motion.div>
       </div>
-      
+
       {/* Title on Hover */}
       <div className="absolute top-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <p className="font-display text-lg text-foreground italic">{artwork.title}</p>

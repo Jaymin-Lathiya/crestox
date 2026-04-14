@@ -285,10 +285,9 @@ export default function PhotoScrollSection({
               <div
                 key={i}
                 ref={(el) => { if (el) cardsRef.current[i] = el; }}
-                className={`${img.href ? "cursor-pointer" : ""} group`}
+                className={img.href ? "group cursor-pointer rounded-sm" : "group rounded-sm"}
                 style={{
                   position: "absolute",
-                  borderRadius: "12px",
                   overflow: "hidden",
                   willChange: "transform, opacity",
                   backfaceVisibility: "hidden",

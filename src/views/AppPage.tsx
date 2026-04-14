@@ -68,6 +68,7 @@ function HomeView() {
             exploded={isExploded}
             onToggle={handleToggle}
             artworkUrl={selectedArtwork.imageUrl}
+            artworkName={selectedArtwork.title}
           />
         </Suspense>
       </div>
@@ -140,6 +141,7 @@ function DetailView() {
             exploded={isExploded}
             onToggle={handleToggle}
             artworkUrl={selectedArtwork.imageUrl}
+            artworkName={selectedArtwork.title}
           />
         </Suspense>
       </div>
