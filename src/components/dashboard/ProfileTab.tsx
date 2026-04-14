@@ -247,7 +247,7 @@ export const ProfileTab = () => {
         transition={{ duration: 0.4 }}
       >
         <div className="relative mb-8 group">
-          <div className="w-32 h-32 rounded-full border border-border overflow-hidden bg-card">
+          <div className="w-32 h-32 rounded-sm border border-border overflow-hidden bg-card">
             <img
               src={avatarSrc}
               alt="Artist"

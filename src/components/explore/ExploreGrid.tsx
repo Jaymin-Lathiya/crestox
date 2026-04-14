@@ -129,7 +129,7 @@ export function ExploreGrid() {
 function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
     return (
         <div className="group min-w-[320px] md:min-w-[360px] snap-start cursor-pointer">
-            <div className="overflow-hidden rounded-2xl aspect-[16/10] mb-3.5 relative bg-zinc-900 border border-white/5">
+            <div className="overflow-hidden rounded-sm aspect-[16/10] mb-3.5 relative bg-zinc-900 border border-white/5">
                 <img
                     src={item.src}
                     alt={item.title}
@@ -152,7 +152,7 @@ function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
             </div>
 
             <div className="flex items-center gap-3 pl-1">
-                <img src={item.avatar} alt={item.user} className="w-5 h-5 rounded-full border border-white/10" />
+                <img src={item.avatar} alt={item.user} className="w-5 h-5 rounded-sm border border-white/10" />
                 <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[13px] font-bold text-zinc-200 group-hover:text-white transition-colors">{item.title}</span>
@@ -173,7 +173,7 @@ function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
 function ElementCard({ item }: { item: typeof ELEMENTS_ITEMS[0] }) {
     return (
         <div className="group cursor-pointer relative">
-            <div className="overflow-hidden rounded-lg aspect-[3/4] mb-2 relative bg-zinc-900 border border-white/5">
+            <div className="overflow-hidden rounded-sm aspect-[3/4] mb-2 relative bg-zinc-900 border border-white/5">
                 <img
                     src={item.src}
                     alt={item.title}

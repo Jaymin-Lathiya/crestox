@@ -2,6 +2,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import NexttopLoader from "nextjs-toploader";
 
 export const metadata = {
     title: "Vite React Shadcn TS",
@@ -16,6 +17,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body>
+                <NexttopLoader />
                 <Providers>
                     <Header />
                     {children}

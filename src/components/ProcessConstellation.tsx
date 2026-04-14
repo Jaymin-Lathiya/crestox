@@ -76,7 +76,7 @@ export default function ProcessConstellation() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start center", "end center"]
   });
 
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
@@ -105,7 +105,7 @@ export default function ProcessConstellation() {
         >
           <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-ghost tracking-tighter mb-4">
             HOW{" "}
-            <span className="italic bg-gradient-to-r from-cyber to-cyber-dim bg-clip-text text-transparent pr-4">
+            <span className="italic bg-clip-text text-cyber pr-4">
               CRESTOX
             </span>
             {" "}WORKS
@@ -118,7 +118,7 @@ export default function ProcessConstellation() {
         {/* Constellation Timeline */}
         <div className="relative max-w-4xl mx-auto">
           {/* Central Constellation Line */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-1 md:w-[2px] -translate-x-1/2">
+          <div className="absolute left-1/2 top-0 bottom-0 w-1 md:w-[4px] -translate-x-1/2">
             {/* Background line */}
             <div className="absolute inset-0 bg-white/10" />
             {/* Animated fill */}

@@ -1,7 +1,6 @@
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
-import { useRef } from "react";
 import Link from "next/link";
-import ScrollImagesReveal, { aspect, image_size } from "../ScrollImagesReveal";
+import ScrollImagesReveal, { ASPECT_RATIOS, ImageOrientation } from "../ScrollImagesReveal";
 
 import { cn } from "@/lib/utils";
 import instance from "@/utils/apiCalls";
@@ -68,7 +67,7 @@ function GridCard({
     row: number;
     cols: number;
     scrollYProgress: MotionValue<number>;
-    image_size: image_size
+    image_size: ImageOrientation
 }) {
     const center = (cols - 1) / 2;
     const distance = Math.abs(col - center);
@@ -87,7 +86,7 @@ function GridCard({
     return (
         <Link href={artwork_id ? `/art/${artwork_id}` : "#"} className={cn("block relative w-full", isLoading && "pointer-events-none")}>
             <motion.div
-                className={cn("relative overflow-hidden bg-card w-full", aspect[image_size])}
+                className={cn("relative overflow-hidden bg-card w-full", ASPECT_RATIOS[image_size])}
                 style={{ y, scale, borderRadius }}
             >
                 {isLoading ? (
@@ -108,7 +107,7 @@ function GridCard({
 
 // ─── Main component ─────────────────────────────────────────────────
 export default function ScrollRevealGrid() {
-    const containerRef = useRef<HTMLDivElement>(null);
+    // const containerRef = useRef<HTMLDivElement>(null);
     const cols = useColumns(); // 👈
     const rows = cols === 2 ? 5 : 3;
     const total = cols * rows;
@@ -165,10 +164,10 @@ export default function ScrollRevealGrid() {
         fetchArtworks();
     }, []);
 
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"],
-    });
+    // const { scrollYProgress } = useScroll({
+    //     target: containerRef,
+    //     offset: ["start start", "end end"],
+    // });
 
     if (!isLoading && artworks.length === 0) {
         return (
@@ -192,11 +191,10 @@ export default function ScrollRevealGrid() {
         columns[i % cols].push(item);
     });
 
-    console.log(columns[0]);
-
 
     return (
         <>
+            {/*
             <div ref={containerRef} className="relative h-[350vh] bg-background">
                 <div className="sticky top-0 flex flex-col items-center justify-center overflow-hidden">
                     <div className="flex gap-4 px-4 w-full max-w-[95vw] mx-auto items-start">
@@ -220,8 +218,9 @@ export default function ScrollRevealGrid() {
                     </div>
                 </div>
             </div>
-            {!isLoading && secondHalfList.length > 0 && (
-                <ScrollImagesReveal bgClass="bg-background" artworks={secondHalfList} />
+            */}
+            {!isLoading && artworks.length > 0 && (
+                <ScrollImagesReveal bgClass="bg-background" artworks={artworks} />
             )}
         </>
     );
