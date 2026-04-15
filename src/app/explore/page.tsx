@@ -15,16 +15,15 @@ export default function ExplorePage() {
         <div className="min-h-screen bg-background">
             <Header />
 
-            <main className="pt-24 px-4 pb-12 max-w-[1920px] mx-auto">
+            <main className="pt-24 px-6 pb-12 max-w-[1920px] mx-auto">
                 <ExploreHeader />
 
-                <div className="mt-8 px-4">
+                <div className="mt-8">
                     <FeaturedCreators />
                 </div>
 
-                <div className="mt-8 px-4">
+                <div className="mt-8">
                     <ScrollRevealGrid />
-
                 </div>
             </main>
         </div>

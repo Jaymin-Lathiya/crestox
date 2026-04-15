@@ -28,7 +28,7 @@ export function ExploreHeader() {
 
     return (
         <div className="w-full space-y-8 py-8 animate-fade-in-up">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="hidden md:flex items-center gap-6 font-medium text-sm text-muted-foreground">
                     <span className="text-foreground cursor-pointer">Explore</span>
                     {/* <span className="hover:text-foreground cursor-pointer transition-colors">Shop</span> */}

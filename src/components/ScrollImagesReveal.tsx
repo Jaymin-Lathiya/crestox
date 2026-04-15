@@ -179,9 +179,9 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         <div className={`relative w-full overflow-hidden pb-24 ${bgClass}`}>
             <div className="relative w-full">
                 <section className="relative flex justify-center">
-                    <div ref={gridRef} className="relative flex w-full max-w-7xl gap-4 sm:gap-8 py-20 px-6 items-start">
+                    <div ref={gridRef} className="relative flex w-full max-w-[1480px] mx-auto gap-10 py-20 items-start">
                         {columns.map((colItems, colIndex) => (
-                            <div key={colIndex} className="flex flex-col gap-4 sm:gap-8 flex-1" style={{ marginTop: `${colIndex * 40}px` }}>
+                            <div key={colIndex} className="flex flex-col gap-10 flex-1" style={{ marginTop: `${colIndex * 40}px` }}>
                                 {colItems.map(({ src, aspect, id }, rowIndex) => {
                                     const content = (
                                         <figure className="relative z-10 m-0" style={{ perspective: "1200px" }}>
