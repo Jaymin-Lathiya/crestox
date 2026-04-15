@@ -6,7 +6,9 @@ import { ArtworkCard } from './ArtworkCard';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ProcessConstellation from '../ProcessConstellation';
-import PhotoScrollSection from '../Photoscrollsection';
+import PhotoScrollSection, {
+  type PhotoScrollImage,
+} from '../Photoscrollsection';
 import { IMAGES } from '@/views/LandingPage';
 import instance from '@/utils/apiCalls';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,7 +66,7 @@ const InfiniteColumn = ({
 };
 
 export function GallerySection() {
-    const [images, setImages] = useState<{ src: string; alt: string; title?: string; href?: string }[]>([]);
+    const [images, setImages] = useState<PhotoScrollImage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -74,17 +76,30 @@ export function GallerySection() {
                 if (res.status === 200 || res.status === 201) {
                     const data = res.data.data;
                     if (data && data.length > 0) {
-                        const formattedImages = data.map((item: any) => {
-                            const base = {
-                                src: item.primary_image_url,
-                                alt: item.artwork_name ?? "Artwork",
-                                title: item.artwork_name ?? "Artwork",
-                            };
-                            if (item.artwork_id != null) {
-                                return { ...base, href: `/art/${item.artwork_id}` };
-                            }
-                            return base;
-                        });
+                        const formattedImages: PhotoScrollImage[] = data.map(
+                            (item: {
+                                artwork_id?: number;
+                                artwork_name?: string;
+                                primary_image_url?: string;
+                                artist_name?: string;
+                                valuation?: string | number;
+                            }) => {
+                                const base: PhotoScrollImage = {
+                                    src: item.primary_image_url ?? "",
+                                    alt: item.artwork_name ?? "Artwork",
+                                    title: item.artwork_name ?? "Artwork",
+                                    artistName: item.artist_name?.trim() || undefined,
+                                    valuation:
+                                        item.valuation != null && item.valuation !== ""
+                                            ? String(item.valuation)
+                                            : undefined,
+                                };
+                                if (item.artwork_id != null) {
+                                    return { ...base, href: `/art/${item.artwork_id}` };
+                                }
+                                return base;
+                            },
+                        );
                         setImages(formattedImages);
                         setIsLoading(false);
                         return;

@@ -12,6 +12,8 @@ export interface ArtistBasicDetails {
     total_fractals: number;
     available_fractals: number;
     current_share_value: number;
+    /** Present when the request is authenticated; whether this artist is on the user watchlist */
+    is_in_watchlist?: boolean;
 }
 
 // --- Achievements response ---
@@ -61,16 +63,26 @@ export interface FeaturedArtist {
     available_fractals: number;
 }
 
+/** Single artwork entry on GET /artists/homepage */
+export interface HomepageArtwork {
+    url: string;
+    name: string;
+}
+
 /** GET /artists/homepage — spotlight section */
 export interface HomepageArtist {
     artist_id: number;
     artist_profile_id: number;
     artist_name: string;
     description: string | null;
+    /** Admin-set marketing line from artist profile */
+    homepage_tagline?: string | null;
+    /** Artist profile / avatar image URL */
+    artist_avatar_url?: string | null;
     fractal_price: number;
     fractals_sold_percentage: number;
     total_portfolio_value: number;
-    artworks: string[];
+    artworks: HomepageArtwork[];
 }
 
 interface FeaturedArtistsResponse {
@@ -166,9 +178,22 @@ export const getBufferPriceOfArtwork = (id: number) => async (): Promise<number>
     return Number.isFinite(value) ? value : 0;
 };
 
+export interface BuyFillLine {
+    source: 'SECONDARY_SALE' | 'PRIMARY_SALE';
+    quantity: number;
+    price_per_share: string;
+    subtotal: string;
+    buyer_pays: string;
+}
+
 export interface BufferPriceQuote {
     current_price: number;
     buffer_percent: number | null;
+    fill_breakdown: BuyFillLine[];
+    fill_subtotal_pre_tax: string | null;
+    fill_total_buyer_pays: string | null;
+    total_available_shares: number | null;
+    sufficient_for_quantity: boolean | null;
 }
 
 export const getBufferPriceQuote = (artworkId: number, quantity?: number) => async (): Promise<BufferPriceQuote> => {
@@ -177,9 +202,29 @@ export const getBufferPriceQuote = (artworkId: number, quantity?: number) => asy
     const currentPrice = data?.current_price;
     const price = currentPrice != null ? parseFloat(String(currentPrice)) : NaN;
     const bufferPercent = data?.buffer_percent != null ? parseFloat(String(data.buffer_percent)) : null;
+    const rawFill = data?.fill_breakdown;
+    const fill_breakdown: BuyFillLine[] = Array.isArray(rawFill)
+        ? rawFill.map((row: any) => ({
+              source: row.source === 'PRIMARY_SALE' ? 'PRIMARY_SALE' : 'SECONDARY_SALE',
+              quantity: Number(row.quantity) || 0,
+              price_per_share: String(row.price_per_share ?? '0'),
+              subtotal: String(row.subtotal ?? '0'),
+              buyer_pays: String(row.buyer_pays ?? '0'),
+          }))
+        : [];
+    const fillSub = data?.fill_subtotal_pre_tax;
+    const fillTotal = data?.fill_total_buyer_pays;
+    const totalAvail = data?.total_available_shares;
+    const sufficient = data?.sufficient_for_quantity;
     return {
         current_price: Number.isFinite(price) ? price : 0,
         buffer_percent: bufferPercent != null && Number.isFinite(bufferPercent) ? bufferPercent : null,
+        fill_breakdown,
+        fill_subtotal_pre_tax: fillSub != null ? String(fillSub) : null,
+        fill_total_buyer_pays: fillTotal != null ? String(fillTotal) : null,
+        total_available_shares:
+            totalAvail != null && Number.isFinite(Number(totalAvail)) ? Number(totalAvail) : null,
+        sufficient_for_quantity: typeof sufficient === 'boolean' ? sufficient : null,
     };
 };
 
@@ -211,6 +256,17 @@ export const initiateBuyOrder = (data: { artwork_id: number; quantity: number; m
     return response.data?.data;
 };
 
+export interface CompleteBuyOrderResponse {
+    total_shares_purchased: number;
+    total_amount: string;
+    fractal_price_before: string;
+    fractal_price_after: string;
+    /** Portfolio-level count of fractals still available (primary + listed secondary). */
+    available_shares_after?: number;
+    razorpay_payment_id: string;
+    fills: unknown[];
+}
+
 export const completeBuyOrder = (data: {
     artwork_id: number;
     quantity: number;
@@ -219,7 +275,7 @@ export const completeBuyOrder = (data: {
     razorpay_signature: string;
     max_slippage_pct?: number;
     quoted_price?: number;
-}) => async () => {
+}) => async (): Promise<CompleteBuyOrderResponse> => {
     const response = await instance.post(ARTIST_URLS.COMPLETE_BUY, data);
     return response.data?.data;
 };

@@ -1,13 +1,11 @@
 "use client";
 
-import TeamSection from "@/components/about/artistCard";
-import SocialButton from "@/components/ui/social-button";
-import { companySocialMediaLinks } from "@/config/companySocial";
+import AboutUsContent from "@/components/about/AboutUsContent";
 
 export default function Page() {
-    return (
-        <div className="flex flex-col min-h-screen">
-            <TeamSection />
-        </div>
-    );
+  return (
+    <div className="flex flex-col min-h-screen">
+      <AboutUsContent />
+    </div>
+  );
 }

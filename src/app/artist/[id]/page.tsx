@@ -26,7 +26,7 @@ import {
 } from '@/apis/artists/artistActions';
 import { strings } from '@/utils/strings';
 import { Skeleton } from '@/components/ui/skeleton';
-import { addToWatchlist } from '@/apis/my-collection/myCollectionActions';
+import { toggleArtistWatchlist } from '@/apis/my-collection/myCollectionActions';
 import { toast } from 'sonner';
 
 type TabType = 'artworks' | 'analytics' | 'achievements' | 'history' | 'collectors';
@@ -203,6 +203,7 @@ const ArtistPage = () => {
         profileImage: basicDetails.avatar_url ?? PLACEHOLDER_AVATAR,
         isVerified: true,
         rank: 'Top 1% Global',
+        isWishlisted: Boolean(basicDetails.is_in_watchlist),
         social_media_links: basicDetails.social_media_links ?? [],
       }
     : isLoading
@@ -215,14 +216,22 @@ const ArtistPage = () => {
         pricePerFractal: Number(basicDetails.current_share_value) || 240.5,
         totalSupply: Number(basicDetails.total_fractals) || 1000,
         available: Number(basicDetails.available_fractals) ?? 142,
-        estimatedYield: '12.4%',
-        lockupPeriod: '12 M',
         available_fractals: Number(basicDetails.available_fractals) ?? 142,
         total_fractals: Number(basicDetails.total_fractals) || 1000,
         firstArtworkId,
         onCollectSuccess: refetchAfterCollect,
+        collectContextLabel: basicDetails.artist_name,
       }
-    : { pricePerFractal: 240.5, totalSupply: 1000, available: 142, estimatedYield: '12.4%', lockupPeriod: '12 M', firstArtworkId, onCollectSuccess: refetchAfterCollect };
+    : {
+        pricePerFractal: 240.5,
+        totalSupply: 1000,
+        available: 142,
+        available_fractals: 142,
+        total_fractals: 1000,
+        firstArtworkId,
+        onCollectSuccess: refetchAfterCollect,
+        collectContextLabel: 'Artist',
+      };
 
   const achievementsForTab = Array.isArray(achievements)
     ? achievements.map((a) => ({
@@ -324,13 +333,23 @@ const ArtistPage = () => {
         }}
       />
 
-      <ArtistHero
+           <ArtistHero
         artist={artistData}
         onWatchlistClick={() => {
           if (id == null || isNaN(id)) return;
-          addToWatchlist({ artist_profile_id: id })
-            .then(() => toast.success('Added to watchlist'))
-            .catch((err: any) => toast.error(err?.response?.data?.message ?? 'Failed to add to watchlist'));
+          toggleArtistWatchlist({ artist_profile_id: id })
+            .then((data) => {
+              setBasicDetails((prev) =>
+                prev ? { ...prev, is_in_watchlist: data.is_in_watchlist } : null,
+              );
+              toast.success(
+                data.message ??
+                  (data.is_in_watchlist ? 'Added to watchlist' : 'Removed from watchlist'),
+              );
+            })
+            .catch((err: any) =>
+              toast.error(err?.response?.data?.message ?? 'Could not update watchlist'),
+            );
         }}
       />
 
@@ -357,7 +376,7 @@ const ArtistPage = () => {
 
           <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
-              <CollectModule {...collectModuleProps} id={Number(id)} isAtwork={artworks.length > 0} />
+              <CollectModule {...collectModuleProps} isAtwork={artworks.length > 0} />
             </div>
           </div>
 

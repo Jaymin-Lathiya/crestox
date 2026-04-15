@@ -8,17 +8,30 @@ gsap.registerPlugin(ScrollTrigger);
 
 const PAD_X = 24;
 
-interface Image {
+export interface PhotoScrollImage {
   src: string;
   alt: string;
   title?: string;
   /** When set, the tile navigates to this path (e.g. `/art/123`) */
   href?: string;
+  artistName?: string;
+  /** Raw numeric string from API (e.g. `"468231.61"`) */
+  valuation?: string;
+}
+
+function formatRupeeValuation(raw: string | undefined): string | null {
+  if (raw == null || raw === "") return null;
+  const n = Number.parseFloat(String(raw).replace(/,/g, ""));
+  if (Number.isNaN(n)) return null;
+  return `\u20B9${n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 interface PhotoScrollSectionProps {
   bgClass?: string;
-  images: Image[];
+  images: PhotoScrollImage[];
 }
 
 export default function PhotoScrollSection({
@@ -281,11 +294,17 @@ export default function PhotoScrollSection({
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          {images.map((img, i) => (
+          {images.map((img, i) => {
+            const valuationLabel = formatRupeeValuation(img.valuation);
+            return (
               <div
                 key={i}
-                ref={(el) => { if (el) cardsRef.current[i] = el; }}
-                className={img.href ? "group cursor-pointer rounded-sm" : "group rounded-sm"}
+                ref={(el) => {
+                  if (el) cardsRef.current[i] = el;
+                }}
+                className={
+                  img.href ? "group cursor-pointer rounded-sm" : "group rounded-sm"
+                }
                 style={{
                   position: "absolute",
                   overflow: "hidden",
@@ -307,11 +326,22 @@ export default function PhotoScrollSection({
                   }}
                   draggable={false}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
-                <div className="absolute left-0 right-0 bottom-0 p-4 md:p-5 z-[11] pointer-events-none opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                  <h3 className="text-white font-serif text-base md:text-xl leading-tight">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+                <div className="absolute left-0 bottom-0 right-0 p-4 md:p-5 z-[11] pointer-events-none text-left opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                  <h3 className="text-white font-serif font-bold text-base md:text-lg leading-snug">
                     {img.title ?? img.alt}
                   </h3>
+                  {img.artistName ? (
+                    <p className="mt-1.5 font-serif text-sm md:text-base text-white/95 leading-snug">
+                      <span className="font-normal">by </span>
+                      {img.artistName}
+                    </p>
+                  ) : null}
+                  {valuationLabel ? (
+                    <p className="mt-1.5 font-serif font-bold text-sm md:text-base text-white leading-snug">
+                      {valuationLabel}
+                    </p>
+                  ) : null}
                 </div>
                 {img.href ? (
                   <Link
@@ -324,7 +354,8 @@ export default function PhotoScrollSection({
                   </Link>
                 ) : null}
               </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -37,6 +37,18 @@ export const getWatchlist = async () => {
     }
 }
 
+export interface ToggleWatchlistResponse {
+    artist_profile_id: number;
+    is_in_watchlist: boolean;
+    message?: string;
+}
+
+/** POST /trading/watchlist — toggles artist on the user watchlist */
+export const toggleArtistWatchlist = async (data: { artist_profile_id: number }) => {
+    const response = await instance.post(myCollectionURLS.ADD_TO_WATCHLIST, data);
+    return (response.data?.data ?? response.data) as ToggleWatchlistResponse;
+};
+
 export const addToWatchlist = async (data: any) => {
     try {
         const response = await instance.post(myCollectionURLS.ADD_TO_WATCHLIST, data);

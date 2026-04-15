@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Heart, MapPin, BadgeCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import SocialButton from '../ui/social-button';
 
 export interface SocialMediaLink {
@@ -33,6 +34,7 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => 
     profileImage,
     isVerified,
     rank = "Top 1% Global",
+    isWishlisted = false,
     social_media_links = [],
   } = artist;
 
@@ -118,7 +120,12 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => 
             transition={{ delay: 0.8, duration: 0.8 }}
             className="flex flex-wrap items-center gap-3 md:gap-4 pt-4"
           >
-            <ActionButton icon={Heart} label="Watchlist" onClick={onWatchlistClick} />
+            <ActionButton
+              icon={Heart}
+              label="Watchlist"
+              onClick={onWatchlistClick}
+              iconActive={isWishlisted}
+            />
             <ActionButton icon={Share2} label="Share" />
             <SocialButton links={social_media_links || []} />
           </motion.div>
@@ -161,15 +168,30 @@ interface ActionButtonProps {
   icon: React.ElementType;
   label: string;
   onClick?: () => void;
+  /** When true, icon is filled (e.g. watchlist heart) */
+  iconActive?: boolean;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, label, onClick }) => (
+const ActionButton: React.FC<ActionButtonProps> = ({
+  icon: Icon,
+  label,
+  onClick,
+  iconActive = false,
+}) => (
   <button
     type="button"
     onClick={onClick}
     className="group flex items-center space-x-2 md:space-x-3 px-4 md:px-5 py-2.5 md:py-3 border border-border rounded-full hover:border-primary/50 transition-all duration-300 bg-card/50 backdrop-blur-sm"
   >
-    <Icon size={14} className="md:w-4 md:h-4 text-muted-foreground group-hover:text-accent transition-colors duration-300" />
+    <Icon
+      size={14}
+      className={cn(
+        'md:w-4 md:h-4 transition-colors duration-300',
+        iconActive
+          ? 'fill-primary text-primary'
+          : 'text-muted-foreground group-hover:text-accent',
+      )}
+    />
     <span className="font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
       {label}
     </span>

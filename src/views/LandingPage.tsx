@@ -22,6 +22,23 @@ import Scroll3DImageReveal from '@/components/Photoscrollsection';
 import ImageTrail from '@/components/ui/image-trail';
 import ScrollImagesReveal from '@/components/ScrollImagesReveal';
 import FlipCard from '@/components/FlipCard';
+import {
+  FOR_ARTISTS,
+  FOR_COLLECTORS,
+  FRACTAL_FLIP_CARDS,
+  FRACTAL_SECTION,
+  HERO_STATS,
+  HERO_TAGLINE,
+} from '@/config/landingEducationalContent';
+
+const FRACTAL_ICON_MAP = {
+  Palette,
+  Sparkles,
+  TrendingUp,
+  Shield,
+  BarChart3,
+  Users,
+} as const;
 
 const TRAIL_IMAGES = [
   "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
@@ -54,43 +71,6 @@ export const IMAGES = [
   { src: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=400&fit=crop", alt: "Ocean" },
   { src: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop", alt: "Blue arch" },
 ];
-
-const CARDS = [
-  {
-    front: {
-      icon: <Palette className="w-6 h-6 text-primary" />,
-      title: "Original Artwork",
-      description: "A physical masterpiece valued at ₹50 lakhs is authenticated and securely stored in a vault.",
-    },
-    back: {
-      title: "Secure Storage",
-      description: "Vault-grade protection, insured asset, and blockchain verification ensure authenticity.",
-    },
-  },
-  {
-    front: {
-      icon: <Sparkles className="w-6 h-6 text-primary" />,
-      title: "Fractionalized",
-      description: "The artwork is divided into 5,000 digital \"fractals\" representing verified ownership.",
-    },
-    back: {
-      title: "Digital Ownership",
-      description: "Each fractal is recorded transparently and securely on-chain.",
-    },
-  },
-  {
-    front: {
-      icon: <TrendingUp className="w-6 h-6 text-primary" />,
-      title: "Trade & Profit",
-      description: "Buy fractals starting at ₹1,000 and trade as the artwork appreciates.",
-    },
-    back: {
-      title: "Marketplace",
-      description: "Seamless trading experience with transparent price discovery.",
-    },
-  },
-];
-
 
 export default function LandingPage() {
   const router = useRouter();
@@ -136,8 +116,7 @@ export default function LandingPage() {
                 </h1>
 
                 <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 font-sans animate-fade-in-up delay-200">
-                  Invest in masterpieces by owning fractional shares.
-                  Crestox democratizes fine art collecting through blockchain-powered fractionalization.
+                  {HERO_TAGLINE}
                 </p>
 
                 {!isLoggedIn && (
@@ -155,18 +134,18 @@ export default function LandingPage() {
                 )}
 
                 <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-20 pt-10 border-t border-border/30 animate-fade-in-up delay-400">
-                  <div>
-                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-primary">₹2.5Cr+</p>
-                    <p className="text-muted-foreground font-mono text-sm mt-1">Trading Volume</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-foreground">1,200+</p>
-                    <p className="text-muted-foreground font-mono text-sm mt-1">Collectors</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold text-foreground">85+</p>
-                    <p className="text-muted-foreground font-mono text-sm mt-1">Artists</p>
-                  </div>
+                  {HERO_STATS.map((stat) => (
+                    <div key={stat.label}>
+                      <p
+                        className={`text-xl sm:text-3xl md:text-4xl font-mono font-bold ${
+                          stat.emphasize ? 'text-primary' : 'text-foreground'
+                        }`}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className="text-muted-foreground font-mono text-sm mt-1">{stat.label}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
@@ -177,15 +156,24 @@ export default function LandingPage() {
       <section className="py-24 px-6 bg-card">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-primary font-mono text-sm tracking-widest">THE CONCEPT</span>
-            <h2 className="font-serif text-4xl md:text-5xl mt-4">What are Art Fractals?</h2>
+            <span className="text-primary font-mono text-sm tracking-widest">{FRACTAL_SECTION.kicker}</span>
+            <h2 className="font-serif text-4xl md:text-5xl mt-4">{FRACTAL_SECTION.title}</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-
-            {CARDS.map((card, idx) => (
-              <FlipCard key={idx} front={card.front} back={card.back} />
-            ))}
+            {FRACTAL_FLIP_CARDS.map((card, idx) => {
+              const Icon = FRACTAL_ICON_MAP[card.front.icon];
+              return (
+                <FlipCard
+                  key={idx}
+                  front={{
+                    ...card.front,
+                    icon: <Icon className="w-6 h-6 text-primary" />,
+                  }}
+                  back={card.back}
+                />
+              );
+            })}
 
           </div>
 
@@ -239,43 +227,25 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="text-primary font-mono text-sm tracking-widest">FOR COLLECTORS</span>
-              <h2 className="font-serif text-4xl md:text-5xl mt-4 mb-6">Invest in Art Like Never Before</h2>
-              <p className="text-muted-foreground font-sans mb-8">
-                No longer reserved for the ultra-wealthy. Start your collection with any budget
-                and build a diversified portfolio of blue-chip artworks.
-              </p>
+              <span className="text-primary font-mono text-sm tracking-widest">{FOR_COLLECTORS.kicker}</span>
+              <h2 className="font-serif text-4xl md:text-5xl mt-4 mb-6">{FOR_COLLECTORS.title}</h2>
+              <p className="text-muted-foreground font-sans mb-8">{FOR_COLLECTORS.lead}</p>
 
               <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">Verified Authenticity</h4>
-                    <p className="text-muted-foreground text-sm font-sans">Every artwork is authenticated and insured before fractionalization.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">Real-time Valuations</h4>
-                    <p className="text-muted-foreground text-sm font-sans">Track your portfolio value with live market data and analytics.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">Secondary Market</h4>
-                    <p className="text-muted-foreground text-sm font-sans">Buy and sell fractals instantly on our liquid marketplace.</p>
-                  </div>
-                </div>
+                {FOR_COLLECTORS.items.map((item) => {
+                  const Icon = FRACTAL_ICON_MAP[item.icon];
+                  return (
+                    <div key={item.title} className="flex gap-4">
+                      <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-mono font-bold mb-1">{item.title}</h4>
+                        <p className="text-muted-foreground text-sm font-sans">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -333,43 +303,25 @@ export default function LandingPage() {
             </div>
 
             <div className="order-1 md:order-2">
-              <span className="text-primary font-mono text-sm tracking-widest">FOR ARTISTS</span>
-              <h2 className="font-serif text-4xl md:text-5xl mt-4 mb-6">Fund Your Art, Keep Your Rights</h2>
-              <p className="text-muted-foreground font-sans mb-8">
-                Get funding for new works without giving up ownership.
-                Earn royalties on every secondary sale, forever.
-              </p>
+              <span className="text-primary font-mono text-sm tracking-widest">{FOR_ARTISTS.kicker}</span>
+              <h2 className="font-serif text-4xl md:text-5xl mt-4 mb-6">{FOR_ARTISTS.title}</h2>
+              <p className="text-muted-foreground font-sans mb-8">{FOR_ARTISTS.lead}</p>
 
               <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">Access New Collectors</h4>
-                    <p className="text-muted-foreground text-sm font-sans">Reach thousands of art enthusiasts who couldn't afford full pieces.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">5% Perpetual Royalties</h4>
-                    <p className="text-muted-foreground text-sm font-sans">Earn from every trade on the secondary market automatically.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-mono font-bold mb-1">Full Creative Control</h4>
-                    <p className="text-muted-foreground text-sm font-sans">You decide pricing, edition size, and retain all IP rights.</p>
-                  </div>
-                </div>
+                {FOR_ARTISTS.items.map((item) => {
+                  const Icon = FRACTAL_ICON_MAP[item.icon];
+                  return (
+                    <div key={item.title} className="flex gap-4">
+                      <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-mono font-bold mb-1">{item.title}</h4>
+                        <p className="text-muted-foreground text-sm font-sans">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {!isLoggedIn && (

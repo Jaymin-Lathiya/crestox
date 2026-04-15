@@ -2,7 +2,7 @@
 import { ReactNode, useState } from 'react';
 import SocialButton, { type SocialMediaLink } from '@/components/ui/social-button';
 
-type Member = {
+export type Member = {
   name: string;
   role: string;
   avatar: string;
@@ -11,17 +11,8 @@ type Member = {
   social_media_links?: SocialMediaLink[];
 };
 
-const coreTeam: Member[] = [
-  {
-    name: 'Udit Shah',
-    role: 'Director & Founder',
-    avatar: 'https://firebasestorage.googleapis.com/v0/b/crestox-giok1.firebasestorage.app/o/founders%2Ffounder_udit.jpeg?alt=media',
-    description: <>A CEPT graduate, Udit brings a strong business pedigree rooted in his family&apos;s ventures. He excels at forging partnerships, growing networks, and overseeing logistics. Udit&apos;s knack for Indian art and culture fuels Crestox&apos;s community building—connecting creators, collectors, and collaborators across the country.</>,
-    social_media_links: [
-      { platform: 'linkedin', url: 'https://www.linkedin.com/in/udit-shah' },
-      { platform: 'instagram', url: 'https://www.instagram.com/uditshah' },
-    ],
-  },
+/** Founding partners (About Us tab). */
+export const foundingPartners: Member[] = [
   {
     name: 'Prayush Shah',
     role: 'Director & Founder',
@@ -32,9 +23,19 @@ const coreTeam: Member[] = [
       { platform: 'twitter', url: 'https://x.com/prayushshah' },
     ],
   },
+  {
+    name: 'Udit Shah',
+    role: 'Director & Founder',
+    avatar: 'https://firebasestorage.googleapis.com/v0/b/crestox-giok1.firebasestorage.app/o/founders%2Ffounder_udit.jpeg?alt=media',
+    description: <>A CEPT graduate, Udit brings a strong business pedigree rooted in his family&apos;s ventures. He excels at forging partnerships, growing networks, and overseeing logistics. Udit&apos;s knack for Indian art and culture fuels Crestox&apos;s community building—connecting creators, collectors, and collaborators across the country.</>,
+    social_media_links: [
+      { platform: 'linkedin', url: 'https://www.linkedin.com/in/udit-shah' },
+      { platform: 'instagram', url: 'https://www.instagram.com/uditshah' },
+    ],
+  },
 ];
 
-const advisoryBoard: Member[] = [
+export const advisoryBoard: Member[] = [
   {
     name: 'Aatman Shah',
     role: 'Official CA',
@@ -84,7 +85,7 @@ const advisoryBoard: Member[] = [
   },
 ];
 
-function MemberCard({ member }: { member: Member }) {
+export function MemberCard({ member }: { member: Member }) {
   const [isActive, setIsActive] = useState(false);
   const links = member.social_media_links ?? [];
 
@@ -136,32 +137,3 @@ function MemberCard({ member }: { member: Member }) {
   );
 }
 
-export default function TeamSection() {
-  return (
-    <section className="bg-white py-16 md:py-32 dark:bg-transparent">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-        {/* Core Team Section */}
-        <div className="mb-24">
-          <h2 className="text-3xl md:text-4xl font-bold mb-10 text-gray-900 dark:text-white">Core Team</h2>
-          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {coreTeam.map((member) => (
-              <MemberCard member={member} key={member.name} />
-            ))}
-          </div>
-        </div>
-
-        {/* Advisory Board Section */}
-        <div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-10 text-gray-900 dark:text-white">Advisory Board</h2>
-          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {advisoryBoard.map((member) => (
-              <MemberCard key={member.name} member={member} />
-            ))}
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}

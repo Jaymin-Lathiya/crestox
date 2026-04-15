@@ -2,29 +2,9 @@ import React, { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import CardFlip from "./ui/card-flip";
+import { PROCESS_STEPS } from "@/config/landingEducationalContent";
 
-const STEPS = [
-  {
-    number: "01",
-    title: "Discover & Authenticate",
-    description: "Browse curated masterpieces verified through our AI authentication protocol. Each piece undergoes rigorous provenance analysis.",
-  },
-  {
-    number: "02",
-    title: "Acquire Fractions",
-    description: "Purchase fractional ownership tokens representing real shares of authenticated artworks. Start with as little as 0.1 ETH.",
-  },
-  {
-    number: "03",
-    title: "Trade & Govern",
-    description: "Trade your fractions on secondary markets or participate in governance decisions about the physical artwork's future.",
-  },
-  {
-    number: "04",
-    title: "Collect Returns",
-    description: "Earn from appreciation, exhibition royalties, and eventual sale proceeds distributed proportionally to token holders.",
-  },
-];
+const STEPS = PROCESS_STEPS;
 
 interface StepCardProps {
   step: typeof STEPS[0];

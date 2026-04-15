@@ -90,11 +90,14 @@ const ArtistPage = () => {
           <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
               <CollectModule
-                pricePerFractal={240.50}
+                pricePerFractal={240.5}
                 totalSupply={1000}
                 available={142}
-                estimatedYield="12.4%"
-                lockupPeriod="12 M"
+                available_fractals={142}
+                total_fractals={1000}
+                firstArtworkId={Number(artworksData[0]?.id) || null}
+                isAtwork={artworksData.length > 0}
+                collectContextLabel={artistData.name}
               />
             </div>
           </div>

@@ -1,21 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Info } from 'lucide-react';
-import { getBufferPriceQuote, initiateBuyOrder, completeBuyOrder } from '@/apis/artists/artistActions';
+import { ArrowRight, Minus, Plus } from 'lucide-react';
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  getBufferPriceQuote,
+  initiateBuyOrder,
+  completeBuyOrder,
+  type BufferPriceQuote,
+  type CompleteBuyOrderResponse,
+} from '@/apis/artists/artistActions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getCookie } from '@/utils/cookieUtils';
-import GradientButton from '../ui/gradiant-button';
+import { cn } from '@/lib/utils';
 
 const NOT_LOGGED_IN_BUY_MESSAGE =
   'You are not logged in. Log in to buy the fractal.';
@@ -25,51 +31,61 @@ function hasAuthToken(): boolean {
   return Boolean(getCookie('token')?.trim());
 }
 
-// Feature flag: Set to true when Razorpay is configured
 const ENABLE_RAZORPAY = false;
 
-// Razorpay types (for when ENABLE_RAZORPAY is true)
 declare global {
   interface Window {
     Razorpay: any;
   }
 }
 
+export type CollectModuleLayout = 'sidebar' | 'floating';
+
 interface CollectModuleProps {
   pricePerFractal?: number;
   totalSupply?: number;
   available?: number;
-  estimatedYield?: string;
-  lockupPeriod?: string;
   available_fractals?: number;
   total_fractals?: number;
   firstArtworkId?: number | null;
   onCollectSuccess?: () => void;
-  id?: number | null;
   isAtwork?: boolean;
+  /** Shown in the collect dialog title: "Collect from {collectContextLabel}" */
+  collectContextLabel?: string;
+  layout?: CollectModuleLayout;
+  className?: string;
 }
 
 const CollectModule: React.FC<CollectModuleProps> = ({
-  pricePerFractal = 240.50,
+  pricePerFractal = 240.5,
   totalSupply = 1000,
   available = 142,
-  estimatedYield = "12.4%",
-  lockupPeriod = "12 M",
   available_fractals = 142,
   total_fractals = 1000,
   firstArtworkId = null,
-  id = null,
   onCollectSuccess,
   isAtwork = false,
+  collectContextLabel = 'Artist',
+  layout = 'sidebar',
+  className,
 }) => {
-  const [quantity, setQuantity] = useState<any>(1);
-  const [quote, setQuote] = useState<{ current_price: number; buffer_percent: number | null } | null>(null);
+  const [quantity, setQuantity] = useState<number | ''>(1);
+  const [quote, setQuote] = useState<BufferPriceQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [availabilityOverride, setAvailabilityOverride] = useState<number | null>(null);
 
-  // Load Razorpay script (only when ENABLE_RAZORPAY is true)
+  const total = total_fractals || totalSupply;
+  const propAvail = available_fractals ?? available;
+  const availShow = availabilityOverride ?? propAvail;
+  const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
+
+  useEffect(() => {
+    setAvailabilityOverride(null);
+  }, [available_fractals, available, total_fractals, totalSupply]);
+
   useEffect(() => {
     if (ENABLE_RAZORPAY) {
       const script = document.createElement('script');
@@ -80,10 +96,9 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       return () => {
         document.body.removeChild(script);
       };
-    } else {
-      // In demo mode, mark as "loaded" immediately
-      setRazorpayLoaded(true);
     }
+    setRazorpayLoaded(true);
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -94,7 +109,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     }
     let cancelled = false;
     setQuoteLoading(true);
-    getBufferPriceQuote(id, quantity)()
+    const q = quantity === '' ? 1 : quantity;
+    getBufferPriceQuote(id, q)()
       .then((data) => {
         if (!cancelled) setQuote(data);
       })
@@ -107,22 +123,38 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     return () => { cancelled = true; };
   }, [firstArtworkId, quantity]);
 
-  const sold = totalSupply - available;
-  const progressPercent = (sold / totalSupply) * 100;
+  const maxQty = Math.max(0, availShow);
+
+  useEffect(() => {
+    if (!dialogOpen || maxQty <= 0) return;
+    setQuantity((prev) => {
+      const n = prev === '' ? 1 : prev;
+      return Math.min(maxQty, Math.max(1, n));
+    });
+  }, [dialogOpen, maxQty]);
 
   const currentPrice = quote?.current_price ?? pricePerFractal;
   const bufferPercent = quote?.buffer_percent ?? 0;
 
   const parsedQty = parseInt(String(quantity), 10);
-  const effectiveQty = !isAtwork ? 0 : (quantity === "" ? 0 : (Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty)));
+  const effectiveQty =
+    !isAtwork ? 0 : quantity === '' ? 0 : Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty);
 
   const baseAmount = effectiveQty * currentPrice;
-  const bufferAdjustment = baseAmount * (bufferPercent / 100);
-  const subTotal = baseAmount;
-  const gst = subTotal * 0.18;
-  const total = gst + subTotal;
-
-  const artist_profile_id = typeof window !== 'undefined' ? localStorage.getItem("artist_profile_id") : null;
+  const hasFillPreview =
+    Boolean(quote?.fill_breakdown?.length) &&
+    quote?.fill_subtotal_pre_tax != null &&
+    quote?.fill_total_buyer_pays != null;
+  const subTotalPreTax = hasFillPreview
+    ? parseFloat(quote!.fill_subtotal_pre_tax!)
+    : baseAmount;
+  const fallbackGst = baseAmount * 0.18;
+  const totalPayableInr = hasFillPreview
+    ? parseFloat(quote!.fill_total_buyer_pays!)
+    : baseAmount + fallbackGst;
+  const taxesAndFeesAmount = hasFillPreview
+    ? Math.max(0, totalPayableInr - subTotalPreTax)
+    : fallbackGst;
 
   const formatCurrencyWithSmallDecimals = (val: number) => {
     const parts = val.toFixed(2).split('.');
@@ -133,6 +165,94 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       </>
     );
   };
+
+  const canInteract = Boolean(firstArtworkId != null && !isNaN(firstArtworkId) && isAtwork && maxQty > 0);
+
+  const bumpQuantity = (delta: number) => {
+    setQuantity((prev) => {
+      const base = prev === '' ? 0 : prev;
+      const next = Math.min(maxQty || 1, Math.max(1, base + delta));
+      return next;
+    });
+  };
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.trim();
+    if (raw === '') {
+      setQuantity('');
+      return;
+    }
+    if (!/^\d+$/.test(raw)) return;
+    const n = parseInt(raw, 10);
+    if (n > maxQty) {
+      setQuantity(maxQty);
+      return;
+    }
+    setQuantity(n);
+  };
+
+  const handleQuantityBlur = () => {
+    if (quantity === '' || quantity === 0) {
+      setQuantity(1);
+    }
+  };
+
+  const fillSourceLabel = (source: 'SECONDARY_SALE' | 'PRIMARY_SALE') =>
+    source === 'SECONDARY_SALE' ? 'Reseller' : 'Artist';
+
+  const refreshAfterPurchase = useCallback(
+    async (
+      artworkId: number,
+      complete: CompleteBuyOrderResponse,
+      purchasedQty: number,
+      priorAvailable: number,
+    ) => {
+      const raw = complete.available_shares_after;
+      const nextAvail =
+        typeof raw === 'number' && Number.isFinite(raw)
+          ? raw
+          : Math.max(0, priorAvailable - purchasedQty);
+
+      setAvailabilityOverride(nextAvail);
+      setQuantity(1);
+
+      setQuoteLoading(true);
+      try {
+        const fresh = await getBufferPriceQuote(artworkId, 1)();
+        setQuote(fresh);
+      } catch {
+        const p = parseFloat(complete.fractal_price_after);
+        const price = Number.isFinite(p) ? p : pricePerFractal;
+        setQuote({
+          current_price: price,
+          buffer_percent: null,
+          fill_breakdown: [],
+          fill_subtotal_pre_tax: null,
+          fill_total_buyer_pays: null,
+          total_available_shares: nextAvail,
+          sufficient_for_quantity: nextAvail >= 1,
+        });
+      } finally {
+        setQuoteLoading(false);
+        setCollecting(false);
+      }
+
+      toast.success('Fractals collected successfully');
+      onCollectSuccess?.();
+    },
+    [onCollectSuccess, pricePerFractal],
+  );
+
+  const openDialog = () => {
+    if (!canInteract) {
+      toast.error('No fractals available to collect for this artwork yet.');
+      return;
+    }
+    setDialogOpen(true);
+  };
+
+  const inventoryShort =
+    quote?.sufficient_for_quantity === false && quote?.total_available_shares != null;
 
   const handleCollectConfirm = async () => {
     if (!hasAuthToken()) {
@@ -146,43 +266,53 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       return;
     }
 
+    if (effectiveQty < 1) {
+      toast.error('Choose a quantity of at least 1');
+      return;
+    }
+
+    if (quote?.sufficient_for_quantity === false) {
+      toast.error(
+        quote.total_available_shares != null
+          ? `Only ${quote.total_available_shares} fractal(s) available at this price mix.`
+          : 'Not enough fractals available for this quantity.',
+      );
+      return;
+    }
+
+    const priorAvailable = availShow;
+    const quotedFractalPrice = quote?.current_price ?? pricePerFractal;
+
     setCollecting(true);
-    setConfirmOpen(false);
 
     try {
-      // Step 1: Initiate buy order
       const orderData = await initiateBuyOrder({
         artwork_id: artworkId,
         quantity: effectiveQty,
         max_slippage_pct: 5,
-        quoted_price: currentPrice,
+        quoted_price: quotedFractalPrice,
       })();
 
       if (ENABLE_RAZORPAY) {
-        // ─── RAZORPAY FLOW (Production) ───────────────────────────────────
-        // Step 2: Open Razorpay checkout
         const options = {
           key: orderData.razorpay_key_id,
-          amount: parseFloat(orderData.amount) * 100, // Convert to paise
+          amount: parseFloat(orderData.amount) * 100,
           currency: orderData.currency,
           name: 'Crestox',
           description: `Purchase ${effectiveQty} fractals`,
           order_id: orderData.razorpay_order_id,
           handler: async function (response: any) {
             try {
-              // Step 3: Complete the order after successful payment
-              await completeBuyOrder({
+              const completed = await completeBuyOrder({
                 artwork_id: artworkId,
                 quantity: effectiveQty,
                 razorpay_order_id: orderData.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 max_slippage_pct: 5,
-                quoted_price: currentPrice,
+                quoted_price: quotedFractalPrice,
               })();
-
-              toast.success('Fractals collected successfully');
-              if (onCollectSuccess) onCollectSuccess();
+              await refreshAfterPurchase(artworkId, completed, effectiveQty, priorAvailable);
             } catch (err: any) {
               const s = err?.response?.status;
               toast.error(
@@ -190,7 +320,6 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                   ? NOT_LOGGED_IN_BUY_MESSAGE
                   : err?.response?.data?.message ?? 'Failed to complete purchase',
               );
-            } finally {
               setCollecting(false);
             }
           },
@@ -208,28 +337,22 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       } else {
-        // ─── DEMO MODE (Bypass Razorpay) ──────────────────────────────────
-        // Step 2: Simulate successful payment
         toast.info('Processing payment...');
-        
-        // Generate mock payment credentials
+
         const mockPaymentId = `pay_mock_${Date.now()}`;
         const mockSignature = `mock_signature_${Date.now()}`;
 
-        // Step 3: Complete the order with mock payment data
-        await completeBuyOrder({
+        const completed = await completeBuyOrder({
           artwork_id: artworkId,
           quantity: effectiveQty,
           razorpay_order_id: orderData.razorpay_order_id,
           razorpay_payment_id: mockPaymentId,
           razorpay_signature: mockSignature,
           max_slippage_pct: 5,
-          quoted_price: currentPrice,
+          quoted_price: quotedFractalPrice,
         })();
 
-        toast.success('Fractals collected successfully');
-        if (onCollectSuccess) onCollectSuccess();
-        setCollecting(false);
+        await refreshAfterPurchase(artworkId, completed, effectiveQty, priorAvailable);
       }
     } catch (err: any) {
       const s = err?.response?.status;
@@ -242,179 +365,286 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     }
   };
 
+  const asideClass =
+    layout === 'floating'
+      ? 'relative lg:fixed lg:left-auto lg:right-8 lg:bottom-8 lg:top-auto z-50 w-full lg:w-[340px]'
+      : 'w-full';
+
+  const innerSurface =
+    layout === 'floating'
+      ? 'glass-panel border border-white/10 bg-background/80'
+      : 'bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B]';
+
+  const summaryHeadingCls =
+    layout === 'floating'
+      ? 'text-[#60A5FA]'
+      : 'text-blue-600 dark:text-[#3B82F6]';
+  const summaryPriceCls =
+    layout === 'floating' ? 'text-white' : 'text-slate-900 dark:text-white';
+  const summaryMutedCls =
+    layout === 'floating' ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400';
+  const summaryBarTrackCls =
+    layout === 'floating' ? 'bg-white/10' : 'bg-slate-200 dark:bg-[#1E293B]';
+  const summaryHintCls =
+    layout === 'floating' ? 'text-zinc-500' : 'text-slate-400 dark:text-zinc-500';
+
   return (
-    <motion.aside
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.4, duration: 0.8 }}
-      className="w-full"
-    >
-      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B] p-6 flex flex-col gap-6 shadow-2xl">
-
-        {/* Header: Status & Current Valuation */}
-        <div className="flex justify-between items-start">
-          <div className="flex flex-col gap-1">
-            <h3 className="font-sans text-sm font-medium tracking-wide text-blue-600 dark:text-[#3B82F6] uppercase">
-              Current Valuation
-            </h3>
-            <div className="flex items-baseline space-x-1">
-              <span className="font-sans text-4xl text-slate-900 dark:text-white font-bold tracking-tight">
-                ₹{quoteLoading ? '—' : currentPrice.toFixed(2)}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="flex items-center space-x-2 bg-blue-100 dark:bg-[#1E3A8A]/40 px-3 py-1.5 rounded-full">
-              <div className="w-2 h-2 bg-blue-500 dark:bg-[#60A5FA] rounded-full" />
-              <span className="text-blue-600 dark:text-[#60A5FA] text-xs font-medium uppercase tracking-wide">
-                Open
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Supply Visualization */}
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm font-sans">
-            <span className="text-slate-500 dark:text-zinc-400">Minted Supply</span>
-            <span className="text-slate-500 dark:text-zinc-400">{available} / {totalSupply}</span>
-          </div>
-
-          <div className="h-2 w-full bg-slate-200 dark:bg-[#1E293B] rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
-              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
-            />
-          </div>
-        </div>
-
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Yield */}
-          <div className="bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-xl p-4 flex flex-col justify-center">
-            <span className="text-sm font-sans text-slate-500 dark:text-zinc-400 mb-1">Yield (Est)</span>
-            <span className="font-sans text-2xl font-semibold text-blue-600 dark:text-[#3B82F6]">
-              {estimatedYield}
-            </span>
-          </div>
-          {/* Lock-up */}
-          <div className="bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-xl p-4 flex flex-col justify-center">
-            <span className="text-sm font-sans text-slate-500 dark:text-zinc-400 mb-1">Lock-up</span>
-            <span className="font-sans text-2xl font-semibold text-slate-900 dark:text-white">
-              {lockupPeriod}
-            </span>
-          </div>
-        </div>
-
-        {/* Quantity Input */}
-        <div className="flex flex-col gap-2">
-          <span className="font-sans text-sm text-slate-500 dark:text-zinc-400">Quantity</span>
-          <div className="bg-white dark:bg-transparent border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 flex items-center shadow-sm dark:shadow-none">
-            <input
-              type="number"
-              disabled={!isAtwork}
-              max={Math.max(1, available)}
-              value={quantity}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === "") {
-                  setQuantity("");
-                  return;
-                }
-                const num = Number(raw);
-                if (!Number.isNaN(num) && num >= 0) {
-                  setQuantity(num);
-                }
-              }}
-              className="w-full bg-transparent font-sans text-slate-900 dark:text-white text-base focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Sub total & Total Display */}
-        <div className="flex flex-col gap-3 font-sans pt-2">
-          <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
-            <span className="text-sm">Sub Total</span>
-            <div className="flex items-center gap-1">
-              {quoteLoading ? <Skeleton className="h-5 w-16" /> : (
-                <>
-                  <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(subTotal)}</span>
-                  <span className="text-[10px] uppercase font-mono tracking-wider opacity-70">
-                    +-{bufferPercent.toFixed(2)}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-between items-center text-slate-500 dark:text-zinc-400">
-            <span className="text-sm">GST (18%)</span>
-            {quoteLoading ? <Skeleton className="h-5 w-16" /> : <span className="text-slate-900 dark:text-white">₹{formatCurrencyWithSmallDecimals(gst)}</span>}
-          </div>
-          <div className="w-full h-px bg-slate-200 dark:bg-[#1E293B] my-1" />
-          <div className="flex justify-between items-center">
-            <span className="text-base text-slate-600 dark:text-zinc-300">Total</span>
-            <div className="flex items-center gap-2">
-              {quoteLoading ? (
-                <Skeleton className="h-6 w-20" />
-              ) : (
-                <>
-                  <span className="text-xl text-slate-900 dark:text-white font-bold tracking-tight">
-                    ₹{formatCurrencyWithSmallDecimals(total)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase font-mono tracking-wider font-medium">
-                    +-{bufferPercent.toFixed(2)}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Primary Button */}
-        <button
-          type="button"
-          onClick={() => {
-            if (!hasAuthToken()) {
-              toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
-              return;
-            }
-            setConfirmOpen(true);
-          }}
-          // disabled={firstArtworkId == null || (Number(artist_profile_id) === id) || !isAtwork || !razorpayLoaded}
-          className="group w-full h-12 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
+    <>
+      <motion.aside
+        initial={{ opacity: 0, x: layout === 'floating' ? 50 : 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: layout === 'floating' ? 0.5 : 0.4, duration: 0.8 }}
+        className={cn(asideClass, className)}
+      >
+        <div
+          className={cn(
+            'relative overflow-hidden rounded-2xl p-6 flex flex-col gap-6 shadow-2xl w-full text-left',
+            innerSurface,
+            !canInteract || !razorpayLoaded ? 'opacity-60' : '',
+          )}
         >
-          <span className="font-sans font-medium text-base">
-            {!razorpayLoaded ? 'Loading...' : 'Collect Fractal'}
-          </span>
-          <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-1">
+              <h3 className={cn('font-sans text-sm font-medium tracking-wide uppercase', summaryHeadingCls)}>
+                Current Valuation
+              </h3>
+              <div className="flex items-baseline space-x-1 min-h-[2.5rem]">
+                {quoteLoading && firstArtworkId != null ? (
+                  <Skeleton
+                    className={cn(
+                      'h-10 w-40 rounded-lg',
+                      layout === 'floating'
+                        ? 'bg-white/15'
+                        : 'bg-slate-200 dark:bg-zinc-700',
+                    )}
+                  />
+                ) : (
+                  <span className={cn('font-sans text-4xl font-bold tracking-tight', summaryPriceCls)}>
+                    {'\u20B9'}
+                    {currentPrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
 
-        <p className="text-center font-sans text-xs text-slate-400 dark:text-zinc-500">
-          {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
-        </p>
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm font-sans">
+              <span className={summaryMutedCls}>Available fractals</span>
+              <span className={summaryMutedCls}>
+                {availShow.toLocaleString()} / {total.toLocaleString()}
+              </span>
+            </div>
 
-        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Collect fractal</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to collect {effectiveQty} fractal(s)? 
-                {ENABLE_RAZORPAY 
-                  ? ' You will be redirected to Razorpay to complete the payment securely.'
-                  : ' Payment will be processed automatically (Demo mode).'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className='flex justify-end items-center gap-2'>
-              <AlertDialogCancel disabled={collecting} className='rounded-lg h-11'>Cancel</AlertDialogCancel>
-              <GradientButton variant='primary' label={collecting ? 'Collecting…' : 'Confirm'} onClick={handleCollectConfirm} disabled={collecting} />
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <div className={cn('h-2 w-full rounded-full overflow-hidden', summaryBarTrackCls)}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${availableBarPercent}%` }}
+                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
+                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
+              />
+            </div>
+          </div>
 
-      </div>
-    </motion.aside>
+          <button
+            type="button"
+            onClick={openDialog}
+            disabled={!canInteract || !razorpayLoaded}
+            className="group w-full h-12 shrink-0 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+          >
+            <span className="font-sans font-medium text-base">
+              {!razorpayLoaded ? 'Loading...' : 'Collect fractal'}
+            </span>
+            <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+          </button>
+
+          <p className={cn('text-center font-sans text-xs', summaryHintCls)}>
+            {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
+          </p>
+        </div>
+      </motion.aside>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent
+          className={cn(
+            'sm:max-w-md gap-0 overflow-hidden border-[#1E293B] bg-[#0B1120] p-0 text-white shadow-2xl',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            '[&>button]:text-zinc-400 [&>button]:hover:text-white',
+          )}
+        >
+          <div className="max-h-[90vh] overflow-y-auto p-6 pb-8">
+            <DialogHeader className="space-y-3 pr-8 text-left">
+              <DialogTitle className="font-serif text-2xl font-normal tracking-tight text-white">
+                Collect from {collectContextLabel}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-zinc-400">
+                Acquire fractals at the best available price. All amounts are in Indian Rupees (INR), including taxes as shown.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-6 space-y-6">
+              <div className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Quantity</span>
+                <div className="flex items-stretch gap-2 rounded-xl border border-[#1E293B] bg-[#0f172a] p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 rounded-lg bg-[#1e293b] text-white hover:bg-[#334155] hover:text-white"
+                    onClick={() => bumpQuantity(-1)}
+                    disabled={effectiveQty <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    aria-label="Number of fractals to buy"
+                    value={quantity === '' ? '' : String(quantity)}
+                    onChange={handleQuantityInputChange}
+                    onBlur={handleQuantityBlur}
+                    className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 text-center font-mono text-lg text-white shadow-none placeholder:text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 rounded-lg bg-[#1e293b] text-white hover:bg-[#334155] hover:text-white"
+                    onClick={() => bumpQuantity(1)}
+                    disabled={effectiveQty >= maxQty}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-[11px] text-zinc-500">
+                  {maxQty.toLocaleString()} available
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Order breakdown</span>
+                {quoteLoading ? (
+                  <Skeleton className="h-24 w-full rounded-xl bg-zinc-800" />
+                ) : quote?.fill_breakdown?.length ? (
+                  <div className="space-y-2 rounded-xl bg-[#0f172a] px-4 py-3 border border-[#1E293B]">
+                    {quote.fill_breakdown.map((line, idx) => (
+                      <div
+                        key={`${line.source}-${idx}-${line.quantity}-${line.price_per_share}`}
+                        className="flex items-start justify-between gap-3 text-sm"
+                      >
+                        <span className="text-zinc-300">
+                          <span className="font-mono tabular-nums text-white">{line.quantity}</span>
+                          <span className="text-zinc-500"> × </span>
+                          @ {'\u20B9'}
+                          {parseFloat(line.price_per_share).toFixed(2)}
+                        </span>
+                        <span className="shrink-0 text-xs font-medium text-zinc-400">
+                          {fillSourceLabel(line.source)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-xl bg-[#0f172a] px-4 py-3 border border-[#1E293B]">
+                    <span className="text-sm text-zinc-300">
+                      {effectiveQty} × @ {'\u20B9'}
+                      {currentPrice.toFixed(2)}
+                      <span className="ml-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                        ±{bufferPercent.toFixed(2)}
+                      </span>
+                    </span>
+                    <span className="text-xs font-medium text-zinc-400">—</span>
+                  </div>
+                )}
+              </div>
+
+              {inventoryShort ? (
+                <p className="text-xs text-amber-400/90">
+                  Only {quote!.total_available_shares!.toLocaleString()} fractal(s) available for this order.
+                  Lower the quantity or try again later.
+                </p>
+              ) : null}
+
+              <div className="space-y-3 border-t border-[#1E293B] pt-4 font-sans">
+                <div className="flex justify-between text-sm text-zinc-400">
+                  <span>Subtotal (pre-tax)</span>
+                  <div className="flex items-center gap-2">
+                    {quoteLoading ? <Skeleton className="h-5 w-20 bg-zinc-800" /> : (
+                      <span className="text-zinc-100 inline-flex items-baseline gap-px">
+                        <span>{'\u20B9'}</span>
+                        {formatCurrencyWithSmallDecimals(subTotalPreTax)}
+                      </span>
+                    )}
+                    {!quoteLoading && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                        ±{bufferPercent.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm text-zinc-400">
+                  <span>{hasFillPreview ? 'Taxes & fees' : 'G.S.T. (18%)'}</span>
+                  {quoteLoading ? <Skeleton className="h-5 w-16 bg-zinc-800" /> : (
+                    <span className="text-zinc-100 inline-flex items-baseline gap-px">
+                      <span>{'\u20B9'}</span>
+                      {formatCurrencyWithSmallDecimals(taxesAndFeesAmount)}
+                    </span>
+                  )}
+                </div>
+                <div className="h-px bg-[#1E293B]" />
+                <div className="flex justify-between text-base font-semibold">
+                  <span className="text-[#3B82F6]">Total payable</span>
+                  <div className="flex items-center gap-2">
+                    {quoteLoading ? <Skeleton className="h-6 w-24 bg-zinc-800" /> : (
+                      <span className="text-[#3B82F6] inline-flex items-baseline gap-px">
+                        <span>{'\u20B9'}</span>
+                        {formatCurrencyWithSmallDecimals(totalPayableInr)}
+                      </span>
+                    )}
+                    {!quoteLoading && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                        ±{bufferPercent.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-8 flex flex-row justify-end gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 rounded-lg border border-[#334155] bg-[#1e293b] text-white hover:bg-[#334155]"
+                onClick={() => setDialogOpen(false)}
+                disabled={collecting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="h-11 rounded-lg bg-[#3B82F6] px-6 font-medium text-white hover:bg-[#2563EB]"
+                disabled={
+                  collecting ||
+                  !razorpayLoaded ||
+                  quoteLoading ||
+                  effectiveQty < 1 ||
+                  quote?.sufficient_for_quantity === false
+                }
+                onClick={handleCollectConfirm}
+              >
+                {collecting ? 'Collecting…' : !razorpayLoaded ? 'Loading…' : 'Confirm collection'}
+              </Button>
+            </DialogFooter>
+
+            <p className="mt-4 text-center text-[10px] text-zinc-600">
+              {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

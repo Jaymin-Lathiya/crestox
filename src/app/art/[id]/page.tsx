@@ -2,7 +2,7 @@
 
 import ExplodedCanvas from "@/components/canvas/ExplodedCanvas";
 import { useCallback, useEffect, useRef, useState } from "react";
-import FinancialHUD from "@/components/FinancialHUD";
+import CollectModule from "@/components/artist/CollectModule";
 import AnalyticsTab from "@/components/artist/AnalyticsTab";
 import ManifestoBlock from "@/components/ManifestoBlock";
 import TechSpecs from "@/components/TechSpecs";
@@ -134,8 +134,6 @@ const Index = () => {
   const [artworkByArtist, setArtworkByArtist] = useState<ArtworkListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
-  const router = useRouter();
-
   const [activeTab, setActiveTab] = useState('Analytics');
   const interactionRef = useRef<HTMLDivElement>(null);
   const [mouseDownPos, setMouseDownPos] = useState<{ x: number, y: number } | null>(null);
@@ -194,13 +192,6 @@ const Index = () => {
     fetchPriceHistory();
   }, [fetchArtworkById]);
 
-  const handleCollect = async () => {
-    const artistId = artwork?.artist_profile_id ?? artwork?.artist_profile?.id;
-    if (artistId != null) {
-      router.push(`/artist/${artistId}`);
-    }
-  };
-
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
   const reelArtworks = artworkByArtist.map(mapArtworkToReelItem).filter((a) => a.imageUrl);
@@ -208,7 +199,6 @@ const Index = () => {
   const pricePerFractal = artwork?.shares?.[0]?.current_price
     ? parseFloat(artwork.shares[0].current_price)
     : parseFloat(artwork?.starting_price ?? "0");
-  const totalValuation = artwork?.valuation ? parseFloat(artwork.valuation) : 0;
   const totalFractals = artwork?.number_of_shares ?? 0;
   const soldCount = artwork?.shares?.length ?? 0;
   const availableFractals = Math.max(0, totalFractals - soldCount);
@@ -239,17 +229,24 @@ const Index = () => {
           ref={interactionRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="absolute top-0 left-0 w-full h-[66vh] z-20 pointer-events-auto cursor-pointer"
+          className="absolute top-0 left-0 w-full h-[60vh] z-20 pointer-events-auto cursor-pointer"
         />
       </div>
 
-      <FinancialHUD
-        pricePerFractal={pricePerFractal}
-        totalValuation={totalValuation}
-        availableFractals={availableFractals}
-        totalFractals={totalFractals}
-        onCollect={handleCollect}
-      />
+      {artwork ? (
+        <CollectModule
+          layout="floating"
+          pricePerFractal={pricePerFractal}
+          totalSupply={totalFractals}
+          available={availableFractals}
+          available_fractals={availableFractals}
+          total_fractals={totalFractals}
+          firstArtworkId={artwork.id}
+          isAtwork
+          collectContextLabel={artistName || artwork.artist_profile?.artist_name || "Artist"}
+          onCollectSuccess={fetchArtworkById}
+        />
+      ) : null}
 
       <div className="relative z-10 px-8 md:px-16 py-10 md:pr-[400px]">
         <Tabs defaultValue="analytics" className="w-full">

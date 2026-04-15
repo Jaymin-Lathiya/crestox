@@ -1,13 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import GradientButton from '../ui/gradiant-button';
 import { getHomepageArtists, type HomepageArtist } from '@/apis/artists/artistActions';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const PLACEHOLDER_HEADLINE = 'What should we use here';
 
 function formatUsd(value: number) {
   return new Intl.NumberFormat('en-US', {
@@ -17,19 +16,27 @@ function formatUsd(value: number) {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
+/** Carousel slide: `artworkName` is null for the artist profile image */
+interface SpotlightSlide {
+  url: string;
+  artworkName: string | null;
+}
+
 interface SpotlightCardModel extends HomepageArtist {
-  displayImages: string[];
+  displaySlides: SpotlightSlide[];
 }
 
 const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: number }) => {
+  const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   const isInView = useInView(cardRef, { amount: 0.3 });
-  const { displayImages, fractals_sold_percentage: fundingProgress } = artist;
-  const len = displayImages.length;
+  const { displaySlides, fractals_sold_percentage: fundingProgress } = artist;
+  const len = displaySlides.length;
+  const currentCaption = displaySlides[currentImageIndex]?.artworkName ?? null;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -82,8 +89,12 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
             <AnimatePresence mode="wait">
               <motion.img
                 key={currentImageIndex}
-                src={displayImages[currentImageIndex]}
-                alt={`${artist.artist_name} — artwork ${currentImageIndex + 1}`}
+                src={displaySlides[currentImageIndex].url}
+                alt={
+                  currentCaption
+                    ? `${artist.artist_name} — ${currentCaption}`
+                    : `${artist.artist_name} — profile`
+                }
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -106,8 +117,12 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
           transition={{ delay: 0.3 }}
         >
           <p className="terminal-text text-muted-foreground text-[10px] mb-1">FUND PROGRESS</p>
-          <div className="flex items-end gap-2 mb-2">
+          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 mb-2">
             <span className="font-display text-2xl italic text-gradient-gold">{safePct}%</span>
+            <span className="font-mono text-[10px] text-muted-foreground tracking-wide">of</span>
+            <span className="font-mono text-sm text-foreground tabular-nums">
+              {formatUsd(artist.total_portfolio_value)}
+            </span>
           </div>
           <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
             <motion.div
@@ -128,7 +143,7 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
             animate={{ opacity: 1 }}
             className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10"
           >
-            {displayImages.map((_, idx) => (
+            {displaySlides.map((_, idx) => (
               <div
                 key={idx}
                 className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${idx === currentImageIndex ? 'bg-primary' : 'bg-primary/20'}`}
@@ -145,9 +160,17 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <p className="terminal-text text-primary text-xs tracking-[0.3em] mb-2">{PLACEHOLDER_HEADLINE}</p>
-          <h3 className="font-display text-3xl md:text-4xl italic text-foreground mb-2">{PLACEHOLDER_HEADLINE}</h3>
-          <p className="font-mono text-muted-foreground mb-4">by {artist.artist_name}</p>
+          {artist.homepage_tagline?.trim() ? (
+            <p className="terminal-text text-primary text-xs tracking-[0.3em] mb-2">
+              {artist.homepage_tagline}
+            </p>
+          ) : null}
+          <h3 className="font-display text-3xl md:text-4xl italic text-foreground mb-2">{artist.artist_name}</h3>
+          <div className="mb-4 min-h-[1.5rem]">
+            {currentCaption ? (
+              <p className="font-mono text-muted-foreground">{currentCaption}</p>
+            ) : null}
+          </div>
 
           <p className="font-sans text-sm text-muted-foreground leading-relaxed mb-6">
             {artist.description?.trim() || '—'}
@@ -187,9 +210,11 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <GradientButton variant="primary" label='Back This Artist'>
-
-            </GradientButton>
+            <GradientButton
+              variant="primary"
+              label="Back This Artist"
+              onClick={() => router.push(`/artist/${artist.artist_profile_id}`)}
+            />
           </motion.div>
         </motion.div>
       </div>
@@ -230,10 +255,22 @@ const ArtistSpotlight = () => {
     staleTime: 60_000,
   });
 
-  const cards: SpotlightCardModel[] = raw.map((a) => ({
-    ...a,
-    displayImages: Array.isArray(a.artworks) ? a.artworks.filter(Boolean) : [],
-  }));
+  const cards: SpotlightCardModel[] = raw.map((a) => {
+    const slides: SpotlightSlide[] = [];
+    const avatar = a.artist_avatar_url?.trim();
+    console.log('avatar', avatar);
+    if (avatar) {
+      slides.push({ url: avatar, artworkName: null });
+    }
+    const items = Array.isArray(a.artworks) ? a.artworks : [];
+    for (const item of items) {
+      const url = typeof item?.url === 'string' ? item.url.trim() : '';
+      if (!url) continue;
+      const name = typeof item?.name === 'string' ? item.name.trim() : '';
+      slides.push({ url, artworkName: name || 'Untitled' });
+    }
+    return { ...a, displaySlides: slides };
+  });
 
   return (
     <section
