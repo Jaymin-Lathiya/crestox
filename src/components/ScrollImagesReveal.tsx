@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -27,8 +27,20 @@ interface ScrollImagesRevealProps {
     artworks?: Artwork[];
 }
 
+function useGridColumnCount() {
+    const [cols, setCols] = useState(4);
+    useEffect(() => {
+        const update = () => setCols(window.innerWidth < 768 ? 2 : 4);
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return cols;
+}
+
 export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks = [] }: ScrollImagesRevealProps) {
     const gridRef = useRef<HTMLDivElement>(null);
+    const colCount = useGridColumnCount();
 
     // 1. Initialize Lenis smooth scroll once on mount
     useEffect(() => {
@@ -152,9 +164,7 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         return () => {
             clearTimeout(timeout);
         };
-    }, [artworks]);
-
-    const COLS = 4;
+    }, [artworks, colCount]);
 
     // Use artworks or fallback to empty array
     const dynamicImages = artworks.map(a => ({
@@ -168,20 +178,26 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         (dynamicImages.length >= 12 ? dynamicImages :
             [...dynamicImages, ...dynamicImages, ...dynamicImages].slice(0, 20));
 
-    // Group images into columns
-    const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: COLS }, () => []);
+    // Group images into columns (round-robin)
+    const columns: { src: string; aspect: string; id: number | null }[][] = Array.from({ length: colCount }, () => []);
     allImages.forEach(({ src, id, aspect }, i) => {
-        const col = i % COLS;
+        const col = i % colCount;
         columns[col].push({ src, aspect, id });
     });
+
+    const columnStaggerY = colCount === 2 ? 24 : 40;
 
     return (
         <div className={`relative w-full overflow-hidden pb-24 ${bgClass}`}>
             <div className="relative w-full">
                 <section className="relative flex justify-center">
-                    <div ref={gridRef} className="relative flex w-full max-w-[1480px] mx-auto gap-10 py-20 items-start">
+                    <div ref={gridRef} className="relative flex w-full max-w-[1480px] mx-auto gap-6 md:gap-10 py-20 items-start">
                         {columns.map((colItems, colIndex) => (
-                            <div key={colIndex} className="flex flex-col gap-10 flex-1" style={{ marginTop: `${colIndex * 40}px` }}>
+                            <div
+                                key={colIndex}
+                                className="flex flex-col gap-6 md:gap-10 flex-1 min-w-0"
+                                style={{ marginTop: `${colIndex * columnStaggerY}px` }}
+                            >
                                 {colItems.map(({ src, aspect, id }, rowIndex) => {
                                     const content = (
                                         <figure className="relative z-10 m-0" style={{ perspective: "1200px" }}>
