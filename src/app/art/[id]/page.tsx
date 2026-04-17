@@ -10,7 +10,12 @@ import ArtistReel from "@/components/ArtistReel";
 import NavigationPill from "@/components/NavigationPill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getArtworkById, getArtworksByArtist, getPriceHistory } from "@/apis/artwork/artworkActions";
+import {
+  getArtworkById,
+  getArtworksByArtist,
+  getArtworkAnalytics,
+  type ArtworkAnalyticsPayload,
+} from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
 
@@ -133,6 +138,9 @@ const Index = () => {
   const [artwork, setArtwork] = useState<ArtworkDetail | null>(null);
   const [artworkByArtist, setArtworkByArtist] = useState<ArtworkListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<ArtworkAnalyticsPayload | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('Analytics');
   const interactionRef = useRef<HTMLDivElement>(null);
@@ -178,19 +186,30 @@ const Index = () => {
     }
   }, [id]);
 
-  const fetchPriceHistory = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (!id || typeof id !== "string") return;
-    let params = {
-      price_type: "VALUATION",
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const res = await getArtworkAnalytics(id)();
+      if (res?.status === 200 && res?.data?.data) {
+        setAnalytics(res.data.data as ArtworkAnalyticsPayload);
+      } else {
+        setAnalyticsError("Could not load analytics.");
+        setAnalytics(null);
+      }
+    } catch {
+      setAnalyticsError("Could not load analytics.");
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
     }
-    const res = await getPriceHistory(id as string, params)();
-    console.log("res", res);
-  }
+  }, [id]);
 
   useEffect(() => {
     fetchArtworkById();
-    fetchPriceHistory();
-  }, [fetchArtworkById]);
+    fetchAnalytics();
+  }, [fetchArtworkById, fetchAnalytics]);
 
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
@@ -263,7 +282,11 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTab />
+            <AnalyticsTab
+              loading={analyticsLoading}
+              error={analyticsError}
+              analytics={analytics}
+            />
           </TabsContent>
 
           <TabsContent value="about" className="mt-0">
