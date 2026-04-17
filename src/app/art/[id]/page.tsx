@@ -216,20 +216,14 @@ const Index = () => {
     <main className="bg-void min-h-screen relative">
       <div className="noise-overlay" />
 
-      <div className="w-full h-[90vh] relative z-20">
+      {/* Hero Section with 3D Canvas */}
+      <div className="w-full h-[85vh] relative z-20">
         <ExplodedCanvas
           exploded={exploded}
           onToggle={toggleExplode}
-          artworkUrl={artworkImageUrl}
-          eventSource={interactionRef}
-          artworkName={artwork?.name}
-          orientation={artwork?.artwork_media?.[0]?.media?.orientation as ImageOrientation}
-        />
-        <div
-          ref={interactionRef}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          className="absolute top-0 left-0 w-full h-[60vh] z-20 pointer-events-auto cursor-pointer"
+          artworkUrl={artwork.artwork_media[0].media.file_path}
+          artworkName={artwork.name}
+          orientation={ImageOrientation.LANDSCAPE}
         />
       </div>
 
@@ -248,43 +242,47 @@ const Index = () => {
         />
       ) : null}
 
-      <div className="relative z-10 px-8 md:px-16 py-10 md:pr-[400px]">
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              About
-            </TabsTrigger>
-            <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              Details
-            </TabsTrigger>
-          </TabsList>
+      <CollectModule collectContextLabel="Mateo Ferreira" />
 
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTab />
-          </TabsContent>
+      {/* Content Section */}
+      <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
+        <div className="space-y-12">
+          <Tabs defaultValue="about" className="w-full">
+            <TabsList className="mb-12 bg-white/5 border border-white/10 p-1">
+              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+                About
+              </TabsTrigger>
+              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+                Technical
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+                Market
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="about" className="mt-0">
-            <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
-          </TabsContent>
+            <TabsContent value="about" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <ManifestoBlock statement={artwork.description} />
+            </TabsContent>
 
-          <TabsContent value="details" className="mt-0">
-            <TechSpecs metadata={metadata} className="mb-24" />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="details" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <TechSpecs metadata={metadata} />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <AnalyticsTab />
+            </TabsContent>
+          </Tabs>
+
+          <div className="pt-20">
+            <ArtistReel
+              artworks={reelArtworks}
+              artistName="Mateo Ferreira"
+            />
+          </div>
+        </div>
       </div>
-
-      <ArtistReel
-        artworks={reelArtworks}
-        artistName={artistName || "Artist"}
-        className="pb-32"
-      />
-
-      <NavigationPill />
     </main>
   );
-};
+}
 
 export default Index;

@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitControls, Html } from '@react-three/drei';
 
-
 // DLS Constants
 const GRID_SIZE = 50;
 const TOTAL_SHARDS = GRID_SIZE * GRID_SIZE;
@@ -17,18 +16,11 @@ export enum ImageOrientation {
   SQUARE = "SQUARE"
 }
 
-export const ASPECT_RATIOS = {
-  [ImageOrientation.PORTRAIT]: "aspect-[3/4]",
-  [ImageOrientation.LANDSCAPE]: "aspect-[4/3]",
-  [ImageOrientation.SQUARE]: "aspect-[1/1]"
-}
-
 export const ASPECT_VALUES = {
   [ImageOrientation.PORTRAIT]: 3 / 4,
   [ImageOrientation.LANDSCAPE]: 4 / 3,
   [ImageOrientation.SQUARE]: 1 / 1
 }
-
 
 interface ArtworkShardsProps {
   exploded: boolean;
@@ -36,7 +28,6 @@ interface ArtworkShardsProps {
   aspect: number;
 }
 
-// ... (vertexShader and fragmentShader remain the same)
 const vertexShader = `
   uniform float uProgress;
   uniform float uTime;
@@ -122,34 +113,42 @@ const fragmentShader = `
   }
 `;
 
-function CameraController({ exploded }: { exploded: boolean }) {
+function CameraController({ exploded, shouldReset, onResetComplete }: { exploded: boolean, shouldReset: boolean, onResetComplete: () => void }) {
   const { camera, controls } = useThree();
-  const [isResetting, setIsResetting] = useState(false);
+  const isPointerDown = useRef(false);
 
-  // Trigger reset when exploded becomes false
   useEffect(() => {
-    if (!exploded) {
-      setIsResetting(true);
-    } else {
-      setIsResetting(false);
-    }
-  }, [exploded]);
+    const handleDown = () => { isPointerDown.current = true; };
+    const handleUp = () => { isPointerDown.current = false; };
+
+    // Track global pointer state to detect release
+    window.addEventListener('pointerdown', handleDown);
+    window.addEventListener('pointerup', handleUp);
+
+    return () => {
+      window.removeEventListener('pointerdown', handleDown);
+      window.removeEventListener('pointerup', handleUp);
+    };
+  }, []);
 
   useFrame((state, delta) => {
-    if (isResetting && !exploded) {
-      // Smoothly interpolate camera back to default position
-      camera.position.lerp(DEFAULT_CAMERA_POS, delta * 4);
+    // Return camera to home only if image is NOT fractalized
+    // AND either shouldReset is true or user is NOT currently dragging
+    if (!exploded && (shouldReset || !isPointerDown.current)) {
+      const distance = camera.position.distanceTo(DEFAULT_CAMERA_POS);
 
-      if (controls) {
-        // @ts-ignore - OrbitControls target is a Vector3
-        controls.target.lerp(DEFAULT_TARGET, delta * 4);
-        // @ts-ignore
-        controls.update();
-      }
-
-      // Stop resetting if we are very close to the target
-      if (camera.position.distanceTo(DEFAULT_CAMERA_POS) < 0.01) {
-        setIsResetting(false);
+      // Only lerp if we're not already basically there
+      if (distance > 0.05) {
+        camera.position.lerp(DEFAULT_CAMERA_POS, delta * 5);
+        if (controls) {
+          // @ts-ignore
+          controls.target.lerp(DEFAULT_TARGET, delta * 5);
+          // @ts-ignore
+          controls.update();
+        }
+      } else if (shouldReset) {
+        // Only trigger completion for explicit reset requests
+        onResetComplete();
       }
     }
   });
@@ -158,7 +157,6 @@ function CameraController({ exploded }: { exploded: boolean }) {
 }
 
 function ArtworkShards({ exploded, textureUrl, aspect }: ArtworkShardsProps) {
-  // ... (ArtworkShards implementation remains the same)
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -248,7 +246,7 @@ function ArtworkShards({ exploded, textureUrl, aspect }: ArtworkShardsProps) {
   if (!texture) {
     return (
       <Html center>
-        <div className="text-white font-mono text-sm tracking-widest animate-pulse">
+        <div className="text-white font-mono text-sm tracking-widest animate-pulse whitespace-nowrap">
           LOADING ASSET...
         </div>
       </Html>
@@ -273,7 +271,6 @@ interface ExplodedCanvasProps {
   exploded: boolean;
   onToggle: () => void;
   artworkUrl: string;
-  eventSource?: React.RefObject<HTMLDivElement | null>;
   orientation?: ImageOrientation;
   artworkName: string;
 }
@@ -282,19 +279,12 @@ export default function ExplodedCanvas({
   exploded,
   onToggle,
   artworkUrl,
-  eventSource,
   orientation = ImageOrientation.SQUARE,
   artworkName
 }: ExplodedCanvasProps) {
   const aspect = ASPECT_VALUES[orientation];
-
-  // Use a state to force re-render when the ref is populated
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (eventSource?.current) {
-      setTick(t => t + 1);
-    }
-  }, [eventSource]);
+  const [shouldReset, setShouldReset] = useState(false);
+  const pointerDownPos = useRef({ x: 0, y: 0 });
 
   return (
     <div className="relative w-full h-full bg-black">
@@ -302,31 +292,68 @@ export default function ExplodedCanvas({
         dpr={[1, 2]}
         camera={{ position: [0, 0, 80], fov: 45 }}
         gl={{ antialias: true, alpha: false }}
-        eventSource={eventSource?.current || undefined}
         className="cursor-pointer"
       >
         <color attach="background" args={['#050505']} />
         <ambientLight intensity={1.5} />
         <pointLight position={[10, 10, 10]} />
 
-        <CameraController exploded={exploded} />
+        <CameraController
+          exploded={exploded}
+          shouldReset={shouldReset}
+          onResetComplete={() => setShouldReset(false)}
+        />
         <ArtworkShards exploded={exploded} textureUrl={artworkUrl} aspect={aspect} />
+
+        {/* Interaction Plane to capture clicks ONLY on the image area */}
+        <mesh
+          position={[0, 0, 0.1]}
+          onPointerDown={(e) => {
+            pointerDownPos.current = { x: e.clientX, y: e.clientY };
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+
+            // Calculate distance moved during interaction
+            const moveDistance = Math.sqrt(
+              Math.pow(e.clientX - pointerDownPos.current.x, 2) +
+              Math.pow(e.clientY - pointerDownPos.current.y, 2)
+            );
+
+            // If user moved more than 5 pixels, it's a drag/rotate, not a click
+            if (moveDistance > 5) return;
+
+            const nextExploded = !exploded;
+            // If we are about to un-fractalize, trigger the camera home reset
+            if (!nextExploded) {
+              setShouldReset(true);
+            } else {
+              setShouldReset(false);
+            }
+            onToggle();
+          }}
+        >
+          <planeGeometry args={[aspect * 50, 50]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
 
         <OrbitControls
           makeDefault
           enablePan={false}
-          enableZoom={true}
+          enableZoom={exploded}
           minDistance={40}
           maxDistance={150}
+          minPolarAngle={0.1}
+          maxPolarAngle={Math.PI - 0.1}
           autoRotate={exploded}
           autoRotateSpeed={0.5}
           dampingFactor={0.05}
-          domElement={eventSource?.current || undefined}
+          onStart={() => setShouldReset(false)}
         />
       </Canvas>
       {artworkName && (
         <div className="absolute bottom-6 left-8 md:left-16 z-10 pointer-events-none">
-          <h1 className="font-serif text-2xl md:text-4xl text-marble italic drop-shadow-lg">
+          <h1 className="font-serif text-2xl md:text-4xl text-white italic drop-shadow-lg drop-shadow-black">
             {artworkName}
           </h1>
         </div>
