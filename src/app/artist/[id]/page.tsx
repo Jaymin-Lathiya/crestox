@@ -16,12 +16,12 @@ import {
   getArtistAchievements,
   getArtistHistory,
   getArtistCollectors,
-  getArtistPriceHistory,
+  getArtistAnalytics,
   type ArtistBasicDetails,
   type ArtistAchievement,
   type ArtistHistory,
   type ArtistCollector,
-  type ArtistPriceHistory,
+  type ArtistAnalyticsPayload,
   getArtistArtworks,
 } from '@/apis/artists/artistActions';
 import { strings } from '@/utils/strings';
@@ -96,7 +96,9 @@ const ArtistPage = () => {
   const [achievements, setAchievements] = useState<ArtistAchievement[]>([]);
   const [history, setHistory] = useState<ArtistHistory[]>([]);
   const [collectors, setCollectors] = useState<ArtistCollector[]>([]);
-  const [priceHistory, setPriceHistory] = useState<ArtistPriceHistory | null>(null);
+  const [artistAnalytics, setArtistAnalytics] = useState<ArtistAnalyticsPayload | null>(null);
+  const [artistAnalyticsLoading, setArtistAnalyticsLoading] = useState(true);
+  const [artistAnalyticsError, setArtistAnalyticsError] = useState<string | null>(null);
   const [artworks, setArtworks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,25 +113,17 @@ const ArtistPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [basic, achievementsData, historyData, collectorsData, priceData, artworksResponse] = await Promise.all([
+        const [basic, achievementsData, historyData, collectorsData, artworksResponse] = await Promise.all([
           getArtistBasicDetails(id)(),
           getArtistAchievements(id)(),
           getArtistHistory(id)(),
           getArtistCollectors(id)(),
-          getArtistPriceHistory(id)(),
           getArtistArtworks(id)(),
         ]);
-        console.log('Artist basic details:', basic);
-        console.log('Artist achievements data:', achievementsData);
-        console.log('Artist history data:', historyData);
-        console.log('Artist collectors data:', collectorsData);
-        console.log('Artist price history data:', priceData);
-        console.log('Artist artworks data:', artworksResponse);
         setBasicDetails(basic ?? null);
         setAchievements(Array.isArray(achievementsData) ? achievementsData : []);
         setHistory(Array.isArray(historyData) ? historyData : []);
         setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
-        setPriceHistory(priceData ?? null);
         const list = Array.isArray(artworksResponse) ? artworksResponse : [];
         const mapped = list.length > 0
           ? list.map((a: any) => {
@@ -160,16 +154,53 @@ const ArtistPage = () => {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+    if (!id || isNaN(id)) {
+      setArtistAnalyticsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setArtistAnalyticsLoading(true);
+      setArtistAnalyticsError(null);
+      try {
+        const res = await getArtistAnalytics(id)();
+        if (cancelled) return;
+        if (res?.status === 200 && res?.data?.data) {
+          setArtistAnalytics(res.data.data as ArtistAnalyticsPayload);
+        } else {
+          setArtistAnalyticsError('Could not load analytics.');
+          setArtistAnalytics(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistAnalyticsError('Could not load analytics.');
+          setArtistAnalytics(null);
+        }
+      } finally {
+        if (!cancelled) setArtistAnalyticsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const refetchAfterCollect = useCallback(async () => {
     if (id == null || isNaN(id)) return;
     try {
-      const [basic, collectorsData, artworksResponse] = await Promise.all([
+      const [basic, collectorsData, artworksResponse, analyticsRes] = await Promise.all([
         getArtistBasicDetails(id)(),
         getArtistCollectors(id)(),
         getArtistArtworks(id)(),
+        getArtistAnalytics(id)(),
       ]);
       setBasicDetails(basic ?? null);
       setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
+      if (analyticsRes?.status === 200 && analyticsRes?.data?.data) {
+        setArtistAnalytics(analyticsRes.data.data as ArtistAnalyticsPayload);
+        setArtistAnalyticsError(null);
+      }
       const list = Array.isArray(artworksResponse) ? artworksResponse : [];
       const mapped = list.length > 0
         ? list.map((a: any) => {
@@ -264,27 +295,19 @@ const ArtistPage = () => {
       }))
     : [];
 
-  const priceDataForAnalytics = Array.isArray(priceHistory?.history)
-    ? priceHistory.history.map((h) => ({
-        month: h.month?.split?.(' ')[0] ?? h.month ?? '',
-        price: h.price,
-      }))
-    : [
-        { month: 'Jan', price: 180 },
-        { month: 'Feb', price: 195 },
-        { month: 'Mar', price: 210 },
-        { month: 'Apr', price: 198 },
-        { month: 'May', price: 225 },
-        { month: 'Jun', price: 240 },
-      ];
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'artworks':
         if (isLoading) return <ArtworksGridSkeleton />;
         return <ArtworksGrid artworks={artworks} />;
       case 'analytics':
-        return <AnalyticsTab priceData={priceDataForAnalytics} />;
+        return (
+          <AnalyticsTab
+            loading={artistAnalyticsLoading}
+            error={artistAnalyticsError}
+            artistAnalytics={artistAnalytics}
+          />
+        );
       case 'achievements':
         return <AchievementsTab achievements={achievementsForTab} />;
       case 'history':

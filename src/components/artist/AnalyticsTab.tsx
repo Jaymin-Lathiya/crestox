@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ArtworkAnalyticsPayload } from "@/apis/artwork/artworkActions";
+import type { ArtistAnalyticsPayload } from "@/apis/artists/artistActions";
 
 const GRADE_STYLES: Record<string, string> = {
   AAA: "hsl(44, 100%, 50%)",
@@ -91,9 +92,11 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 export interface AnalyticsTabProps {
   loading?: boolean;
   error?: string | null;
-  /** Artwork detail: full analytics from GET /artwork/:id/analytics */
+  /** Artwork detail: GET /artwork/:id/analytics (chart = valuation) */
   analytics?: ArtworkAnalyticsPayload | null;
-  /** Artist profile (or demos): chart points only; grades/metrics use demo unless `analytics` is set */
+  /** Artist detail: GET /artists/:id/analytics (chart = fractal price) */
+  artistAnalytics?: ArtistAnalyticsPayload | null;
+  /** Demos / legacy: chart points only when no API payload */
   priceData?: { month: string; price: number }[];
 }
 
@@ -101,16 +104,26 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
   loading = false,
   error = null,
   analytics = null,
+  artistAnalytics = null,
   priceData: legacyPriceData,
 }) => {
   const gradientId = useId().replace(/:/g, "");
 
-  const useLiveAnalytics = analytics != null;
+  const useArtworkLive = analytics != null;
+  const useArtistLive = artistAnalytics != null;
+  const useLiveApi = useArtworkLive || useArtistLive;
 
   const chartRows = useMemo(() => {
-    if (useLiveAnalytics) {
+    if (analytics != null) {
       if (!analytics.valuation_history?.length) return [];
       return analytics.valuation_history.map(({ label, price }) => ({
+        month: label,
+        price,
+      }));
+    }
+    if (artistAnalytics != null) {
+      if (!artistAnalytics.fractal_price_history?.length) return [];
+      return artistAnalytics.fractal_price_history.map(({ label, price }) => ({
         month: label,
         price,
       }));
@@ -119,11 +132,16 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
       return legacyPriceData;
     }
     return DEMO_PRICE_DATA;
-  }, [analytics, legacyPriceData, useLiveAnalytics]);
+  }, [analytics, artistAnalytics, legacyPriceData]);
 
   const gradesForUi = useMemo(() => {
-    if (useLiveAnalytics) {
-      const fromApi = analytics.grade_distribution ?? [];
+    if (useLiveApi) {
+      const fromApi =
+        analytics != null
+          ? analytics.grade_distribution ?? []
+          : artistAnalytics != null
+            ? artistAnalytics.grade_distribution ?? []
+            : [];
       const map = new Map(fromApi.map((g) => [g.grade, g.count]));
       return GRADE_ORDER.map((grade) => ({
         grade,
@@ -132,12 +150,12 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
       }));
     }
     return DEMO_GRADES_UI;
-  }, [analytics, useLiveAnalytics]);
+  }, [analytics, artistAnalytics, useLiveApi]);
 
   const maxCount = Math.max(1, ...gradesForUi.map((g) => g.count));
 
   const metrics = useMemo(() => {
-    if (useLiveAnalytics) {
+    if (analytics != null) {
       return {
         hold: formatHoldMonths(analytics.avg_hold_days),
         collectors: analytics.unique_collectors.toLocaleString("en-IN"),
@@ -145,8 +163,28 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
         portfolio: formatInr(analytics.total_portfolio_value, true),
       };
     }
+    if (artistAnalytics != null) {
+      return {
+        hold: formatHoldMonths(artistAnalytics.avg_hold_days),
+        collectors: artistAnalytics.unique_collectors.toLocaleString("en-IN"),
+        fractal: formatInr(artistAnalytics.fractal_price),
+        portfolio: formatInr(artistAnalytics.total_portfolio_value, true),
+      };
+    }
     return DEMO_METRICS;
-  }, [analytics, useLiveAnalytics]);
+  }, [analytics, artistAnalytics]);
+
+  const chartTitle = useArtworkLive
+    ? "Valuation history"
+    : useArtistLive
+      ? "Fractal price history"
+      : "Price history";
+
+  const emptyChartCopy = useArtworkLive
+    ? "No valuation data for this artwork yet."
+    : useArtistLive
+      ? "No fractal price history yet."
+      : "No chart data.";
 
   if (loading) {
     return (
@@ -179,7 +217,7 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
     >
       <div className="glass p-6 rounded-lg">
         <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground mb-6">
-          Valuation history
+          {chartTitle}
         </h3>
         <div className="h-64">
           {chartRows.length > 0 ? (
@@ -221,7 +259,7 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
             </ResponsiveContainer>
           ) : (
             <p className="text-xs font-mono text-muted-foreground h-full flex items-center justify-center">
-              {useLiveAnalytics ? "No valuation data for this artwork yet." : "No chart data."}
+              {useLiveApi ? emptyChartCopy : "No chart data."}
             </p>
           )}
         </div>

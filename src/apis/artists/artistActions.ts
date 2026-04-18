@@ -49,6 +49,18 @@ export interface ArtistPriceHistory {
     history: { month: string; price: number }[];
 }
 
+/** GET /artists/:id/analytics — same metrics as artwork analytics; chart is fractal price over time */
+export interface ArtistAnalyticsPayload {
+    artist_profile_id: number;
+    currency: "INR";
+    fractal_price_history: { label: string; price: number }[];
+    grade_distribution: { grade: string; count: number }[];
+    unique_collectors: number;
+    total_portfolio_value: number;
+    fractal_price: number;
+    avg_hold_days: number | null;
+}
+
 export interface ArtistArtwork {
     artistProfileId: number;
 }
@@ -160,7 +172,17 @@ export const getArtistCollectors = (id: number) => async (): Promise<ArtistColle
 export const getArtistPriceHistory = (id: number) => async (): Promise<ArtistPriceHistory> => {
     const response = await instance.get(ARTIST_URLS.PRICE_HISTORY(id));
     return response.data?.data ?? { current_price: 0, history: [] };
-}
+};
+
+export const getArtistAnalytics = (id: number) => async () => {
+    try {
+        const response = await instance.get(ARTIST_URLS.ANALYTICS(id));
+        return response;
+    } catch (err: any) {
+        console.error({ err });
+        throw err;
+    }
+};
 
 export const getArtistArtworks = (id: number) => async (): Promise<any[]> => {
     const response = await instance.get(ARTIST_URLS.ARTWORKS(id));
