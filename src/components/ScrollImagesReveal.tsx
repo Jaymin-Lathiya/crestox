@@ -54,11 +54,16 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
 
         lenis.on("scroll", ScrollTrigger.update);
 
+        // NOTE: the original implementation only cancelled the first RAF id,
+        // which left the recursive requestAnimationFrame chain running forever
+        // after unmount (a memory/CPU leak that stacks on every HMR/route
+        // change). We track the latest id so cleanup actually stops the loop.
+        let rafId = 0;
         const raf = (t: number) => {
             lenis.raf(t);
-            requestAnimationFrame(raf);
+            rafId = requestAnimationFrame(raf);
         };
-        const rafId = requestAnimationFrame(raf);
+        rafId = requestAnimationFrame(raf);
 
         gsap.ticker.lagSmoothing(0);
 
@@ -69,32 +74,37 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         };
     }, []);
 
-    // 2. Apply GSAP animations progressively as new artworks are loaded
+    // 2. Set up GSAP animations once after the artworks list is ready.
+    // Using gsap.context so every tween/ScrollTrigger created here is
+    // automatically reverted on cleanup instead of leaking across renders.
     useEffect(() => {
-        if (!artworks.length) return;
+        if (!artworks.length || !gridRef.current) return;
 
-        // Delay to allow DOM layout to settle
-        const timeout = setTimeout(() => {
-            const gridWrappers = gridRef.current?.querySelectorAll(".grid-item-imgwrap:not(.gsap-applied)") as NodeListOf<HTMLElement>;
-            if (!gridWrappers || gridWrappers.length === 0) return;
+        const ctx = gsap.context(() => {
+            const gridWrappers = gridRef.current!.querySelectorAll<HTMLElement>(
+                ".grid-item-imgwrap"
+            );
+            if (!gridWrappers.length) return;
+
+            const viewportHalf = window.innerWidth / 2;
 
             gridWrappers.forEach((wrapper) => {
-                wrapper.classList.add("gsap-applied");
                 const img = wrapper.querySelector<HTMLElement>(".grid-item-img");
                 const rect = wrapper.getBoundingClientRect();
-                const isLeft = (rect.left + rect.width / 2) < (window.innerWidth / 2);
+                const isLeft = rect.left + rect.width / 2 < viewportHalf;
 
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: wrapper,
-                        start: "top bottom", // Start when top of element hits bottom of viewport
-                        end: "bottom top",   // End when bottom of element hits top of viewport
-                        scrub: 1,            // Smooth scrubbing
-                    }
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: 1,
+                        invalidateOnRefresh: false,
+                    },
                 });
 
-                // Entrance Animation
-                tl.fromTo(wrapper,
+                tl.fromTo(
+                    wrapper,
                     {
                         z: 200,
                         rotateX: 45,
@@ -113,57 +123,46 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
                         opacity: 1,
                         filter: "blur(0px) brightness(1)",
                         ease: "power2.out",
-                        duration: 1
+                        duration: 1,
                     }
                 )
-                    // Middle Hold (Crystal Clear State)
                     .to(wrapper, { duration: 1 })
-                    // Exit Animation
-                    .to(wrapper,
-                        {
-                            z: 200,
-                            rotateX: -45,
-                            rotateZ: isLeft ? -5 : 5,
-                            xPercent: isLeft ? -15 : 15,
-                            yPercent: -50,
-                            opacity: 0,
-                            filter: "blur(10px) brightness(0.5)",
-                            ease: "power2.in",
-                            duration: 1
-                        }
-                    );
+                    .to(wrapper, {
+                        z: 200,
+                        rotateX: -45,
+                        rotateZ: isLeft ? -5 : 5,
+                        xPercent: isLeft ? -15 : 15,
+                        yPercent: -50,
+                        opacity: 0,
+                        filter: "blur(10px) brightness(0.5)",
+                        ease: "power2.in",
+                        duration: 1,
+                    });
 
                 if (img) {
-                    gsap.fromTo(img,
-                        { scale: 1.4 },
-                        {
-                            scale: 1,
-                            scrollTrigger: {
-                                trigger: wrapper,
-                                start: "top bottom",
-                                end: "center center",
-                                scrub: true
-                            }
-                        }
-                    );
-
-                    gsap.to(img, {
-                        scale: 1.4,
+                    // Collapse the two image-scale ScrollTriggers into a single
+                    // timeline. Each ScrollTrigger with scrub fires update
+                    // callbacks on every scroll frame, so halving them roughly
+                    // halves the per-frame work for the image zoom effect.
+                    gsap.timeline({
                         scrollTrigger: {
                             trigger: wrapper,
-                            start: "center center",
+                            start: "top bottom",
                             end: "bottom top",
-                            scrub: true
-                        }
-                    });
+                            scrub: true,
+                            invalidateOnRefresh: false,
+                        },
+                    })
+                        .fromTo(img, { scale: 1.4 }, { scale: 1, ease: "none", duration: 1 })
+                        .to(img, { scale: 1.4, ease: "none", duration: 1 });
                 }
             });
-            ScrollTrigger.refresh();
-        }, 200);
 
-        return () => {
-            clearTimeout(timeout);
-        };
+            // Refresh once at the end instead of per-item.
+            ScrollTrigger.refresh();
+        }, gridRef);
+
+        return () => ctx.revert();
     }, [artworks, colCount]);
 
     // Use artworks or fallback to empty array
@@ -201,13 +200,15 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
                                 {colItems.map(({ src, aspect, id }, rowIndex) => {
                                     const content = (
                                         <figure className="relative z-10 m-0" style={{ perspective: "1200px" }}>
-                                            <div className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-xl bg-gray-900/50 border border-white/5 shadow-2xl transition-shadow duration-500 hover:shadow-white/10`}>
+                                            <div
+                                                className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-xl bg-gray-900/50 border border-white/5 shadow-2xl transition-shadow duration-500 hover:shadow-white/10`}
+                                            >
                                                 <div
-                                                    className="grid-item-img absolute inset-0 h-full w-full bg-cover bg-center transition-transform duration-700"
+                                                    className="grid-item-img absolute inset-0 h-full w-full bg-cover bg-center"
                                                     style={{
                                                         backgroundImage: `url(${src})`,
                                                         backgroundSize: 'cover',
-                                                        backgroundPosition: 'center'
+                                                        backgroundPosition: 'center',
                                                     }}
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />

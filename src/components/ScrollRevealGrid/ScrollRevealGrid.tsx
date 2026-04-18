@@ -116,19 +116,27 @@ export default function ScrollRevealGrid() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchArtworks = async () => {
             try {
-                let allArtworks: any[] = [];
+                const allArtworks: any[] = [];
                 let nextCursor: string | null = null;
-                let isFetching = true;
 
-                while (isFetching) {
+                // Load every page BEFORE committing to state. Otherwise each
+                // intermediate setArtworks remounts/re-runs the heavy GSAP
+                // ScrollTrigger setup in ScrollImagesReveal (and calls
+                // ScrollTrigger.refresh() on every page), which is the main
+                // source of lag during initial load.
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
                     const res = await instance.get('/artwork/verified', {
                         params: {
-                            take: 20, // Fetch in chunks of 20
+                            take: 20,
                             ...(nextCursor ? { cursor: nextCursor } : {})
                         }
                     });
+
+                    if (cancelled) return;
 
                     const data = res.data?.data || res.data;
                     let list: any[] = [];
@@ -138,30 +146,27 @@ export default function ScrollRevealGrid() {
                         list = data;
                     }
 
-                    allArtworks = [...allArtworks, ...list];
+                    allArtworks.push(...list);
 
-                    // Update state incrementally so the UI starts displaying items as they come in.
-                    setArtworks(allArtworks);
-
-                    // Check for next_cursor indicating more pages. Break loop if null.
                     if (data?.next_cursor) {
                         nextCursor = data.next_cursor;
                     } else {
-                        nextCursor = null;
-                        isFetching = false;
-                    }
-
-                    // On the first chunk, we can disable the primary isLoading state.
-                    if (isLoading) {
-                        setIsLoading(false);
+                        break;
                     }
                 }
+
+                if (cancelled) return;
+                setArtworks(allArtworks);
+                setIsLoading(false);
             } catch (error) {
                 console.error("Failed to fetch verified artworks", error);
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
         fetchArtworks();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // const { scrollYProgress } = useScroll({

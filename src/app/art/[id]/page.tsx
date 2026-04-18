@@ -16,7 +16,7 @@ import {
   getArtworkAnalytics,
   type ArtworkAnalyticsPayload,
 } from "@/apis/artwork/artworkActions";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
 
 /** API artwork media item */
@@ -142,7 +142,6 @@ const Index = () => {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState('Analytics');
   const interactionRef = useRef<HTMLDivElement>(null);
   const [mouseDownPos, setMouseDownPos] = useState<{ x: number, y: number } | null>(null);
 
@@ -261,15 +260,6 @@ const Index = () => {
         />
       ) : null}
 
-      <CollectModule collectContextLabel="Mateo Ferreira" />
-
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTab
-              loading={analyticsLoading}
-              error={analyticsError}
-              analytics={analytics}
-            />
-          </TabsContent>
       {/* Content Section */}
       <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
         <div className="space-y-12">
@@ -295,7 +285,11 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <AnalyticsTab />
+              <AnalyticsTab
+                loading={analyticsLoading}
+                error={analyticsError}
+                analytics={analytics}
+              />
             </TabsContent>
           </Tabs>
 
