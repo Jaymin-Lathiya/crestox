@@ -159,8 +159,9 @@ const Index = () => {
       Math.pow(e.clientX - mouseDownPos.x, 2) +
       Math.pow(e.clientY - mouseDownPos.y, 2)
     );
-    // Only toggle if it was a quick click (moved less than 5px)
-    if (dist < 5) {
+    // If not exploded, do nothing on the background plane. The canvas image mesh handles its own clicks.
+    // If exploded, a quick global click un-explodes it.
+    if (dist < 5 && exploded) {
       toggleExplode();
     }
     setMouseDownPos(null);
@@ -240,6 +241,9 @@ const Index = () => {
     );
   }
 
+  console.log({ exploded });
+
+
   return (
     <main className="bg-void min-h-screen relative">
       <div className="noise-overlay" />
@@ -258,53 +262,62 @@ const Index = () => {
           ref={interactionRef}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="absolute top-0 left-0 w-full h-[60vh] z-20 pointer-events-auto cursor-pointer"
+          className={`absolute top-0 left-0 w-full z-20 pointer-events-auto cursor-pointer ${exploded ? "h-[60vh]" : "h-[90vh]"} `}
         />
       </div>
 
-      <FinancialHUD
-        pricePerFractal={pricePerFractal}
-        totalValuation={totalValuation}
-        availableFractals={availableFractals}
-        totalFractals={totalFractals}
-        onCollect={handleCollect}
-      />
+      {artwork ? (
+        <CollectModule
+          layout="floating"
+          pricePerFractal={pricePerFractal}
+          totalSupply={totalFractals}
+          available={availableFractals}
+          available_fractals={availableFractals}
+          total_fractals={totalFractals}
+          firstArtworkId={artwork.id}
+          isAtwork
+          collectContextLabel={artistName || artwork.artist_profile?.artist_name || "Artist"}
+          onCollectSuccess={fetchArtworkById}
+        />
+      ) : null}
 
-      <div className="relative z-10 px-8 md:px-16 py-10 md:pr-[400px]">
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              About
-            </TabsTrigger>
-            <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-              Details
-            </TabsTrigger>
-          </TabsList>
+      {/* Content Section */}
+      <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
+        <div className="space-y-12">
+          <Tabs defaultValue="analytics" className="w-full">
+            <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+                About
+              </TabsTrigger>
+              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+                Details
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTab />
-          </TabsContent>
+            <TabsContent value="analytics" className="mt-0">
+              <AnalyticsTab />
+            </TabsContent>
 
-          <TabsContent value="about" className="mt-0">
-            <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
-          </TabsContent>
+            <TabsContent value="about" className="mt-0">
+              <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
+            </TabsContent>
 
-          <TabsContent value="details" className="mt-0">
-            <TechSpecs metadata={metadata} className="mb-24" />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="details" className="mt-0">
+              <TechSpecs metadata={metadata} className="mb-24" />
+            </TabsContent>
+          </Tabs>
+
+
+        </div>
       </div>
-
       <ArtistReel
         artworks={reelArtworks}
         artistName={artistName || "Artist"}
         className="pb-32"
       />
-
-      <NavigationPill />
     </main>
   );
 }
