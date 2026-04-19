@@ -271,6 +271,7 @@ interface ExplodedCanvasProps {
   exploded: boolean;
   onToggle: () => void;
   artworkUrl: string;
+  eventSource?: React.RefObject<HTMLDivElement | null>;
   orientation?: ImageOrientation;
   artworkName: string;
 }
@@ -279,6 +280,7 @@ export default function ExplodedCanvas({
   exploded,
   onToggle,
   artworkUrl,
+  eventSource,
   orientation = ImageOrientation.SQUARE,
   artworkName
 }: ExplodedCanvasProps) {
@@ -286,12 +288,22 @@ export default function ExplodedCanvas({
   const [shouldReset, setShouldReset] = useState(false);
   const pointerDownPos = useRef({ x: 0, y: 0 });
 
+  // Use a state to force re-render when the ref is populated
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (eventSource?.current) {
+      setTick(t => t + 1);
+    }
+  }, [eventSource]);
+
+
   return (
     <div className="relative w-full h-full bg-black">
       <Canvas
         dpr={[1, 2]}
         camera={{ position: [0, 0, 80], fov: 45 }}
         gl={{ antialias: true, alpha: false }}
+        eventSource={eventSource?.current || undefined}
         className="cursor-pointer"
       >
         <color attach="background" args={['#050505']} />
@@ -349,6 +361,7 @@ export default function ExplodedCanvas({
           autoRotateSpeed={0.5}
           dampingFactor={0.05}
           onStart={() => setShouldReset(false)}
+          domElement={eventSource?.current || undefined}
         />
       </Canvas>
       {artworkName && (

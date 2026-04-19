@@ -157,8 +157,9 @@ const Index = () => {
       Math.pow(e.clientX - mouseDownPos.x, 2) +
       Math.pow(e.clientY - mouseDownPos.y, 2)
     );
-    // Only toggle if it was a quick click (moved less than 5px)
-    if (dist < 5) {
+    // If not exploded, do nothing on the background plane. The canvas image mesh handles its own clicks.
+    // If exploded, a quick global click un-explodes it.
+    if (dist < 5 && exploded) {
       toggleExplode();
     }
     setMouseDownPos(null);
@@ -230,18 +231,28 @@ const Index = () => {
     );
   }
 
+  console.log({ exploded });
+
+
   return (
     <main className="bg-void min-h-screen relative">
       <div className="noise-overlay" />
 
       {/* Hero Section with 3D Canvas */}
-      <div className="w-full h-[85vh] relative z-20">
+      <div className="w-full h-[90vh] relative z-20">
         <ExplodedCanvas
           exploded={exploded}
           onToggle={toggleExplode}
+          eventSource={interactionRef}
           artworkUrl={artwork.artwork_media[0].media.file_path}
           artworkName={artwork.name}
           orientation={ImageOrientation.LANDSCAPE}
+        />
+        <div
+          ref={interactionRef}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          className={`absolute top-0 left-0 w-full z-20 pointer-events-auto cursor-pointer ${exploded ? "h-[60vh]" : "h-[90vh]"} `}
         />
       </div>
 
@@ -263,44 +274,40 @@ const Index = () => {
       {/* Content Section */}
       <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
         <div className="space-y-12">
-          <Tabs defaultValue="about" className="w-full">
-            <TabsList className="mb-12 bg-white/5 border border-white/10 p-1">
-              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+          <Tabs defaultValue="analytics" className="w-full">
+            <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
                 About
               </TabsTrigger>
-              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
-                Technical
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
-                Market
+              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+                Details
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="about" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <ManifestoBlock statement={artwork.description} />
+            <TabsContent value="analytics" className="mt-0">
+              <AnalyticsTab />
             </TabsContent>
 
-            <TabsContent value="details" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <TechSpecs metadata={metadata} />
+            <TabsContent value="about" className="mt-0">
+              <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
             </TabsContent>
 
-            <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <AnalyticsTab
-                loading={analyticsLoading}
-                error={analyticsError}
-                analytics={analytics}
-              />
+            <TabsContent value="details" className="mt-0">
+              <TechSpecs metadata={metadata} className="mb-24" />
             </TabsContent>
           </Tabs>
 
-          <div className="pt-20">
-            <ArtistReel
-              artworks={reelArtworks}
-              artistName="Mateo Ferreira"
-            />
-          </div>
+
         </div>
       </div>
+      <ArtistReel
+        artworks={reelArtworks}
+        artistName={artistName || "Artist"}
+        className="pb-32"
+      />
     </main>
   );
 }
