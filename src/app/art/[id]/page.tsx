@@ -274,29 +274,33 @@ const Index = () => {
       {/* Content Section */}
       <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
         <div className="space-y-12">
-          <Tabs defaultValue="analytics" className="w-full">
-            <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
-              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+          <Tabs defaultValue="about" className="w-full">
+            <TabsList className="mb-12 bg-white/5 border border-white/10 p-1">
+              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
                 About
               </TabsTrigger>
-              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
-                Details
+              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+                Technical
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
+                Market
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="analytics" className="mt-0">
-              <AnalyticsTab />
+            <TabsContent value="about" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <ManifestoBlock statement={artwork.description} />
             </TabsContent>
 
-            <TabsContent value="about" className="mt-0">
-              <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
+            <TabsContent value="details" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <TechSpecs metadata={metadata} />
             </TabsContent>
 
-            <TabsContent value="details" className="mt-0">
-              <TechSpecs metadata={metadata} className="mb-24" />
+            <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <AnalyticsTab
+                loading={analyticsLoading}
+                error={analyticsError}
+                analytics={analytics}
+              />
             </TabsContent>
           </Tabs>
 
