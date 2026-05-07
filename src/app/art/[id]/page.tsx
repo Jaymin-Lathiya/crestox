@@ -15,7 +15,6 @@ import {
   getArtworksByArtist,
   getArtworkAnalytics,
   type ArtworkAnalyticsPayload,
-  getPriceHistory,
 } from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
@@ -188,19 +187,59 @@ const Index = () => {
     }
   }, [id]);
 
-  const fetchPriceHistory = async () => {
-    if (!id || typeof id !== "string") return;
-    let params = {
-      price_type: "VALUATION",
-    }
-    const res = await getPriceHistory(id as string, params)();
-    console.log("res", res);
-  }
-
   useEffect(() => {
     fetchArtworkById();
-    fetchPriceHistory();
   }, [fetchArtworkById]);
+
+  useEffect(() => {
+    if (!id || typeof id !== "string") {
+      setAnalyticsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+      try {
+        const res = await getArtworkAnalytics(id)();
+        if (cancelled) return;
+        if (res?.status === 200 && res?.data?.data) {
+          setAnalytics(res.data.data as ArtworkAnalyticsPayload);
+        } else {
+          setAnalyticsError("Could not load analytics.");
+          setAnalytics(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setAnalyticsError("Could not load analytics.");
+          setAnalytics(null);
+        }
+      } finally {
+        if (!cancelled) setAnalyticsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const refetchAnalyticsAfterCollect = useCallback(async () => {
+    if (!id || typeof id !== "string") return;
+    try {
+      const res = await getArtworkAnalytics(id)();
+      if (res?.status === 200 && res?.data?.data) {
+        setAnalytics(res.data.data as ArtworkAnalyticsPayload);
+        setAnalyticsError(null);
+      }
+    } catch {
+      // keep showing last analytics if refetch fails
+    }
+  }, [id]);
+
+  const handleCollectSuccess = useCallback(() => {
+    void fetchArtworkById();
+    void refetchAnalyticsAfterCollect();
+  }, [fetchArtworkById, refetchAnalyticsAfterCollect]);
 
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
@@ -254,7 +293,7 @@ const Index = () => {
           firstArtworkId={artwork.id}
           isAtwork
           collectContextLabel={artistName || artwork.artist_profile?.artist_name || "Artist"}
-          onCollectSuccess={fetchArtworkById}
+          onCollectSuccess={handleCollectSuccess}
         />
       ) : null}
 
@@ -273,7 +312,11 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="analytics" className="mt-0">
-            <AnalyticsTab />
+            <AnalyticsTab
+              loading={analyticsLoading}
+              error={analyticsError}
+              analytics={analytics}
+            />
           </TabsContent>
 
           <TabsContent value="about" className="mt-0">
