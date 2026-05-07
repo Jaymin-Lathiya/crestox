@@ -18,7 +18,6 @@ import {
 } from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
-import FinancialHUD from "@/components/FinancialHUD";
 
 /** API artwork media item */
 interface ArtworkMediaItem {
