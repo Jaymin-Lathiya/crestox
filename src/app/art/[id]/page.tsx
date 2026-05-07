@@ -15,6 +15,7 @@ import {
   getArtworksByArtist,
   getArtworkAnalytics,
   type ArtworkAnalyticsPayload,
+  getPriceHistory,
 } from "@/apis/artwork/artworkActions";
 import { useParams, useRouter } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
@@ -166,13 +167,6 @@ const Index = () => {
     setMouseDownPos(null);
   };
 
-  const handleCollect = async () => {
-    const artistId = artwork?.artist_profile_id ?? artwork?.artist_profile?.id;
-    if (artistId != null) {
-      router.push(`/artist/${artistId}`);
-    }
-  };
-
   const fetchArtworkById = useCallback(async () => {
     if (!id || typeof id !== "string") return;
     setLoading(true);
@@ -194,30 +188,19 @@ const Index = () => {
     }
   }, [id]);
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchPriceHistory = async () => {
     if (!id || typeof id !== "string") return;
-    setAnalyticsLoading(true);
-    setAnalyticsError(null);
-    try {
-      const res = await getArtworkAnalytics(id)();
-      if (res?.status === 200 && res?.data?.data) {
-        setAnalytics(res.data.data as ArtworkAnalyticsPayload);
-      } else {
-        setAnalyticsError("Could not load analytics.");
-        setAnalytics(null);
-      }
-    } catch {
-      setAnalyticsError("Could not load analytics.");
-      setAnalytics(null);
-    } finally {
-      setAnalyticsLoading(false);
+    let params = {
+      price_type: "VALUATION",
     }
-  }, [id]);
+    const res = await getPriceHistory(id as string, params)();
+    console.log("res", res);
+  }
 
   useEffect(() => {
     fetchArtworkById();
-    fetchAnalytics();
-  }, [fetchArtworkById, fetchAnalytics]);
+    fetchPriceHistory();
+  }, [fetchArtworkById]);
 
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
@@ -229,7 +212,6 @@ const Index = () => {
   const totalFractals = artwork?.number_of_shares ?? 0;
   const soldCount = artwork?.shares?.length ?? 0;
   const availableFractals = Math.max(0, totalFractals - soldCount);
-  const totalValuation = artwork?.valuation ? parseFloat(artwork.valuation) : 0;
 
   if (loading) {
     return (
@@ -240,14 +222,10 @@ const Index = () => {
     );
   }
 
-  console.log({ exploded });
-
-
   return (
     <main className="bg-void min-h-screen relative">
       <div className="noise-overlay" />
 
-      {/* Hero Section with 3D Canvas */}
       <div className="w-full h-[90vh] relative z-20">
         <ExplodedCanvas
           exploded={exploded}
@@ -280,49 +258,43 @@ const Index = () => {
         />
       ) : null}
 
-      {/* Content Section */}
-      <div className="relative z-10 px-8 md:px-16 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-20">
-        <div className="space-y-12">
-          <Tabs defaultValue="about" className="w-full">
-            <TabsList className="mb-12 bg-white/5 border border-white/10 p-1">
-              <TabsTrigger value="about" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
-                About
-              </TabsTrigger>
-              <TabsTrigger value="details" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
-                Technical
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 font-mono text-[10px] tracking-widest uppercase">
-                Market
-              </TabsTrigger>
-            </TabsList>
+      <div className="relative z-10 px-8 md:px-16 py-10 md:pr-[400px]">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+              About
+            </TabsTrigger>
+            <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">
+              Details
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="about" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <ManifestoBlock statement={artwork.description} />
-            </TabsContent>
+          <TabsContent value="analytics" className="mt-0">
+            <AnalyticsTab />
+          </TabsContent>
 
-            <TabsContent value="details" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <TechSpecs metadata={metadata} />
-            </TabsContent>
+          <TabsContent value="about" className="mt-0">
+            <ManifestoBlock statement={artwork?.description ?? ""} className="mb-24" />
+          </TabsContent>
 
-            <TabsContent value="analytics" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <AnalyticsTab
-                loading={analyticsLoading}
-                error={analyticsError}
-                analytics={analytics}
-              />
-            </TabsContent>
-          </Tabs>
-
-
-        </div>
+          <TabsContent value="details" className="mt-0">
+            <TechSpecs metadata={metadata} className="mb-24" />
+          </TabsContent>
+        </Tabs>
       </div>
+
       <ArtistReel
         artworks={reelArtworks}
         artistName={artistName || "Artist"}
         className="pb-32"
       />
+
+      <NavigationPill />
     </main>
   );
-}
+};
 
 export default Index;
