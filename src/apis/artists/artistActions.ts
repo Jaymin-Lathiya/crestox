@@ -146,6 +146,92 @@ export const applyAsArtist = (data: any) => async () => {
     }
 };
 
+export interface ArtistOnboardingState {
+    last_completed_step: number;
+    artist_profile_id: number | null;
+    is_approved: boolean;
+    step1: {
+        artist_name: string;
+        artist_bio: string;
+        collector_message: string;
+        avatar_media_id: number | null;
+        avatar_url?: string | null;
+    };
+    step2: {
+        achievements: Array<{
+            title: string;
+            description: string | null;
+            media_id: number | null;
+            media_url?: string | null;
+            media_original_name?: string | null;
+        }>;
+        history: Array<{
+            title: string;
+            description: string | null;
+            media_id: number | null;
+            media_url?: string | null;
+            media_original_name?: string | null;
+        }>;
+        previously_sold_artworks: Array<{
+            artwork_name: string;
+            artwork_image_media_id: number | null;
+            proof_of_sale_media_id: number | null;
+            sell_value: number | null;
+            artwork_image_url?: string | null;
+            proof_of_sale_url?: string | null;
+            proof_of_sale_original_name?: string | null;
+        }>;
+    };
+    step3: {
+        social_links: Array<{ platform: string; url: string }>;
+        location: string;
+        university: string;
+        website_portfolio_link: string;
+        artist_style: string;
+    };
+}
+
+export const getArtistOnboardingState = () => async (): Promise<ArtistOnboardingState> => {
+    const response = await instance.get<{ data?: ArtistOnboardingState }>(ARTIST_URLS.MY_ONBOARDING);
+    const payload = response.data?.data as ArtistOnboardingState | undefined;
+    if (!payload) {
+        throw new Error("Missing onboarding payload");
+    }
+    return payload;
+};
+
+export const submitArtistOnboardingStep1 = (data: {
+    artist_name: string;
+    artist_bio: string;
+    collector_message?: string;
+    avatar_media_id?: number | null;
+}) => async () => {
+    return instance.post(ARTIST_URLS.ONBOARDING_STEP_1, data);
+};
+
+export const submitArtistOnboardingStep2 = (data: {
+    achievements?: Array<{ title: string; description?: string; media_id?: number }>;
+    history?: Array<{ title: string; description?: string; media_id?: number }>;
+    previously_sold_artworks?: Array<{
+        artwork_name: string;
+        artwork_image_media_id?: number;
+        proof_of_sale_media_id?: number;
+        sell_value?: number;
+    }>;
+}) => async () => {
+    return instance.patch(ARTIST_URLS.ONBOARDING_STEP_2, data);
+};
+
+export const submitArtistOnboardingStep3 = (data: {
+    social_links?: Array<{ platform: string; url: string }>;
+    location?: string;
+    university?: string;
+    website_portfolio_link?: string;
+    artist_style?: string;
+}) => async () => {
+    return instance.patch(ARTIST_URLS.ONBOARDING_STEP_3, data);
+};
+
 export const getArtistBasicDetails = (id: number) => async (): Promise<ArtistBasicDetails | null> => {
     const response = await instance.get(ARTIST_URLS.BASIC_DETAILS(id));
     return response.data?.data ?? null;

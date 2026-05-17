@@ -15,6 +15,7 @@ export interface User {
     isAdmin: boolean;
     artist_profile_id?: number | null;
     artist_profile_approved?: boolean;
+    artist_onboarding_last_completed_step?: number | null;
 }
 
 interface UserState {

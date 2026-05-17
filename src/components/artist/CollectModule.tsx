@@ -31,7 +31,7 @@ function hasAuthToken(): boolean {
   return Boolean(getCookie('token')?.trim());
 }
 
-const ENABLE_RAZORPAY = false;
+const ENABLE_RAZORPAY = true;
 
 declare global {
   interface Window {
@@ -333,6 +333,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             color: '#3B82F6',
           },
         };
+
+        setDialogOpen(false);
 
         const razorpay = new window.Razorpay(options);
         razorpay.open();
