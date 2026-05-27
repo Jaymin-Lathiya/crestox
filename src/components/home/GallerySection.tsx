@@ -119,7 +119,7 @@ export function GallerySection() {
         <section className="py-24 overflow-hidden bg-background">
             <div className="container mx-auto px-4 mb-12 text-center">
                 <span className="text-primary font-mono text-sm tracking-widest uppercase mb-2 block">Gallery</span>
-                <h2 className="font-serif text-3xl md:text-5xl">Curated Masterpieces</h2>
+                <h2 className="font-serif text-3xl md:text-5xl">Curated Collection</h2>
             </div>
 
             {(!isLoading && images.length > 0) ? (

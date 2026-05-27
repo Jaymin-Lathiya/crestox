@@ -272,7 +272,7 @@ interface ExplodedCanvasProps {
   onToggle: () => void;
   artworkUrl: string;
   eventSource?: React.RefObject<HTMLDivElement | null>;
-  orientation?: ImageOrientation;
+  orientation?: any;
   artworkName: string;
 }
 
@@ -281,7 +281,7 @@ export default function ExplodedCanvas({
   onToggle,
   artworkUrl,
   eventSource,
-  orientation = ImageOrientation.SQUARE,
+  orientation,
   artworkName
 }: ExplodedCanvasProps) {
   const aspect = ASPECT_VALUES[orientation];

@@ -77,11 +77,12 @@ const MOCK_CREATORS = {
 
 function CreatorCardSkeleton() {
     return (
-        <div className="group relative bg-card/40 border border-border/50 rounded-2xl p-4 flex flex-col items-center text-center">
-            <div className="relative mb-4">
-                <Skeleton className="w-16 h-16 rounded-full" />
+        <div className="group relative bg-card/40 border border-border/50 rounded-2xl p-4 flex flex-col items-center text-center h-[280px] justify-between">
+            <div className="relative mb-4 flex flex-col items-center w-full">
+                <Skeleton className="w-16 h-16 rounded-full mb-3" />
+                <Skeleton className="h-5 w-24 mb-1" />
+                <Skeleton className="h-3 w-16" />
             </div>
-            <Skeleton className="h-5 w-24 mb-3" />
             <div className="w-full mt-auto mb-4">
                 <div className="flex justify-between items-end mb-2">
                     <Skeleton className="h-2 w-16" />
@@ -113,12 +114,160 @@ function mapFeaturedArtistToCreator(artist: any): CreatorItem {
     };
 }
 
+interface CreatorCardProps {
+    creator: CreatorItem;
+    onShowMore: (bio: string, name: string) => void;
+}
+
+function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
+    const [isFlipped, setIsFlipped] = useState(false);
+
+    const handleFlip = () => {
+        setIsFlipped(prev => !prev);
+    };
+
+    const isLongBio = creator.bio && creator.bio.length > 120;
+    const displayedBio = isLongBio ? `${creator.bio.slice(0, 110)}...` : creator.bio;
+
+    return (
+        <div
+            className="group [perspective:1000px] cursor-pointer w-full h-[280px]"
+            onClick={handleFlip}
+        >
+            <div
+                className={cn(
+                    "relative w-full h-full transition-transform duration-700 ease-in-out [transform-style:preserve-3d]",
+                    isFlipped ? "[transform:rotateY(180deg)]" : ""
+                )}
+            >
+                {/* Front Side */}
+                <div className="absolute inset-0 w-full h-full bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-4 flex flex-col items-center justify-between text-center hover:shadow-lg hover:shadow-primary/5 [backface-visibility:hidden]">
+                    <div className="flex flex-col items-center w-full">
+                        <div className="relative mb-3">
+                            <div className="w-16 h-16 rounded-full p-0.5 border border-border/50 group-hover:border-primary/50 transition-colors">
+                                <img
+                                    src={creator.image}
+                                    alt={creator.name}
+                                    className="w-full h-full rounded-full object-cover"
+                                />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                {creator.name.slice(0, 2)}
+                            </div>
+                        </div>
+
+                        <h3 className="font-serif text-base font-medium mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                            {creator.name}
+                        </h3>
+                        <p className="text-[10px] terminal-text text-muted-foreground">
+                            {creator.role || 'Artist'}
+                        </p>
+                    </div>
+
+                    <div className="w-full mt-auto mb-4">
+                        <div className="flex justify-between items-end mb-1.5 text-[10px]">
+                            <span className="text-muted-foreground">{creator.stats.label}</span>
+                            <span className="font-mono font-medium text-foreground">
+                                {creator.stats.value} / {creator.stats.max}
+                            </span>
+                        </div>
+                        <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
+                                style={{ width: `${creator.stats.max > 0 ? (creator.stats.value / creator.stats.max) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {creator.id != null ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                            asChild
+                            onClick={(e) => e.stopPropagation()} // Avoid flipping card
+                        >
+                            <Link href={`/artist/${creator.id}`}>View Profile</Link>
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                            onClick={(e) => e.stopPropagation()} // Avoid flipping card
+                        >
+                            View Profile
+                        </Button>
+                    )}
+                </div>
+
+                {/* Back Side */}
+                <div className="absolute inset-0 w-full h-full bg-card/90 border border-primary/30 rounded-2xl p-4 flex flex-col items-center justify-between text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+                    <div className="w-full flex flex-col items-center flex-grow">
+                        <h4 className="font-serif text-sm font-semibold text-primary mb-2">
+                            About {creator.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed text-center overflow-y-auto max-h-[130px] pr-1 scrollbar-thin">
+                            {displayedBio}
+                        </p>
+
+                        {isLongBio && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Avoid flipping card
+                                    onShowMore(creator.bio, creator.name);
+                                }}
+                                className="mt-2 text-[10px] font-mono text-primary hover:underline"
+                            >
+                                Show More
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="w-full flex gap-2 mt-auto">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleFlip();
+                            }}
+                            className="flex-grow h-8 text-[10px] font-mono border border-border/60 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Back
+                        </button>
+                        {creator.id != null ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-grow h-8 text-[10px] border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                asChild
+                                onClick={(e) => e.stopPropagation()} // Avoid flipping card
+                            >
+                                <Link href={`/artist/${creator.id}`}>Profile</Link>
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-grow h-8 text-[10px] border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                onClick={(e) => e.stopPropagation()} // Avoid flipping card
+                            >
+                                Profile
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function FeaturedCreators() {
     const [activeTab, setActiveTab] = useState('artists');
     const [isExpanded, setIsExpanded] = useState(false);
     const [displayedCreators, setDisplayedCreators] = useState<CreatorItem[]>([]);
     const [isLoadingArtists, setIsLoadingArtists] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [selectedBio, setSelectedBio] = useState<{ bio: string; name: string } | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -140,19 +289,22 @@ export function FeaturedCreators() {
         };
     }, [isExpanded, isLoadingArtists, activeTab, displayedCreators.length]);
 
+    const loadFeaturedArtists = async () => {
+        setIsLoadingArtists(true);
+        try {
+            const artists = await getFeaturedArtists()();
+            setDisplayedCreators(artists.map(mapFeaturedArtistToCreator));
+        } catch (error) {
+            console.error("Failed to load featured artists:", error);
+            setDisplayedCreators([]);
+        } finally {
+            setIsLoadingArtists(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'artists') {
-            setIsLoadingArtists(true);
-            getFeaturedArtists()()
-                .then((artists) => {
-                    setDisplayedCreators(artists.map(mapFeaturedArtistToCreator));
-                })
-                .catch(() => {
-                    setDisplayedCreators([]);
-                })
-                .finally(() => {
-                    setIsLoadingArtists(false);
-                });
+            loadFeaturedArtists();
         } else {
             const creators = MOCK_CREATORS[activeTab as keyof typeof MOCK_CREATORS];
             const shuffled = [...creators].sort(() => 0.5 - Math.random());
@@ -195,10 +347,9 @@ export function FeaturedCreators() {
             if (!isExpanded) {
                 loadAllArtists();
             } else {
-                // Collapse back to original featured artists list
+                // Collapse back to original featured artists list by re-fetching featured artists API
                 setIsExpanded(false);
-                // Slice the displayed creators back to the first 6 (original featured artists)
-                setDisplayedCreators(prev => prev.slice(0, 6));
+                loadFeaturedArtists();
             }
         } else {
             setIsExpanded(!isExpanded);
@@ -265,61 +416,11 @@ export function FeaturedCreators() {
                                 </p>
                             </div>
                         ) : visibleCreators.map((creator, idx) => (
-                            <div
+                            <CreatorCard
                                 key={creator.id ?? idx}
-                                className="group relative bg-card/40 hover:bg-card/60 border border-border/50 hover:border-primary/30 rounded-2xl p-4 transition-all duration-300 flex flex-col items-center text-center hover:shadow-lg hover:shadow-primary/5"
-                            >
-                                <div className="relative mb-4">
-                                    <div className="w-16 h-16 rounded-full p-0.5 border border-border/50 group-hover:border-primary/50 transition-colors">
-                                        <img
-                                            src={creator.image}
-                                            alt={creator.name}
-                                            className="w-full h-full rounded-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                                        {creator.name.slice(0, 2)}
-                                    </div>
-                                </div>
-
-                                <h3 className="font-serif text-lg font-medium mb-3 group-hover:text-primary transition-colors line-clamp-1">
-                                    {creator.name}
-                                </h3>
-
-                                <div className="w-full mt-auto mb-4">
-                                    <div className="flex justify-between items-end mb-1.5 text-[10px]">
-                                        <span className="text-muted-foreground">{creator.stats.label}</span>
-                                        <span className="font-mono font-medium text-foreground">
-                                            {creator.stats.value} / {creator.stats.max}
-                                        </span>
-                                    </div>
-                                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-primary rounded-full transition-all duration-1000 ease-out group-hover:shadow-[0_0_10px_var(--primary)]"
-                                            style={{ width: `${creator.stats.max > 0 ? (creator.stats.value / creator.stats.max) * 100 : 0}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {creator.id != null ? (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
-                                        asChild
-                                    >
-                                        <Link href={`/artist/${creator.id}`}>View Profile</Link>
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
-                                    >
-                                        View Profile
-                                    </Button>
-                                )}
-                            </div>
+                                creator={creator}
+                                onShowMore={(bio, name) => setSelectedBio({ bio, name })}
+                            />
                         ))}
 
                         {isLoadingArtists && activeTab === 'artists' && isExpanded && (
@@ -329,6 +430,34 @@ export function FeaturedCreators() {
                     </>
                 )}
             </div>
+
+            {/* "Show More" Bio Modal Popup */}
+            {selectedBio && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-background border border-border/80 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setSelectedBio(null)}
+                            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground font-mono text-sm border border-border/50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-secondary transition-all"
+                        >
+                            ✕
+                        </button>
+                        <h3 className="font-serif text-xl font-medium mb-4 text-primary">
+                            About {selectedBio.name}
+                        </h3>
+                        <div className="max-h-[300px] overflow-y-auto text-sm text-foreground/80 leading-relaxed pr-2 font-mono scrollbar-thin">
+                            {selectedBio.bio}
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <Button
+                                onClick={() => setSelectedBio(null)}
+                                className="px-6 h-10 text-xs font-mono tracking-wider"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {!showStickyCollapse && (
                 <div className="mt-10 flex justify-center">

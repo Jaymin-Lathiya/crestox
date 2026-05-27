@@ -125,11 +125,11 @@ export default function LandingPage() {
                       variant="primary"
                       className="group h-12"
                       onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
-                      label="Create Collector Account"
+                      label="Start Collecting"
                     >
                       <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </GradientButton>
-                    <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Join as Artist' />
+                    <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Apply as an Artist' />
                   </div>
                 )}
 
@@ -343,7 +343,7 @@ export default function LandingPage() {
       <section className="py-24 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="font-serif text-4xl md:text-6xl mb-6">Start Your Collection Today</h2>
+          <h2 className="font-serif text-4xl md:text-6xl mb-6">Begin Your Collection</h2>
           <p className="text-muted-foreground font-sans text-lg mb-10">
             Join 1,200+ collectors investing in the future of art.
           </p>

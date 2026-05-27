@@ -1,4 +1,7 @@
-import { useState, useRef } from 'react';
+"use client";
+
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import GradientButton from '../ui/gradiant-button';
 
@@ -90,23 +93,20 @@ interface HoveredCardState {
 
 const TickerItem = ({
   piece,
-  onHover,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   piece: ArtPiece;
-  onHover: (data: HoveredCardState | null) => void;
+  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseLeave: () => void;
 }) => {
   const isPositive = piece.change24h >= 0;
 
   return (
     <motion.div
       className="flex items-center gap-4 px-6 py-3 cursor-pointer group"
-      onMouseEnter={(e) => {
-        onHover({
-          piece,
-          anchorRect: e.currentTarget.getBoundingClientRect(),
-        });
-      }}
-      onMouseLeave={() => onHover(null)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       whileHover={{ scale: 1.02 }}
     >
       {/* Thumbnail */}
@@ -139,7 +139,7 @@ const TickerItem = ({
   );
 };
 
-const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
+const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFractals: () => void }) => {
   const isPositive = piece.change24h >= 0;
 
   return (
@@ -194,7 +194,7 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
       </div>
 
       {/* Action */}
-      <GradientButton label='View Fractals' className="w-full mt-2">
+      <GradientButton label='View Fractals' className="w-full mt-2" onClick={onViewFractals}>
       </GradientButton>
     </motion.div>
   );
@@ -203,6 +203,49 @@ const HolographicCard = ({ piece }: { piece: ArtPiece }) => {
 const TickerStream = () => {
   const [hoveredCard, setHoveredCard] = useState<HoveredCardState | null>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
+
+  const handleMouseEnterItem = (piece: ArtPiece, anchorRect: DOMRect) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setHoveredCard({ piece, anchorRect });
+  };
+
+  const handleMouseLeaveItem = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setHoveredCard(null);
+    }, 200);
+  };
+
+  const handleMouseEnterCard = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeaveCard = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setHoveredCard(null);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   // Duplicate items for seamless loop
   const duplicatedPieces = [...artPieces, ...artPieces];
@@ -230,7 +273,8 @@ const TickerStream = () => {
           <TickerItem
             key={`${piece.id}-${index}`}
             piece={piece}
-            onHover={setHoveredCard}
+            onMouseEnter={(e) => handleMouseEnterItem(piece, e.currentTarget.getBoundingClientRect())}
+            onMouseLeave={handleMouseLeaveItem}
           />
         ))}
       </div>
@@ -239,7 +283,9 @@ const TickerStream = () => {
       <AnimatePresence>
         {hoveredCard && (
           <div
-            className="fixed z-50 pointer-events-none"
+            className="fixed z-50 pointer-events-auto"
+            onMouseEnter={handleMouseEnterCard}
+            onMouseLeave={handleMouseLeaveCard}
             style={{
               // Keep card anchored to hovered item and clamped within viewport.
               left: Math.min(
@@ -250,7 +296,12 @@ const TickerStream = () => {
               transform: "translate(-50%, -100%)",
             }}
           >
-            <HolographicCard piece={hoveredCard.piece} />
+            <HolographicCard
+              piece={hoveredCard.piece}
+              onViewFractals={() => {
+                router.push(`/art/${hoveredCard.piece.id}`);
+              }}
+            />
           </div>
         )}
       </AnimatePresence>

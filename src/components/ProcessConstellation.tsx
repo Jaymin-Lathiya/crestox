@@ -91,7 +91,7 @@ export default function ProcessConstellation() {
             {" "}WORKS
           </h2>
           <p className="font-mono text-sm text-ghost-dim tracking-widest uppercase">
-            [ The Protocol in Four Steps ]
+            [ The Process in Four Steps ]
           </p>
         </motion.div>
 

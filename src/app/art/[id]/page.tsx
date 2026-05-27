@@ -272,7 +272,7 @@ const Index = () => {
           eventSource={interactionRef}
           artworkUrl={artwork.artwork_media[0].media.file_path}
           artworkName={artwork.name}
-          orientation={ImageOrientation.LANDSCAPE}
+          orientation={artwork.artwork_media[0].media.orientation}
         />
         <div
           ref={interactionRef}

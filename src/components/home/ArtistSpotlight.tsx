@@ -289,12 +289,11 @@ const ArtistSpotlight = () => {
         >
           <p className="terminal-text text-primary text-xs tracking-[0.4em] mb-4">EMERGING ARTISTS</p>
           <h2 className="font-display text-4xl md:text-5xl lg:text-6xl italic text-foreground mb-6">
-            Fund the
-            <span className="text-gradient-gold"> Future of Art</span>
+            Support
+            <span className="text-gradient-gold"> Emerging Artists</span>
           </h2>
           <p className="font-mono text-sm text-muted-foreground max-w-xl mx-auto">
-            Your investment directly supports creators bringing bold visions to life.
-            Watch your fractals appreciate as their careers ascend.
+            Own a share in selected works and help fund artists at an earlier stage.
           </p>
         </motion.div>
 
