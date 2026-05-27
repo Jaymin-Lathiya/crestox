@@ -540,6 +540,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MonolithCard from '@/components/MonolithCard';
 import { toast } from 'sonner';
 import ResaleModal from '@/components/ResaleModal';
+import CertificateModal from '@/components/CertificateModal';
 import { getMyCollection, getWatchlist, sellFractal } from '@/apis/my-collection/myCollectionActions';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -618,6 +619,7 @@ function MyHoldingsSkeleton() {
 export default function CollectionPage() {
   const [activeTab, setActiveTab] = useState('My Holdings');
   const [resaleTarget, setResaleTarget] = useState<MyCollectionArtist | null>(null);
+  const [certificateTarget, setCertificateTarget] = useState<MyCollectionArtist | null>(null);
   const [myCollection, setMyCollection] = useState<MyCollectionResponse | null>(null);
   const [isLoadingCollection, setIsLoadingCollection] = useState(true);
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true);
@@ -733,7 +735,7 @@ export default function CollectionPage() {
                         currentValue={parseFloat(artist.current_value) || 0}
                         gainLossPerc={parseFloat(artist.gain_loss_pct) || 0}
                         onSell={() => setResaleTarget(artist)}
-                        onCertificate={() => toast.success(`Certificate for ${artist.artist_name} generated`)}
+                        onCertificate={() => setCertificateTarget(artist)}
                       />
                     </motion.div>
                   ))
@@ -764,6 +766,13 @@ export default function CollectionPage() {
             )}
           </AnimatePresence>
         </main>
+
+        <CertificateModal
+          isOpen={!!certificateTarget}
+          onClose={() => setCertificateTarget(null)}
+          artistProfileId={certificateTarget?.artist_profile_id ?? 0}
+          artistName={certificateTarget?.artist_name ?? ''}
+        />
 
         <ResaleModal
           isOpen={!!resaleTarget}

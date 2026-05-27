@@ -57,3 +57,33 @@ export const addToWatchlist = async (data: any) => {
         throw err;
     }
 }
+
+export interface HoldingCertificateArtwork {
+    artwork_id: number;
+    artwork_name: string;
+    artwork_image_url: string | null;
+    shares_count: number;
+}
+
+export interface HoldingCertificateData {
+    auth_number: string;
+    share_count: number;
+    issued_at: string;
+    owner: { id: number; name: string };
+    artist: {
+        id: number;
+        artist_name: string;
+        avatar_url: string | null;
+        collector_message: string | null;
+    };
+    artworks: HoldingCertificateArtwork[];
+}
+
+export const getHoldingCertificate = async (
+    artistProfileId: number,
+): Promise<HoldingCertificateData> => {
+    const response = await instance.get(
+        myCollectionURLS.HOLDING_CERTIFICATE(artistProfileId),
+    );
+    return (response.data?.data ?? response.data) as HoldingCertificateData;
+};
