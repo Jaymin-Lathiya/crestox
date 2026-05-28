@@ -69,7 +69,7 @@ export function SignupModal({ isOpen, onClose }: SignupModalProps) {
 
                     <GradientButton
                         label="Continue"
-                        className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleContinue}
                     />
                 </div>

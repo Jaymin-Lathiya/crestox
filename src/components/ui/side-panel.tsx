@@ -50,7 +50,7 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handlePanelOpen}
-            className="md:hidden fixed inset-0 bg-black/50 z-40"
+            className="md:hidden fixed inset-0 bg-background/70 backdrop-blur-sm z-40"
           />
         )}
 
@@ -60,7 +60,7 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
           animate={panelOpen ? { y: 0 } : { y: "100%" }}
           transition={{ duration: 0.3, ease: [0.42, 0, 0.58, 1] }}
         >
-          <div className="bg-neutral-900 w-full h-full overflow-y-auto">
+          <div className="bg-card w-full h-full overflow-y-auto">
             <div ref={measureRef} className="p-4">
               <AnimatePresence mode="popLayout">
                 <motion.div
@@ -90,7 +90,7 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
           <ResizablePanel>
             <motion.div
               className={cn(
-                "bg-neutral-900 rounded-r-[44px] w-[260px]",
+                "bg-card rounded-r-[44px] w-[260px]",
                 className
               )}
               animate={panelOpen ? "open" : "closed"}

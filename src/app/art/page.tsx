@@ -73,10 +73,10 @@ const Index = () => {
             {/* Content Sections */}
             <div className="relative z-10 px-8 md:px-16 py-10 md:pr-[400px]">
                 <Tabs defaultValue="analytics" className="w-full">
-                    <TabsList className="mb-8 bg-black/40 border border-white/10 text-white/70">
-                        <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">Analytics</TabsTrigger>
-                        <TabsTrigger value="about" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">About</TabsTrigger>
-                        <TabsTrigger value="details" className="data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none">Details</TabsTrigger>
+                    <TabsList className="mb-8 bg-card/40 border border-border text-muted-foreground">
+                        <TabsTrigger value="analytics" className="data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none">Analytics</TabsTrigger>
+                        <TabsTrigger value="about" className="data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none">About</TabsTrigger>
+                        <TabsTrigger value="details" className="data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none">Details</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="analytics" className="mt-0">

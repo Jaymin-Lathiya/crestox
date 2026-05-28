@@ -29,7 +29,7 @@ const ArtworkCard: React.FC<{ artwork: Artwork }> = ({ artwork }) => {
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <div className="text-white text-xs">{artwork.primary_image_orientation} → {aspect[artwork.primary_image_orientation]}</div>
+        <div className="text-foreground text-xs">{artwork.primary_image_orientation} → {aspect[artwork.primary_image_orientation]}</div>
         {/* Image */}
         <Image
           src={artwork.imageUrl}

@@ -1329,7 +1329,7 @@ export default function ArtistOnboardingWizard({ variant = "portfolio", classNam
             </Button>
             <GradientButton
               type="submit"
-              className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-8"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
               label={
                 submitting
                   ? "Saving…"

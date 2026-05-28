@@ -43,7 +43,7 @@ export const NavigationIsland = ({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            className="fixed inset-0 bg-black/50 z-20 md:hidden"
+            className="fixed inset-0 bg-background/70 backdrop-blur-sm z-20 md:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -65,7 +65,7 @@ export const NavigationIsland = ({
             isExpanded
           ) ?
             {
-              background: "rgba(10, 10, 20, 0.4)",
+              background: "hsl(var(--background) / 0.85)",
               backdropFilter: "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
             }
@@ -99,7 +99,7 @@ export const NavigationIsland = ({
         <div className={cn("hidden md:flex w-full items-center pt-6 pb-2 transition-all duration-200", isExpanded ? "justify-end pr-4" : "justify-center")}>
           <button
             onClick={onToggleExpand}
-            className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-zinc-600 transition-colors"
+            className="w-8 h-8 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
           >
             {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>

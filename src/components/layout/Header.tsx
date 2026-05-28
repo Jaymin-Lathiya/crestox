@@ -85,7 +85,7 @@ export function Header() {
 
   return (
     <>
-      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 px-6 py-3 md:py-4 bg-background/80 backdrop-blur-lg border border-border/50 rounded-2xl shadow-sm">
+      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 px-6 py-3 md:py-4 bg-card/90 dark:bg-background/80 backdrop-blur-lg border border-border dark:border-border/50 rounded-2xl shadow-lg shadow-foreground/5 dark:shadow-sm dark:shadow-transparent">
         <div className="flex justify-between items-center w-full">
           <div
             className="flex-shrink-0 cursor-pointer"
@@ -122,7 +122,7 @@ export function Header() {
               {data.map((item, idx) => (
                 <DockItem
                   key={idx}
-                  className="aspect-square rounded-full bg-card border border-border/60"
+                  className="aspect-square rounded-full bg-background dark:bg-card border border-border dark:border-border/60 hover:bg-accent dark:hover:bg-card transition-colors"
                   onClick={() => {
                     if (item.type === "theme") {
                       toggleTheme();
@@ -176,7 +176,7 @@ export function Header() {
       </nav>
       {/* Mobile/Tablet Bottom Nav — below lg */}
       <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-        <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-background/80 backdrop-blur-lg border border-border/50 shadow-sm">
+        <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-card/90 dark:bg-background/80 backdrop-blur-lg border border-border dark:border-border/50 shadow-lg shadow-foreground/5 dark:shadow-sm dark:shadow-transparent">
           {data.map((item, idx) => (
             <button
               key={idx}
@@ -186,8 +186,8 @@ export function Header() {
               }}
               className="flex flex-col items-center gap-1 shrink-0 w-12" // 👈 fixed width
             >
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-card border border-border/60">
-                <div className="w-5 h-5 text-foreground/80">
+              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background dark:bg-card border border-border dark:border-border/60">
+                <div className="w-5 h-5 text-foreground dark:text-foreground/80">
                   {item.icon}
                 </div>
               </div>

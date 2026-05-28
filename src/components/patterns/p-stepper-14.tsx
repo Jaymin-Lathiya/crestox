@@ -34,7 +34,7 @@ export function Pattern() {
           {steps.map((step) => (
             <StepperItem key={step} step={step} loading={step === 2}>
               <StepperTrigger>
-                <StepperIndicator className="data-[state=completed]:bg-success data-[state=completed]:text-white">
+                <StepperIndicator className="data-[state=completed]:bg-success data-[state=completed]:text-primary-foreground">
                   {step}
                 </StepperIndicator>
               </StepperTrigger>

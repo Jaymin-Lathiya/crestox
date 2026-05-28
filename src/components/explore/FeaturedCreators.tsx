@@ -183,7 +183,7 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
                         <Button
                             variant="outline"
                             size="sm"
-                            className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                            className="w-full h-8 text-xs border-border hover:border-primary group-hover:bg-primary/5 transition-all"
                             asChild
                             onClick={(e) => e.stopPropagation()} // Avoid flipping card
                         >
@@ -193,7 +193,7 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
                         <Button
                             variant="outline"
                             size="sm"
-                            className="w-full h-8 text-xs border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                            className="w-full h-8 text-xs border-border hover:border-primary group-hover:bg-primary/5 transition-all"
                             onClick={(e) => e.stopPropagation()} // Avoid flipping card
                         >
                             View Profile
@@ -238,7 +238,7 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="flex-grow h-8 text-[10px] border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                className="flex-grow h-8 text-[10px] border-border hover:border-primary group-hover:bg-primary/5 transition-all"
                                 asChild
                                 onClick={(e) => e.stopPropagation()} // Avoid flipping card
                             >
@@ -248,7 +248,7 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="flex-grow h-8 text-[10px] border-white/10 dark:border-white/10 hover:border-primary dark:hover:border-primary group-hover:bg-primary/5 transition-all"
+                                className="flex-grow h-8 text-[10px] border-border hover:border-primary group-hover:bg-primary/5 transition-all"
                                 onClick={(e) => e.stopPropagation()} // Avoid flipping card
                             >
                                 Profile

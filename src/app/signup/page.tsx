@@ -171,7 +171,7 @@ function SignupFormContent() {
                                     <StepperNav className="justify-center items-center mt-5 gap-2 me-3">
                                         <StepperItem step={1} completed={activeStep > 1}>
                                             <StepperTrigger onClick={() => { if (activeStep > 1) setActiveStep(1) }}>
-                                                <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-white">
+                                                <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground">
                                                     1
                                                 </StepperIndicator>
                                             </StepperTrigger>
@@ -187,7 +187,7 @@ function SignupFormContent() {
                                                     if (isValid) setActiveStep(2);
                                                 }
                                             }}>
-                                                <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-white">
+                                                <StepperIndicator className="data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground">
                                                     2
                                                 </StepperIndicator>
                                             </StepperTrigger>
@@ -259,7 +259,7 @@ function SignupFormContent() {
                                                         type="button"
                                                         onClick={nextStep}
 
-                                                        className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                                         label="Next"
                                                     >
                                                     </GradientButton>
@@ -267,7 +267,7 @@ function SignupFormContent() {
                                                     <div className="flex flex-col w-full text-right items-end gap-2">
                                                         <GradientButton
                                                             type="submit"
-                                                            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                                             label={isLoading ? "Loading..." : "Create "}
                                                             onClick={form.handleSubmit(onSubmit)}
                                                             disabled={isLoading}

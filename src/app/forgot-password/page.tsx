@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white">
+                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                                 Send OTP
                             </Button>
                         </form>
