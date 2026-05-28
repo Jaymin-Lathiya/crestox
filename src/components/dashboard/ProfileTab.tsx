@@ -256,7 +256,7 @@ export const ProfileTab = () => {
           </div>
           <button
             type="button"
-            className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             title="Avatar changes use media upload in a future update"
           >
             <Camera className="w-6 h-6 text-foreground" />
@@ -268,7 +268,7 @@ export const ProfileTab = () => {
           value={artistName}
           onChange={(e) => setArtistName(e.target.value)}
           placeholder="Your Name"
-          className="text-display bg-transparent border-none text-center focus:outline-none placeholder:text-zinc-700 w-full"
+          className="text-display bg-transparent border-none text-center focus:outline-none placeholder:text-muted-foreground/60 w-full"
         />
         {!profile.is_approved && (
           <p className="text-xs text-primary mt-2 uppercase tracking-wider">
@@ -290,7 +290,7 @@ export const ProfileTab = () => {
           onChange={(e) => setArtistBio(e.target.value)}
           placeholder="Write your artist statement..."
           rows={4}
-          className="w-full bg-transparent border-none text-base leading-relaxed text-zinc-300 focus:outline-none resize-none placeholder:text-zinc-700"
+          className="w-full bg-transparent border-none text-base leading-relaxed text-foreground/80 focus:outline-none resize-none placeholder:text-muted-foreground/60"
         />
       </motion.div>
 

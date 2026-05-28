@@ -374,7 +374,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   const innerSurface =
     layout === 'floating'
-      ? 'glass-panel border border-white/10 bg-background/80'
+      ? 'glass-panel border border-foreground/10 bg-background/80'
       : 'bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B]';
 
   const summaryHeadingCls =
@@ -469,30 +469,30 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           className={cn(
-            'sm:max-w-md gap-0 overflow-hidden border-[#1E293B] bg-[#0B1120] p-0 text-white shadow-2xl',
+            'sm:max-w-md gap-0 overflow-hidden border-border bg-card p-0 text-card-foreground shadow-2xl',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            '[&>button]:text-zinc-400 [&>button]:hover:text-white',
+            '[&>button]:text-muted-foreground [&>button]:hover:text-foreground',
           )}
         >
           <div className="max-h-[90vh] overflow-y-auto p-6 pb-8">
             <DialogHeader className="space-y-3 pr-8 text-left">
-              <DialogTitle className="font-serif text-2xl font-normal tracking-tight text-white">
+              <DialogTitle className="font-serif text-2xl font-normal tracking-tight text-foreground">
                 Collect from {collectContextLabel}
               </DialogTitle>
-              <DialogDescription className="text-sm text-zinc-400">
+              <DialogDescription className="text-sm text-muted-foreground">
                 Acquire fractals at the best available price. All amounts are in Indian Rupees (INR), including taxes as shown.
               </DialogDescription>
             </DialogHeader>
 
             <div className="mt-6 space-y-6">
               <div className="space-y-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Quantity</span>
-                <div className="flex items-stretch gap-2 rounded-xl border border-[#1E293B] bg-[#0f172a] p-1">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quantity</span>
+                <div className="flex items-stretch gap-2 rounded-xl border border-border bg-muted p-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-11 w-11 shrink-0 rounded-lg bg-[#1e293b] text-white hover:bg-[#334155] hover:text-white"
+                    className="h-11 w-11 shrink-0 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 hover:text-accent-foreground"
                     onClick={() => bumpQuantity(-1)}
                     disabled={effectiveQty <= 1}
                   >
@@ -506,49 +506,49 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                     value={quantity === '' ? '' : String(quantity)}
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
-                    className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 text-center font-mono text-lg text-white shadow-none placeholder:text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 text-center font-mono text-lg text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-11 w-11 shrink-0 rounded-lg bg-[#1e293b] text-white hover:bg-[#334155] hover:text-white"
+                    className="h-11 w-11 shrink-0 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 hover:text-accent-foreground"
                     onClick={() => bumpQuantity(1)}
                     disabled={effectiveQty >= maxQty}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-muted-foreground">
                   {maxQty.toLocaleString()} available
                 </p>
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Order breakdown</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Order breakdown</span>
                 {quoteLoading ? (
-                  <Skeleton className="h-24 w-full rounded-xl bg-zinc-800" />
+                  <Skeleton className="h-24 w-full rounded-xl bg-muted" />
                 ) : quote?.fill_breakdown?.length ? (
-                  <div className="space-y-2 rounded-xl bg-[#0f172a] px-4 py-3 border border-[#1E293B]">
+                  <div className="space-y-2 rounded-xl bg-muted px-4 py-3 border border-border">
                     {quote.fill_breakdown.map((line, idx) => (
                       <div
                         key={`${line.source}-${idx}-${line.quantity}-${line.price_per_share}`}
                         className="flex items-start justify-between gap-3 text-sm"
                       >
-                        <span className="text-zinc-300">
-                          <span className="font-mono tabular-nums text-white">{line.quantity}</span>
-                          <span className="text-zinc-500"> × </span>
+                        <span className="text-foreground/80">
+                          <span className="font-mono tabular-nums text-foreground">{line.quantity}</span>
+                          <span className="text-muted-foreground"> × </span>
                           @ {'\u20B9'}
                           {parseFloat(line.price_per_share).toFixed(2)}
                         </span>
-                        <span className="shrink-0 text-xs font-medium text-zinc-400">
+                        <span className="shrink-0 text-xs font-medium text-muted-foreground">
                           {fillSourceLabel(line.source)}
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between rounded-xl bg-[#0f172a] px-4 py-3 border border-[#1E293B]">
+                  <div className="flex items-center justify-between rounded-xl bg-muted px-4 py-3 border border-border">
                     <span className="text-sm text-zinc-300">
                       {effectiveQty} × @ {'\u20B9'}
                       {currentPrice.toFixed(2)}
@@ -568,44 +568,44 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 </p>
               ) : null}
 
-              <div className="space-y-3 border-t border-[#1E293B] pt-4 font-sans">
-                <div className="flex justify-between text-sm text-zinc-400">
+              <div className="space-y-3 border-t border-border pt-4 font-sans">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal (pre-tax)</span>
                   <div className="flex items-center gap-2">
-                    {quoteLoading ? <Skeleton className="h-5 w-20 bg-zinc-800" /> : (
-                      <span className="text-zinc-100 inline-flex items-baseline gap-px">
+                    {quoteLoading ? <Skeleton className="h-5 w-20 bg-muted" /> : (
+                      <span className="text-foreground inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(subTotalPreTax)}
                       </span>
                     )}
                     {!quoteLoading && (
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex justify-between text-sm text-zinc-400">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{hasFillPreview ? 'Taxes & fees' : 'G.S.T. (18%)'}</span>
-                  {quoteLoading ? <Skeleton className="h-5 w-16 bg-zinc-800" /> : (
-                    <span className="text-zinc-100 inline-flex items-baseline gap-px">
+                  {quoteLoading ? <Skeleton className="h-5 w-16 bg-muted" /> : (
+                    <span className="text-foreground inline-flex items-baseline gap-px">
                       <span>{'\u20B9'}</span>
                       {formatCurrencyWithSmallDecimals(taxesAndFeesAmount)}
                     </span>
                   )}
                 </div>
-                <div className="h-px bg-[#1E293B]" />
+                <div className="h-px bg-border" />
                 <div className="flex justify-between text-base font-semibold">
-                  <span className="text-[#3B82F6]">Total payable</span>
+                  <span className="text-primary">Total payable</span>
                   <div className="flex items-center gap-2">
-                    {quoteLoading ? <Skeleton className="h-6 w-24 bg-zinc-800" /> : (
-                      <span className="text-[#3B82F6] inline-flex items-baseline gap-px">
+                    {quoteLoading ? <Skeleton className="h-6 w-24 bg-muted" /> : (
+                      <span className="text-primary inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(totalPayableInr)}
                       </span>
                     )}
                     {!quoteLoading && (
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
                     )}
@@ -618,7 +618,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 rounded-lg border border-[#334155] bg-[#1e293b] text-white hover:bg-[#334155]"
+                className="h-11 rounded-lg border border-border bg-accent text-accent-foreground hover:bg-accent/80"
                 onClick={() => setDialogOpen(false)}
                 disabled={collecting}
               >
@@ -626,7 +626,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               </Button>
               <Button
                 type="button"
-                className="h-11 rounded-lg bg-[#3B82F6] px-6 font-medium text-white hover:bg-[#2563EB]"
+                className="h-11 rounded-lg bg-primary px-6 font-medium text-primary-foreground hover:bg-primary/90"
                 disabled={
                   collecting ||
                   !razorpayLoaded ||
@@ -640,7 +640,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               </Button>
             </DialogFooter>
 
-            <p className="mt-4 text-center text-[10px] text-zinc-600">
+            <p className="mt-4 text-center text-[10px] text-muted-foreground">
               {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
             </p>
           </div>

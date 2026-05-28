@@ -465,7 +465,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
                         <div className="pt-4">
                             <GradientButton
                                 type="submit"
-                                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-8"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
                                 label={isSubmitting ? "Creating..." : "Create Artwork"}
                                 disabled={isSubmitting}
                             />

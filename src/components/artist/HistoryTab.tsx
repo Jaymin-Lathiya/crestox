@@ -169,7 +169,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ history = DEFAULT_HISTORY }) =>
                   </p>
                 </MorphingDialogDescription>
               </div>
-              <MorphingDialogClose className='text-zinc-50' />
+              <MorphingDialogClose className='text-foreground' />
             </MorphingDialogContent>
           </MorphingDialogContainer>
         </MorphingDialog>

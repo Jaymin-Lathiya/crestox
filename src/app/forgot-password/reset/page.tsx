@@ -141,7 +141,7 @@ export default function ResetPasswordPage() {
                                 <ValidationItem fulfilled={val.special} label="One special character (!@#$%*=)" />
                             </div>
 
-                            <Button type="submit" className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white">
+                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                                 Set Password
                             </Button>
                         </form>

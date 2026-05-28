@@ -91,7 +91,7 @@ function LoginFormContent() {
                                     We've sent a secure login link to
                                 </div>
                                 <div className="flex items-center space-x-3 text-[19px]">
-                                    <Mail className="h-6 w-6 text-[#3B82F6]" />
+                                    <Mail className="h-6 w-6 text-primary" />
                                     <span className="font-semibold tracking-wide text-foreground">{form.getValues("email")}</span>
                                     <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground transition-colors ml-2">
                                         <Pencil className="h-5 w-5" />
@@ -103,8 +103,8 @@ function LoginFormContent() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center space-y-8 py-4">
-                                <div className="rounded-full border-[3px] border-[#2563EB] p-3 mb-2 flex items-center justify-center h-16 w-16 bg-background">
-                                    <Check className="h-8 w-8 text-[#2563EB]" strokeWidth={3} />
+                                <div className="rounded-full border-[3px] border-primary p-3 mb-2 flex items-center justify-center h-16 w-16 bg-background">
+                                    <Check className="h-8 w-8 text-primary" strokeWidth={3} />
                                 </div>
                                 <Form {...form}>
                                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-sm">
@@ -123,7 +123,7 @@ function LoginFormContent() {
                                         <div className="flex items-center justify-center space-x-4 pt-2">
                                             <Button
                                                 type="submit"
-                                                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium px-6 h-11 rounded-lg"
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 h-11 rounded-lg"
                                                 disabled={isLoading}
                                             >
                                                 {isLoading ? "Updating..." : "Update Email"}
@@ -174,7 +174,7 @@ function LoginFormContent() {
                                     <div className="flex justify-end pt-4">
                                         <GradientButton
                                             type="submit"
-                                            className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                                             label={isLoading ? "Sending..." : "Continue with Email"}
                                             onClick={() => {
                                                 onSubmit(form.getValues())

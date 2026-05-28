@@ -127,7 +127,6 @@ export default function LandingPage() {
                       onClick={() => router.push(`/signup?user_type=${UserType.COLLECTOR}`)}
                       label="Start Collecting"
                     >
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </GradientButton>
                     <GradientButton variant="secondary" onClick={handleArtistButtonClick} label='Apply as an Artist' />
                   </div>
@@ -137,9 +136,8 @@ export default function LandingPage() {
                   {HERO_STATS.map((stat) => (
                     <div key={stat.label}>
                       <p
-                        className={`text-xl sm:text-3xl md:text-4xl font-mono font-bold ${
-                          stat.emphasize ? 'text-primary' : 'text-foreground'
-                        }`}
+                        className={`text-xl sm:text-3xl md:text-4xl font-mono font-bold ${stat.emphasize ? 'text-primary' : 'text-foreground'
+                          }`}
                       >
                         {stat.value}
                       </p>

@@ -167,7 +167,7 @@ export default function PhotoScrollSection({
     const panYTop = excess > 0 ? totalH / 2 - vh / 2 : 0;
     const panYBottom = excess > 0 ? vh / 2 - totalH / 2 : 0;
 
-    // Set initial state — keep cards partially visible so section doesn't look empty
+    // Set initial state — fully hidden until scroll reaches the section
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
       const { x, y, cw, ch } = layout[i];
@@ -177,7 +177,7 @@ export default function PhotoScrollSection({
         width: cw,
         height: ch,
         scale: 0.65,
-        opacity: 0.35,
+        opacity: 0,
         transformOrigin: "center center",
         force3D: true,
       });
@@ -191,6 +191,23 @@ export default function PhotoScrollSection({
     });
 
     const ctx = gsap.context(() => {
+      // Auto fade-in: when section enters the viewport, smoothly reveal the cards
+      // (independent of scroll-scrub) so the section never feels empty on arrival.
+      const entranceCards = cardsRef.current.filter(Boolean);
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top 85%",
+        once: true,
+        onEnter: () => {
+          gsap.to(entranceCards, {
+            opacity: 1,
+            duration: 0.9,
+            stagger: 0.06,
+            ease: "power2.out",
+          });
+        },
+      });
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
@@ -235,7 +252,6 @@ export default function PhotoScrollSection({
             width: cw,
             height: ch,
             scale: 0.65,
-            opacity: 0.35,
             transformOrigin: "center center",
             force3D: true,
           },
@@ -245,7 +261,6 @@ export default function PhotoScrollSection({
             width: cw,
             height: ch,
             scale: 1,
-            opacity: 1,
             ease: "expo.out",
             duration: 1,
             force3D: true,
@@ -316,6 +331,8 @@ export default function PhotoScrollSection({
                 <img
                   src={img.src}
                   alt={img.alt}
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: "100%",
                     height: "100%",

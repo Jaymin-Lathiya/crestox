@@ -19,7 +19,7 @@ const SettingToggle = ({ label, description, enabled, onChange }: SettingToggleP
       onClick={onChange}
       className={cn(
         "w-12 h-6 rounded-full transition-colors relative",
-        enabled ? "bg-accent" : "bg-zinc-800"
+        enabled ? "bg-accent" : "bg-muted"
       )}
     >
       <div
@@ -131,7 +131,7 @@ export const SettingsTab = () => {
             </div>
             <span className="text-xs text-muted-foreground">Default</span>
           </div>
-          <button className="w-full py-3 border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-zinc-600 transition-colors">
+          <button className="w-full py-3 border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
             + Add Payment Method
           </button>
         </div>
@@ -160,7 +160,7 @@ export const SettingsTab = () => {
                 "flex-1 py-3 flex flex-col items-center gap-2 border transition-colors",
                 theme.active
                   ? "border-primary bg-primary/10"
-                  : "border-border hover:border-zinc-600"
+                  : "border-border hover:border-foreground/40"
               )}
             >
               <theme.icon className="w-5 h-5" />

@@ -201,7 +201,7 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
                                     const content = (
                                         <figure className="relative z-10 m-0" style={{ perspective: "1200px" }}>
                                             <div
-                                                className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-xl bg-gray-900/50 border border-white/5 shadow-2xl transition-shadow duration-500 hover:shadow-white/10`}
+                                                className={`grid-item-imgwrap relative ${aspect} w-full overflow-hidden rounded-xl bg-muted border border-border shadow-2xl transition-shadow duration-500 hover:shadow-foreground/10`}
                                             >
                                                 <div
                                                     className="grid-item-img absolute inset-0 h-full w-full bg-cover bg-center"

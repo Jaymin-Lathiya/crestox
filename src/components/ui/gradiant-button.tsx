@@ -115,7 +115,7 @@ export default function GradientButton({
       disabled={disabled}
       onClick={handleClick}
       className={cn(
-        "group relative h-12 px-6 rounded-xl overflow-hidden transition-all duration-500 cursor-pointer",
+        "group relative h-12 px-6 rounded-xl overflow-hidden transition-all duration-500 cursor-pointer inline-flex items-center justify-center",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         className
       )}
@@ -165,7 +165,7 @@ export default function GradientButton({
       {/* Text */}
       <span
         className={cn(
-          "relative z-10 bg-gradient-to-b flex items-center bg-clip-text text-transparent font-light tracking-wide",
+          "relative z-10 bg-gradient-to-b bg-clip-text text-transparent font-light tracking-wide leading-none",
           isDark ? colors.dark.text : colors.light.text
         )}
         style={{

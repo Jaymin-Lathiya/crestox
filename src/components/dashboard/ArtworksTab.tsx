@@ -156,7 +156,7 @@ export const ArtworksTab = () => {
             className={cn(
               "px-4 py-2 text-xs uppercase tracking-wider transition-all duration-200",
               filter === btn.value
-                ? "bg-zinc-800 text-foreground"
+                ? "bg-muted text-foreground"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

@@ -35,14 +35,14 @@ export function ExploreGrid() {
     const [activeTab, setActiveTab] = useState("Graphic Design");
 
     return (
-        <div className="min-h-screen bg-black text-white font-sans selection:bg-white/20 flex flex-col">
+        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-foreground/20 flex flex-col">
 
             {/* Global Header */}
             <Header />
 
             {/* --- Sub-Toolbar (Search & Filters) --- */}
             {/* Positioned below the global header (fixed or standard flow) */}
-            <div className="sticky top-[72px] z-40 bg-black/90 backdrop-blur-md border-b border-white/5 py-3 pt-4 transition-all">
+            <div className="sticky top-[72px] z-40 bg-background/90 backdrop-blur-md border-b border-border/60 py-3 pt-4 transition-all">
                 <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between gap-6">
 
                     {/* Filter Tabs (Horizontal Scroll) */}
@@ -54,34 +54,34 @@ export function ExploreGrid() {
                                     onClick={() => setActiveTab(tab)}
                                     className={cn(
                                         "text-[13px] font-medium whitespace-nowrap transition-all duration-300 relative py-2",
-                                        activeTab === tab ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                                        activeTab === tab ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
                                     )}
                                 >
                                     {tab}
                                     {activeTab === tab && (
                                         <motion.div
                                             layoutId="activeTab"
-                                            className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-white"
+                                            className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-foreground"
                                         />
                                     )}
                                 </button>
                             ))}
-                            <ChevronRight className="w-4 h-4 text-zinc-600 shrink-0 cursor-pointer hover:text-white transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-foreground transition-colors" />
                         </div>
                     </div>
 
                     {/* Search Bar - Minimal Pill */}
                     <div className="relative group w-full max-w-[300px] shrink-0 hidden lg:block">
                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                            <Sparkles className="h-3.5 w-3.5 text-zinc-500" />
+                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>
                         <input
                             type="text"
                             placeholder="Try 'celestial maps'"
-                            className="w-full bg-zinc-900/50 text-[13px] text-white placeholder:text-zinc-600 rounded-full py-2 pl-9 pr-10 border border-white/5 focus:border-zinc-700 outline-none transition-all hover:bg-zinc-900"
+                            className="w-full bg-muted/50 text-[13px] text-foreground placeholder:text-muted-foreground rounded-full py-2 pl-9 pr-10 border border-border/60 focus:border-border outline-none transition-all hover:bg-muted"
                         />
                         <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                            <Globe className="h-3.5 w-3.5 text-zinc-600" />
+                            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>
                     </div>
 
@@ -93,7 +93,7 @@ export function ExploreGrid() {
 
                 {/* Section: Selected by Cosmos */}
                 <section className="mb-20">
-                    <h2 className="text-[28px] font-serif text-zinc-200 mb-8 font-normal tracking-wide">Selected by Cosmos</h2>
+                    <h2 className="text-[28px] font-serif text-foreground mb-8 font-normal tracking-wide">Selected by Cosmos</h2>
                     <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar snap-x">
                         {SELECTED_BY_COSMOS.map((item) => (
                             <CosmosCard key={item.id} item={item} />
@@ -103,7 +103,7 @@ export function ExploreGrid() {
 
                 {/* Section: Elements */}
                 <section>
-                    <h2 className="text-[28px] font-serif text-zinc-200 mb-8 font-normal tracking-wide">Elements</h2>
+                    <h2 className="text-[28px] font-serif text-foreground mb-8 font-normal tracking-wide">Elements</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {/* Repeat mock data to fill grid */}
                         {[...ELEMENTS_ITEMS, ...ELEMENTS_ITEMS, ...ELEMENTS_ITEMS, ...ELEMENTS_ITEMS].map((item, idx) => (
@@ -129,7 +129,7 @@ export function ExploreGrid() {
 function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
     return (
         <div className="group min-w-[320px] md:min-w-[360px] snap-start cursor-pointer">
-            <div className="overflow-hidden rounded-sm aspect-[16/10] mb-3.5 relative bg-zinc-900 border border-white/5">
+            <div className="overflow-hidden rounded-sm aspect-[16/10] mb-3.5 relative bg-muted border border-border/60">
                 <img
                     src={item.src}
                     alt={item.title}
@@ -152,16 +152,16 @@ function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
             </div>
 
             <div className="flex items-center gap-3 pl-1">
-                <img src={item.avatar} alt={item.user} className="w-5 h-5 rounded-sm border border-white/10" />
+                <img src={item.avatar} alt={item.user} className="w-5 h-5 rounded-sm border border-border" />
                 <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                        <span className="text-[13px] font-bold text-zinc-200 group-hover:text-white transition-colors">{item.title}</span>
+                        <span className="text-[13px] font-bold text-foreground/90 group-hover:text-foreground transition-colors">{item.title}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-zinc-500">@{item.user.replace('@', '')}</span>
+                        <span className="text-[11px] text-muted-foreground">@{item.user.replace('@', '')}</span>
 
-                        <div className="w-2.5 h-2.5 bg-zinc-700 rounded-full flex items-center justify-center">
-                            <svg className="w-1.5 h-1.5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M20 6L9 17l-5-5" /></svg>
+                        <div className="w-2.5 h-2.5 bg-primary rounded-full flex items-center justify-center">
+                            <svg className="w-1.5 h-1.5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M20 6L9 17l-5-5" /></svg>
                         </div>
                     </div>
                 </div>
@@ -173,7 +173,7 @@ function CosmosCard({ item }: { item: typeof SELECTED_BY_COSMOS[0] }) {
 function ElementCard({ item }: { item: typeof ELEMENTS_ITEMS[0] }) {
     return (
         <div className="group cursor-pointer relative">
-            <div className="overflow-hidden rounded-sm aspect-[3/4] mb-2 relative bg-zinc-900 border border-white/5">
+            <div className="overflow-hidden rounded-sm aspect-[3/4] mb-2 relative bg-muted border border-border/60">
                 <img
                     src={item.src}
                     alt={item.title}

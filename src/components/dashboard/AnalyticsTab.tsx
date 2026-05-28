@@ -44,8 +44,8 @@ export const AnalyticsTab = () => {
               <button
                 key={period}
                 className={`px-3 py-1 text-xs uppercase tracking-wider ${
-                  i === 2 
-                    ? "bg-zinc-800 text-foreground border border-zinc-700" 
+                  i === 2
+                    ? "bg-muted text-foreground border border-border"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
