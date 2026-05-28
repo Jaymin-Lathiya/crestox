@@ -67,6 +67,9 @@ export interface ArtworkDetail {
   artist_profile?: { id: number; artist_name: string; user_id: number };
   artwork_media?: ArtworkMediaItem[];
   shares?: ArtworkShare[];
+  available_shares?: number;
+  available_from_artist?: number;
+  available_from_listings?: number;
 }
 
 /** API artwork list item (same shape as detail, used in artist reel) */
@@ -249,8 +252,7 @@ const Index = () => {
     ? parseFloat(artwork.shares[0].current_price)
     : parseFloat(artwork?.starting_price ?? "0");
   const totalFractals = artwork?.number_of_shares ?? 0;
-  const soldCount = artwork?.shares?.length ?? 0;
-  const availableFractals = Math.max(0, totalFractals - soldCount);
+  const availableFractals = artwork?.available_shares ?? 0;
 
   if (loading) {
     return (
@@ -272,7 +274,7 @@ const Index = () => {
           eventSource={interactionRef}
           artworkUrl={artwork.artwork_media[0].media.file_path}
           artworkName={artwork.name}
-          orientation={artwork.artwork_media[0].media.orientation}
+          orientation={artwork.artwork_media[0].media.orientation || ImageOrientation.PORTRAIT}
         />
         <div
           ref={interactionRef}
