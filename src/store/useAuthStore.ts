@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getMagicLink, verifyMagicLink, getToken } from '@/apis/auth/authActions';
+import { getMagicLink, verifyMagicLink, getToken, googleAuth } from '@/apis/auth/authActions';
 import { setCookie } from '@/utils/cookieUtils';
 import { UserType } from '@/enums/userType';
 
@@ -24,6 +24,7 @@ interface AuthState {
     requestMagicLink: (email: string, name?: string, user_type?: string) => Promise<void>;
     verifyMagicLinkToken: (token: string) => Promise<VerifyResponseData | null>;
     fetchUserToken: (accessToken: string) => Promise<boolean>;
+    googleSignIn: (idToken: string, user_type?: string) => Promise<VerifyResponseData | null>;
     clearStore: () => void;
 }
 
@@ -102,6 +103,38 @@ export const useAuthStore = create<AuthState>((set) => ({
             console.log(err);
             set({ error: err?.response?.data?.message || err.message || 'Verification failed. Failed to get user token.' });
             return false;
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    googleSignIn: async (idToken: string, user_type?: string) => {
+        set({ isLoading: true, error: null, isSuccess: false });
+        try {
+            const googleAuthAction = googleAuth({ idToken, user_type });
+            const response = await googleAuthAction();
+
+            if (response.status !== 200) {
+                set({ error: response.data?.message || 'Google sign-in failed.' });
+                return null;
+            }
+
+            const accessToken = response.data?.accessToken || response.data?.data?.accessToken;
+            const isNewUser = response.data?.isNewUser || response.data?.data?.isNewUser;
+            const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
+            const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
+            const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+
+            if (accessToken) {
+                setCookie("token", accessToken, 30);
+            }
+
+            set({ isSuccess: true });
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+        } catch (err: any) {
+            console.log(err);
+            set({ error: err?.response?.data?.message || err.message || 'Google sign-in failed.' });
+            return null;
         } finally {
             set({ isLoading: false });
         }

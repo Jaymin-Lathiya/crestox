@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -41,6 +41,8 @@ import { CheckIcon, LoaderCircleIcon, CheckCircle2 } from "lucide-react"
 import GradientButton from "@/components/ui/gradiant-button"
 import ArtistProfileForm from "./ArtistProfileForm"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
+import { toast } from "sonner"
 
 const formSchema = z.object({
     firstName: z.string().min(1, { message: "First name is required." }),
@@ -50,8 +52,10 @@ const formSchema = z.object({
 })
 
 function SignupFormContent() {
-    const { requestMagicLink, isLoading, isSuccess, error } = useAuthStore()
+    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn } = useAuthStore()
     const [activeStep, setActiveStep] = useState(1);
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const router = useRouter();
 
     const searchParams = useSearchParams();
 
@@ -59,6 +63,36 @@ function SignupFormContent() {
     const userType = Object.values(UserType).includes(rawType as UserType)
         ? (rawType as UserType)
         : UserType.COLLECTOR;
+
+    const handleGoogleSuccess = async (idToken: string) => {
+        setGoogleLoading(true);
+        try {
+            const result = await googleSignIn(idToken, userType);
+            if (result?.accessToken) {
+                toast.success("Successfully signed up with Google!");
+                if (result.isNewArtist && userType === UserType.ARTIST) {
+                    router.push("/artist/onboarding");
+                } else if (result.isNewCollector) {
+                    router.push("/explore");
+                } else {
+                    router.push("/app");
+                }
+            }
+        } catch (err) {
+            console.error("Google sign-in error:", err);
+            toast.error("Failed to sign up with Google");
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
+    const { triggerGoogleSignIn } = useGoogleSignIn({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            toast.error(error);
+            setGoogleLoading(false);
+        },
+    });
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -258,11 +292,21 @@ function SignupFormContent() {
                                 </div>
                             </div>
 
-                            <Button variant="outline" className="w-full" type="button">
-                                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                                    <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                                </svg>
-                                Sign up with Google
+                            <Button 
+                                variant="outline" 
+                                className="w-full" 
+                                type="button"
+                                onClick={triggerGoogleSignIn}
+                                disabled={googleLoading || isLoading}
+                            >
+                                {googleLoading ? (
+                                    <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                                        <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                                    </svg>
+                                )}
+                                {googleLoading ? "Signing up..." : "Sign up with Google"}
                             </Button>
                         </>
                     )}

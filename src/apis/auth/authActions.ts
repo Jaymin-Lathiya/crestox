@@ -30,4 +30,13 @@ export const getToken = (data: any) => async () => {
     } catch (err: any) {
         throw err;
     }
-}   
+}
+
+export const googleAuth = (data: { idToken: string; user_type?: string }) => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.GOOGLE_AUTH, data);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
