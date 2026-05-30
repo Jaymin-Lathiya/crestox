@@ -263,6 +263,31 @@ const Index = () => {
     );
   }
 
+  // Fetch finished but no artwork (not found / failed): show a clear state instead of
+  // crashing on `artwork.artwork_media[0]...` below.
+  if (!artwork) {
+    return (
+      <>
+        <main className="bg-void min-h-screen relative flex items-center justify-center px-6">
+          <div className="noise-overlay" />
+          <div className="relative z-10 text-center max-w-md">
+            <h1 className="text-2xl font-serif text-foreground mb-3">Artwork not found</h1>
+            <p className="text-muted-foreground text-sm mb-6">
+              This artwork could not be loaded. It may have been removed or the link is invalid.
+            </p>
+            <button
+              onClick={() => router.push("/explore")}
+              className="text-sm text-primary hover:underline underline-offset-4"
+            >
+              Browse other artworks
+            </button>
+          </div>
+        </main>
+        <NavigationPill />
+      </>
+    );
+  }
+
   return (
     <main className="bg-void min-h-screen relative">
       <div className="noise-overlay" />
@@ -272,9 +297,9 @@ const Index = () => {
           exploded={exploded}
           onToggle={toggleExplode}
           eventSource={interactionRef}
-          artworkUrl={artwork.artwork_media[0].media.file_path}
+          artworkUrl={artworkImageUrl}
           artworkName={artwork.name}
-          orientation={artwork.artwork_media[0].media.orientation || ImageOrientation.PORTRAIT}
+          orientation={artwork.artwork_media?.[0]?.media?.orientation || ImageOrientation.PORTRAIT}
         />
         <div
           ref={interactionRef}

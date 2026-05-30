@@ -60,7 +60,12 @@ function mergeSocialLinksForSave(
 
 export const ProfileTab = () => {
   const queryClient = useQueryClient();
-  const { user, fetchProfile } = useUserStore();
+  const {
+    user,
+    fetchProfile,
+    isLoading: profileLoading,
+    isInitialized: profileInitialized,
+  } = useUserStore();
 
   const [artistName, setArtistName] = useState("");
   const [artistBio, setArtistBio] = useState("");
@@ -194,6 +199,16 @@ export const ProfileTab = () => {
     () => buildMediaUrl(profile?.avatar_url ?? null),
     [profile?.avatar_url]
   );
+
+  // Profile still loading (e.g. a hard refresh): show a spinner instead of the
+  // signed-out message, which would otherwise flash for logged-in users.
+  if (!user && (profileLoading || !profileInitialized)) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

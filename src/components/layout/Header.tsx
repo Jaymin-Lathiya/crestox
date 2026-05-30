@@ -22,10 +22,10 @@ import ProfileDropdown from "../ui/profile";
 import { clearCookie, getCookie } from "@/utils/cookieUtils";
 import { useUserStore } from "@/store/useUserStore";
 import { SignupModal } from "../ui/signup-modal";
+import { Skeleton } from "../ui/skeleton";
 
 export function Header() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -36,18 +36,23 @@ export function Header() {
   });
 
   const token = getCookie("token");
-  const { fetchProfile, user } = useUserStore();
+  const { initialize, clearUser, user, isLoading, isLoggedIn, isInitialized } =
+    useUserStore();
 
   React.useEffect(() => {
-    if (token !== undefined && token !== "") {
-      setIsLoggedIn(true);
-      fetchProfile();
-    }
-  }, [token, fetchProfile]);
+    // `initialize` reads the token cookie itself, so re-running on token change
+    // covers both login (cookie set) and logout (cookie cleared).
+    initialize();
+  }, [token, initialize]);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  // While we hold a credential but the profile hasn't resolved yet, show a skeleton
+  // rather than flashing the "Sign Up" button or rendering nothing.
+  const profilePending =
+    (isLoggedIn || token !== "") && !user && (isLoading || !isInitialized);
 
   const data = [
     {
@@ -142,15 +147,22 @@ export function Header() {
           <div className="flex items-center gap-4">
             {/* <ThemeToggle /> */}
 
-            {isLoggedIn ?
-              <ProfileDropdown
-                logout={() => {
-                  clearCookie("token");
-                  setIsLoggedIn(false);
-                  window.location.href = "/";
-                }}
-              />
-              : <div className="flex items-center gap-2">
+            {!mounted || profilePending ?
+              // Skeleton placeholder for the auth area — matches the profile dropdown's
+              // avatar (+ name on md) so layout doesn't shift once the profile loads.
+              <div className="flex items-center gap-3">
+                <Skeleton className="hidden md:block h-4 w-20 rounded" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </div>
+              : user ?
+                <ProfileDropdown
+                  logout={() => {
+                    clearCookie("token");
+                    clearUser();
+                    window.location.href = "/";
+                  }}
+                />
+                : <div className="flex items-center gap-2">
                 {/* <GradientButton
                   label="Sign In"
                   variant="primary"

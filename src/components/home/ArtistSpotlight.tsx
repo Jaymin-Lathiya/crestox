@@ -329,10 +329,7 @@ const ArtistSpotlight = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <GradientButton variant="primary" label='Explore All Artists'>
-              <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+            <GradientButton variant="primary" label='Explore All Artists' className='flex justify-center items-center'>
             </GradientButton>
 
           </motion.div>

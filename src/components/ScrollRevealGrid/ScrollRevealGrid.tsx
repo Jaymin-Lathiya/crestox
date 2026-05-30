@@ -105,6 +105,65 @@ function GridCard({
     );
 }
 
+function ScrollRevealGridSkeleton() {
+    const [cols, setCols] = useState(4);
+    useEffect(() => {
+        const update = () => setCols(window.innerWidth < 768 ? 2 : 4);
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+
+    const columnStaggerY = cols === 2 ? 24 : 40;
+
+    // Define standard mock items to generate a beautiful, realistic staggered skeleton layout
+    const aspectRatios = [
+        "aspect-[3/4]",  // Portrait
+        "aspect-[1/1]",  // Square
+        "aspect-[4/3]",  // Landscape
+        "aspect-[3/4]",  // Portrait
+        "aspect-[1/1]",  // Square
+    ];
+
+    // Build grid columns (round-robin)
+    const columns = Array.from({ length: cols }, (_, colIdx) => {
+        return Array.from({ length: 3 }, (_, rowIdx) => {
+            const aspectIndex = (colIdx + rowIdx) % aspectRatios.length;
+            return aspectRatios[aspectIndex];
+        });
+    });
+
+    return (
+        <div className="relative w-full overflow-hidden pb-24 bg-background">
+            <div className="relative w-full">
+                <section className="relative flex justify-center">
+                    <div className="relative flex w-full max-w-[1480px] mx-auto gap-6 md:gap-10 py-20 items-start">
+                        {columns.map((colItems, colIndex) => (
+                            <div
+                                key={colIndex}
+                                className="flex flex-col gap-6 md:gap-10 flex-1 min-w-0"
+                                style={{ marginTop: `${colIndex * columnStaggerY}px` }}
+                            >
+                                {colItems.map((aspect, rowIndex) => (
+                                    <div key={rowIndex} className="w-full">
+                                        <figure className="relative z-10 m-0" style={{ perspective: "1200px" }}>
+                                            <div
+                                                className={`relative ${aspect} w-full overflow-hidden rounded-xl bg-card/45 border border-border/40 shadow-2xl`}
+                                            >
+                                                <Skeleton className="absolute inset-0 w-full h-full opacity-60" />
+                                            </div>
+                                        </figure>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main component ─────────────────────────────────────────────────
 export default function ScrollRevealGrid() {
     // const containerRef = useRef<HTMLDivElement>(null);
@@ -114,10 +173,12 @@ export default function ScrollRevealGrid() {
 
     const [artworks, setArtworks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
         const fetchArtworks = async () => {
+            setIsError(false);
             try {
                 const allArtworks: any[] = [];
                 let nextCursor: string | null = null;
@@ -160,7 +221,10 @@ export default function ScrollRevealGrid() {
                 setIsLoading(false);
             } catch (error) {
                 console.error("Failed to fetch verified artworks", error);
-                if (!cancelled) setIsLoading(false);
+                if (!cancelled) {
+                    setIsError(true);
+                    setIsLoading(false);
+                }
             }
         };
         fetchArtworks();
@@ -176,8 +240,15 @@ export default function ScrollRevealGrid() {
 
     if (!isLoading && artworks.length === 0) {
         return (
-            <div className="flex items-center justify-center h-screen bg-background text-muted-foreground font-serif text-2xl md:text-3xl">
-                Not any verified artwork yet
+            <div className="flex flex-col items-center justify-center h-screen bg-background text-muted-foreground font-serif text-center px-6">
+                <p className="text-2xl md:text-3xl">
+                    {isError ? "Couldn't load artworks" : "Not any verified artwork yet"}
+                </p>
+                {isError && (
+                    <p className="mt-3 text-sm font-sans">
+                        Something went wrong while loading the gallery. Please try again later.
+                    </p>
+                )}
             </div>
         );
     }
@@ -224,8 +295,12 @@ export default function ScrollRevealGrid() {
                 </div>
             </div>
             */}
-            {!isLoading && artworks.length > 0 && (
-                <ScrollImagesReveal bgClass="bg-background" artworks={artworks} />
+            {isLoading ? (
+                <ScrollRevealGridSkeleton />
+            ) : (
+                artworks.length > 0 && (
+                    <ScrollImagesReveal bgClass="bg-background" artworks={artworks} />
+                )
             )}
         </>
     );

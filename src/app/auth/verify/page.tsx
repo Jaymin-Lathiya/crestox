@@ -3,6 +3,7 @@
 import { useEffect, Suspense, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useUserStore } from "@/store/useUserStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoaderCircleIcon, CheckCircle2, XCircle } from "lucide-react"
 import { setCookie } from "@/utils/cookieUtils"
@@ -23,6 +24,11 @@ function VerifyContent() {
 
                 if (verifyResult && verifyResult.accessToken) {
                     setCookie("token", verifyResult.accessToken, 30);
+
+                    // Start loading the profile NOW (synchronously sets isLoggedIn + isLoading)
+                    // so the page we redirect to renders its loading skeleton instead of the
+                    // signed-out "Sign in" state before the Header's effect kicks in.
+                    void useUserStore.getState().initialize();
 
                     if (!!verifyResult.isTypeSelected) {
                         router.push("/");

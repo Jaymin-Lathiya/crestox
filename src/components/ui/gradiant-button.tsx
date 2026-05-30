@@ -165,7 +165,7 @@ export default function GradientButton({
       {/* Text */}
       <span
         className={cn(
-          "relative z-10 bg-gradient-to-b bg-clip-text text-transparent font-light tracking-wide leading-none",
+          "relative z-10 bg-gradient-to-b bg-clip-text text-transparent font-light tracking-wide leading-none flex items-center justify-between",
           isDark ? colors.dark.text : colors.light.text
         )}
         style={{

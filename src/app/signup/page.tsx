@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
@@ -37,10 +37,11 @@ import {
     StepperSeparator,
     StepperPanel
 } from "@/components/reui/stepper"
-import { CheckIcon, LoaderCircleIcon, CheckCircle2 } from "lucide-react"
+import { CheckIcon, LoaderCircleIcon, CheckCircle2, Mail, Pencil, Check } from "lucide-react"
 import GradientButton from "@/components/ui/gradiant-button"
 import ArtistProfileForm from "./ArtistProfileForm"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useUserStore } from "@/store/useUserStore"
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
 import { toast } from "sonner"
 
@@ -52,10 +53,19 @@ const formSchema = z.object({
 })
 
 function SignupFormContent() {
-    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn } = useAuthStore()
+    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn, clearStore } = useAuthStore()
     const [activeStep, setActiveStep] = useState(1);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const router = useRouter();
+
+    // `isSuccess` lives in the global auth store, so it would otherwise persist when
+    // navigating between /signup and /login and show a stale success screen (with a
+    // blank email, since the new form has no value). Reset it on mount.
+    useEffect(() => {
+        clearStore();
+        setIsEditing(false);
+    }, [clearStore]);
 
     const searchParams = useSearchParams();
 
@@ -69,6 +79,9 @@ function SignupFormContent() {
         try {
             const result = await googleSignIn(idToken, userType);
             if (result?.accessToken) {
+                // Kick off profile load before redirecting so the destination page shows
+                // its skeleton instead of the signed-out state.
+                void useUserStore.getState().initialize();
                 toast.success("Successfully signed up with Google!");
                 if (result.isNewArtist && userType === UserType.ARTIST) {
                     router.push("/artist/onboarding");
@@ -108,6 +121,9 @@ function SignupFormContent() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const name = `${values.firstName} ${values.lastName}`.trim();
         await requestMagicLink(values.email, name, values.user_type);
+        // Re-using this handler for the "edit email" flow on the success screen:
+        // once the link is re-sent with the updated email, drop back to the sent view.
+        setIsEditing(false);
     }
 
     const nextStep = async () => {
@@ -143,13 +159,69 @@ function SignupFormContent() {
                 </CardHeader>
                 <CardContent className="pt-6">
                     {isSuccess ? (
-                        <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                            <CheckCircle2 className="h-16 w-16 text-primary" />
-                            <p className="text-center text-muted-foreground">
-                                We've sent a secure verification link to <strong>{form.getValues("email")}</strong>.
-                                Please check your inbox.
-                            </p>
-                        </div>
+                        !isEditing ? (
+                            <div className="flex flex-col items-center justify-center space-y-6 py-8">
+                                <CheckCircle2 className="h-16 w-16 text-primary" />
+                                <div className="text-center text-[17px] text-muted-foreground w-full">
+                                    We've sent a secure verification link to
+                                </div>
+                                <div className="flex items-center space-x-3 text-[19px]">
+                                    <Mail className="h-6 w-6 text-primary shrink-0" />
+                                    <span className="font-semibold tracking-wide text-foreground break-all">{form.getValues("email")}</span>
+                                    <button type="button" onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground transition-colors ml-2 shrink-0">
+                                        <Pencil className="h-5 w-5" />
+                                    </button>
+                                </div>
+                                <div className="text-center text-[15px] text-muted-foreground mt-4">
+                                    Please check your inbox. Didn't get the email? Check spam or edit your email.
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center space-y-8 py-4">
+                                <div className="rounded-full border-[3px] border-primary p-3 mb-2 flex items-center justify-center h-16 w-16 bg-background">
+                                    <Check className="h-8 w-8 text-primary" strokeWidth={3} />
+                                </div>
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-sm">
+                                        <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Input placeholder="m@example.com" {...field} disabled={isLoading} className="bg-transparent border-input text-[15px] h-12 rounded-lg pl-4" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="flex items-center justify-center space-x-4 pt-2">
+                                            <Button
+                                                type="submit"
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 h-11 rounded-lg"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? "Updating..." : "Update Email"}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => setIsEditing(false)}
+                                                disabled={isLoading}
+                                                className="text-muted-foreground hover:text-foreground px-6 h-11 rounded-lg"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                        {error && (
+                                            <div className="text-sm font-medium text-destructive mt-2 text-center">
+                                                {error}
+                                            </div>
+                                        )}
+                                    </form>
+                                </Form>
+                            </div>
+                        )
                     ) : (
                         <>
                             <Stepper

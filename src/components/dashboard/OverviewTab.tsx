@@ -11,6 +11,7 @@ import {
 } from "@/apis/my-portfolio/myPortfolioActions";
 import { getArtistOnboardingState } from "@/apis/artists/artistActions";
 import { useUserStore } from "@/store/useUserStore";
+import { Skeleton } from "@/components/ui/skeleton";
 import ArtistOnboardingWizard from "@/components/artist/ArtistOnboardingWizard";
 
 const PENDING_REVIEW_COPY =
@@ -28,7 +29,7 @@ function formatTxDate(iso: string) {
 }
 
 export const OverviewTab = () => {
-  const { user } = useUserStore();
+  const { user, isLoading: profileLoading, isInitialized: profileInitialized } = useUserStore();
 
   const {
     data: onboarding,
@@ -95,6 +96,28 @@ export const OverviewTab = () => {
 
   const showDashboardLoading =
     Boolean(user) && isApprovedArtist && (isLoading || (isFetching && !data));
+
+  // Profile still loading (e.g. a hard refresh): show a skeleton instead of the
+  // signed-out "Sign in" message, which would otherwise flash for logged-in users.
+  if (!user && (profileLoading || !profileInitialized)) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-9 w-40 mb-3" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-64 w-full rounded-xl lg:col-span-2" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

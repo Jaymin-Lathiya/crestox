@@ -68,9 +68,11 @@ const InfiniteColumn = ({
 export function GallerySection() {
     const [images, setImages] = useState<PhotoScrollImage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
 
     useEffect(() => {
         const fetchMasterpieces = async () => {
+            setIsError(false);
             try {
                 const res = await instance.get('/artwork/curated-masterpieces');
                 if (res.status === 200 || res.status === 201) {
@@ -107,6 +109,7 @@ export function GallerySection() {
                 }
             } catch (error) {
                 console.error("Failed to fetch curated masterpieces", error);
+                setIsError(true);
             }
             // fallback to IMAGES if fetch fails or is empty
             // setImages(IMAGES);
@@ -122,9 +125,7 @@ export function GallerySection() {
                 <h2 className="font-serif text-3xl md:text-5xl">Curated Collection</h2>
             </div>
 
-            {(!isLoading && images.length > 0) ? (
-                <PhotoScrollSection bgClass='bg-background' images={images} />
-            ) : (
+            {isLoading ? (
                 <div className="h-[100vh] w-full flex flex-col items-center justify-center px-4 md:px-12 py-10 overflow-hidden">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-7xl">
                         {Array.from({ length: 8 }).map((_, idx) => (
@@ -137,6 +138,16 @@ export function GallerySection() {
                             />
                         ))}
                     </div>
+                </div>
+            ) : images.length > 0 ? (
+                <PhotoScrollSection bgClass='bg-background' images={images} />
+            ) : (
+                <div className="w-full flex flex-col items-center justify-center px-4 py-24 text-center">
+                    <p className="text-muted-foreground text-sm">
+                        {isError
+                            ? "We couldn't load the curated collection right now. Please try again later."
+                            : "No curated artworks are available yet. Check back soon."}
+                    </p>
                 </div>
             )}
 

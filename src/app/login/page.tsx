@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { UserType } from "@/enums/userType"
 import { useForm } from "react-hook-form"
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/form"
 import GradientButton from "@/components/ui/gradiant-button"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useUserStore } from "@/store/useUserStore"
 import { CheckCircle2, Mail, Pencil, Check, LoaderCircle } from "lucide-react"
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
 import { toast } from "sonner"
@@ -38,11 +39,19 @@ const formSchema = z.object({
 })
 
 function LoginFormContent() {
-    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn } = useAuthStore()
+    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn, clearStore } = useAuthStore()
     const searchParams = useSearchParams()
     const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [googleLoading, setGoogleLoading] = useState(false)
+
+    // `isSuccess` lives in the global auth store, so it would otherwise persist when
+    // navigating between /login and /signup and show a stale success screen (with a
+    // blank email, since the new form has no value). Reset it on mount.
+    useEffect(() => {
+        clearStore()
+        setIsEditing(false)
+    }, [clearStore])
 
     const rawType = searchParams.get("user_type")
     const userType = Object.values(UserType).includes(rawType as UserType)
@@ -54,6 +63,9 @@ function LoginFormContent() {
         try {
             const result = await googleSignIn(idToken, userType || undefined);
             if (result?.accessToken) {
+                // Kick off profile load before redirecting so the destination page shows
+                // its skeleton instead of the signed-out state.
+                void useUserStore.getState().initialize();
                 toast.success("Successfully logged in with Google!");
                 if (result.isNewArtist) {
                     router.push("/artist/onboarding");
