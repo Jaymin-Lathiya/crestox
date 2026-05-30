@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Share2, Heart, MapPin, BadgeCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import SocialButton from '../ui/social-button';
 
@@ -27,6 +28,29 @@ interface ArtistHeroProps {
 
 const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleShare = async () => {
+    if (typeof window === 'undefined') return;
+    const url = window.location.href;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for browsers/contexts without the async clipboard API.
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      toast.success('Artist link copied');
+    } catch {
+      toast.error('Could not copy link');
+    }
+  };
   const {
     name,
     bio,
@@ -126,7 +150,7 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => 
               onClick={onWatchlistClick}
               iconActive={isWishlisted}
             />
-            <ActionButton icon={Share2} label="Share" />
+            <ActionButton icon={Share2} label="Share" onClick={handleShare} />
             <SocialButton links={social_media_links || []} />
           </motion.div>
         </div>
@@ -189,7 +213,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
         'md:w-4 md:h-4 transition-colors duration-300',
         iconActive
           ? 'fill-primary text-primary'
-          : 'text-muted-foreground group-hover:text-accent',
+          : 'text-muted-foreground group-hover:text-primary',
       )}
     />
     <span className="font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
