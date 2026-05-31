@@ -91,6 +91,14 @@ export const ArtworksTab = () => {
 
   const canAddArtwork = user?.artist_profile_approved === true;
 
+  const handleAddArtwork = () => {
+    if (canAddArtwork) {
+      router.push("/portfolio/artwork/create");
+    } else {
+      toast.error("Your artist profile is not verified yet");
+    }
+  };
+
   const filterButtons: { value: FilterStatus; label: string }[] = [
     { value: "all", label: "All" },
     { value: "live", label: "Live" },
@@ -124,13 +132,7 @@ export const ArtworksTab = () => {
           )}
           whileHover={canAddArtwork ? { scale: 1.02 } : undefined}
           whileTap={canAddArtwork ? { scale: 0.98 } : undefined}
-          onClick={() => {
-            if (canAddArtwork) {
-              router.push("/portfolio/artwork/create");
-            } else {
-              toast.error("Your artist profile is not verified yet");
-            }
-          }}
+          onClick={handleAddArtwork}
           title={
             !canAddArtwork
               ? "Your artist profile must be approved to add artworks"
@@ -189,9 +191,23 @@ export const ArtworksTab = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="w-16 h-16 border border-border rounded-full flex items-center justify-center mb-4">
+          <button
+            type="button"
+            onClick={handleAddArtwork}
+            title={
+              !canAddArtwork
+                ? "Your artist profile must be approved to add artworks"
+                : "Add artwork"
+            }
+            className={cn(
+              "w-16 h-16 border border-border rounded-full flex items-center justify-center mb-4 transition-colors",
+              canAddArtwork
+                ? "hover:border-foreground hover:bg-muted/50 cursor-pointer"
+                : "opacity-60 cursor-not-allowed"
+            )}
+          >
             <Plus className="w-6 h-6 text-muted-foreground" />
-          </div>
+          </button>
           <p className="text-muted-foreground">No artworks found</p>
         </motion.div>
       )}
