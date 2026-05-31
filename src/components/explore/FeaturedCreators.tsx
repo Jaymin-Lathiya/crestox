@@ -379,7 +379,7 @@ export function FeaturedCreators() {
         <section className="mb-16 animate-fade-in-up delay-100">
             <div
                 className={cn(
-                    "flex items-center justify-center gap-8 mb-12 border-b border-border/40 pb-4 overflow-x-auto no-scrollbar",
+                    "flex items-center justify-start md:justify-center gap-4 md:gap-8 mb-12 border-b border-border/40 pb-4 overflow-x-auto no-scrollbar",
                     isExpanded && activeTab === "artists" && "sticky top-20 z-30 bg-background/95 backdrop-blur-md pt-3"
                 )}
             >

@@ -165,6 +165,17 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         return () => ctx.revert();
     }, [artworks, colCount]);
 
+    // 3. Recompute ScrollTrigger positions when surrounding layout changes.
+    // The Explore page's "Browse All" expands content ABOVE this grid, pushing
+    // it down. Without a refresh, the triggers keep their stale (collapsed-layout)
+    // scroll positions, so each image's reveal window never lines up with the
+    // actual scroll — leaving the whole gallery stuck at opacity 0.
+    useEffect(() => {
+        const refresh = () => ScrollTrigger.refresh();
+        window.addEventListener("crestox:explore-layout", refresh);
+        return () => window.removeEventListener("crestox:explore-layout", refresh);
+    }, []);
+
     // Use artworks or fallback to empty array
     const dynamicImages = artworks.map(a => ({
         src: a.primary_image_url,
