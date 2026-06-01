@@ -3,11 +3,21 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import CardFlip from "./ui/card-flip";
 import { PROCESS_STEPS } from "@/config/landingEducationalContent";
+import DiscoverVerifyAnim from "./animations/DiscoverVerifyAnim";
+import AcquireFractionsAnim from "./animations/AcquireFractionsAnim";
+import TradeAnytimeAnim from "./animations/TradeAnytimeAnim";
+import TrackPerformanceAnim from "./animations/TrackPerformanceAnim";
 
-const STEPS = PROCESS_STEPS;
+const STEP_ANIMATIONS: Record<string, React.ReactNode> = {
+  "01": <DiscoverVerifyAnim />,
+  "02": <AcquireFractionsAnim />,
+  "03": <TradeAnytimeAnim />,
+  "04": <TrackPerformanceAnim />,
+};
+
 
 interface StepCardProps {
-  step: typeof STEPS[0];
+  step: typeof PROCESS_STEPS[number];
   index: number;
   isLeft: boolean;
 }
@@ -110,7 +120,7 @@ export default function ProcessConstellation() {
 
           {/* Steps */}
           {/* <div className="relative flex flex-col gap-24">
-            {STEPS.map((step, index) => (
+            {PROCESS_STEPS.map((step, index) => (
               <div key={step.number} className="relative">
                 <StepCard 
                   step={step} 
@@ -122,12 +132,12 @@ export default function ProcessConstellation() {
           </div> */}
           {/* Steps */}
           <div className="relative">
-            {STEPS.map((item, index) => (
+            {PROCESS_STEPS.map((item, index) => (
               <div
                 key={item.number}
                 className={cn(
                   "relative flex items-center justify-between mb-24",
-                  index === STEPS.length - 1 && "mb-0",
+                  index === PROCESS_STEPS.length - 1 && "mb-0",
                   index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
                 )}
               >
@@ -156,6 +166,7 @@ export default function ProcessConstellation() {
                     step={item.number}
                     title={item.title}
                     description={item.description}
+                    animation={STEP_ANIMATIONS[item.number]}
                   />
                 </motion.div>
               </div>
