@@ -45,6 +45,46 @@ export const getPortfolioDashboard = () => async () => {
   return response;
 };
 
+export type PortfolioAnalyticsPeriod = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
+
+export interface PortfolioAnalyticsMetric {
+  value: number | null;
+  change_percent: number | null;
+}
+
+export interface PortfolioAnalytics {
+  artist_profile_id: number;
+  currency: "INR";
+  period: PortfolioAnalyticsPeriod;
+  portfolio: {
+    current_value: number;
+    change_percent: number | null;
+    series: { label: string; value: number }[];
+  };
+  metrics: {
+    avg_daily_views: PortfolioAnalyticsMetric;
+    revenue_period: PortfolioAnalyticsMetric;
+    new_collectors: PortfolioAnalyticsMetric;
+    avg_time_to_sale_days: PortfolioAnalyticsMetric;
+  };
+  top_artworks: {
+    artwork_id: number;
+    title: string;
+    views: number;
+    sales: number;
+    revenue: number;
+  }[];
+}
+
+export const getPortfolioAnalytics =
+  (period: PortfolioAnalyticsPeriod = "1M") =>
+  async () => {
+    const response = await instance.get(myPortfolioURLS.PORTFOLIO_ANALYTICS, {
+      params: { period },
+    });
+    return response;
+  };
+
 // --- Authenticated artist profile (settings tab) ---
 
 export interface MyArtistProfileAchievement {

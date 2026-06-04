@@ -11,7 +11,7 @@
  */
 
 import { ArrowRight, Repeat2 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface CardFlipProps {
@@ -20,6 +20,7 @@ export interface CardFlipProps {
     description?: string;
     features?: string[];
     step?: string;
+    animation?: ReactNode;
 }
 
 export default function CardFlip({
@@ -28,6 +29,7 @@ export default function CardFlip({
     description = "Dive deep into the world of modern UI/UX design.",
     // features = ["UI/UX", "Modern Design", "Tailwind CSS", "Kokonut UI"],
     step = "1",
+    animation,
 }: CardFlipProps) {
     const [isFlipped, setIsFlipped] = useState(false);
 
@@ -62,26 +64,34 @@ export default function CardFlip({
                     )}
                 >
                     <div className="relative h-full overflow-hidden bg-gradient-to-b from-background to-surface">
-                        <div className="absolute inset-0 flex items-start justify-center pt-24">
-                            <div className="relative flex h-[100px] w-[200px] items-center justify-center">
-                                {[...Array(10)].map((_, i) => (
-                                    <div
-                                        className={cn(
-                                            "absolute h-[50px] w-[50px]",
-                                            "rounded-[140px]",
-                                            "animate-[scale_3s_linear_infinite]",
-                                            "opacity-0",
-                                            "shadow-[0_0_50px_rgba(37,99,235,0.5)]",
-                                            "group-hover:animate-[scale_2s_linear_infinite]"
-                                        )}
-                                        key={i}
-                                        style={{
-                                            animationDelay: `${i * 0.3}s`,
-                                        }}
-                                    />
-                                ))}
+                        {animation ? (
+                            <div className="absolute inset-0 flex items-center justify-center px-4 pt-4 pb-28">
+                                <div className="w-full h-full max-w-[280px] flex items-center justify-center">
+                                    {animation}
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="absolute inset-0 flex items-start justify-center pt-24">
+                                <div className="relative flex h-[100px] w-[200px] items-center justify-center">
+                                    {[...Array(10)].map((_, i) => (
+                                        <div
+                                            className={cn(
+                                                "absolute h-[50px] w-[50px]",
+                                                "rounded-[140px]",
+                                                "animate-[scale_3s_linear_infinite]",
+                                                "opacity-0",
+                                                "shadow-[0_0_50px_rgba(37,99,235,0.5)]",
+                                                "group-hover:animate-[scale_2s_linear_infinite]"
+                                            )}
+                                            key={i}
+                                            style={{
+                                                animationDelay: `${i * 0.3}s`,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="absolute right-0 bottom-0 left-0 p-5">

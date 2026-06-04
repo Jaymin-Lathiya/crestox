@@ -16,6 +16,7 @@ import {
   getArtworkAnalytics,
   type ArtworkAnalyticsPayload,
 } from "@/apis/artwork/artworkActions";
+import type { CompleteBuyOrderResponse } from "@/apis/artists/artistActions";
 import { useParams, useRouter } from "next/navigation";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
 
@@ -70,6 +71,8 @@ export interface ArtworkDetail {
   available_shares?: number;
   available_from_artist?: number;
   available_from_listings?: number;
+  /** Live portfolio fractal price (same source as trading price quote). */
+  current_fractal_price?: string | number | null;
 }
 
 /** API artwork list item (same shape as detail, used in artist reel) */
@@ -239,18 +242,46 @@ const Index = () => {
     }
   }, [id]);
 
-  const handleCollectSuccess = useCallback(() => {
-    void fetchArtworkById();
-    void refetchAnalyticsAfterCollect();
-  }, [fetchArtworkById, refetchAnalyticsAfterCollect]);
+  const handleCollectSuccess = useCallback(
+    (result?: CompleteBuyOrderResponse) => {
+      if (result) {
+        setArtwork((prev) => {
+          if (!prev) return prev;
+          const nextAvail =
+            result.artwork_available_shares_after ?? prev.available_shares;
+          const nextPrice = result.fractal_price_after;
+          return {
+            ...prev,
+            available_shares: nextAvail,
+            current_fractal_price: nextPrice,
+            shares: prev.shares?.length
+              ? prev.shares.map((s) => ({ ...s, current_price: nextPrice }))
+              : prev.shares,
+          };
+        });
+      }
+      void fetchArtworkById();
+      void refetchAnalyticsAfterCollect();
+    },
+    [fetchArtworkById, refetchAnalyticsAfterCollect],
+  );
 
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
   const reelArtworks = artworkByArtist.map(mapArtworkToReelItem).filter((a) => a.imageUrl);
   const artistName = artwork?.artist_profile?.artist_name ?? "";
-  const pricePerFractal = artwork?.shares?.[0]?.current_price
-    ? parseFloat(artwork.shares[0].current_price)
-    : parseFloat(artwork?.starting_price ?? "0");
+  const pricePerFractal = (() => {
+    const fromPortfolio = artwork?.current_fractal_price;
+    if (fromPortfolio != null && fromPortfolio !== "") {
+      const p = parseFloat(String(fromPortfolio));
+      if (Number.isFinite(p)) return p;
+    }
+    if (artwork?.shares?.[0]?.current_price) {
+      const p = parseFloat(artwork.shares[0].current_price);
+      if (Number.isFinite(p)) return p;
+    }
+    return parseFloat(artwork?.starting_price ?? "0");
+  })();
   const totalFractals = artwork?.number_of_shares ?? 0;
   const availableFractals = artwork?.available_shares ?? 0;
 

@@ -1,6 +1,29 @@
 import instance from "@/utils/apiCalls";
 import { ARTWORK_URLS } from "./artworkUrls";
 
+export interface FeaturedTickerArtwork {
+    artwork_id: number;
+    artwork_name: string;
+    artist_name: string | null;
+    primary_image_url: string | null;
+    description: string | null;
+    fractal_price: number;
+    change_24h: number;
+    valuation: number;
+    available_shares: number;
+}
+
+export const getFeaturedArtworksForTicker = () => async (): Promise<FeaturedTickerArtwork[]> => {
+    try {
+        const response = await instance.get(ARTWORK_URLS.GET_FEATURED_ARTWORKS);
+        const data = response.data?.data ?? response.data;
+        return Array.isArray(data) ? data : [];
+    } catch (err: any) {
+        console.log({ err });
+        throw err;
+    }
+};
+
 export const createArtwork = (data: any) => async () => {
     try {
         const response = await instance.post(ARTWORK_URLS.CREATE_ARTWORK, data);

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { getProfile } from '@/apis/user/userActions';
 import { getCookie } from '@/utils/cookieUtils';
+import {
+    clearArtistProfileIdStorage,
+    syncArtistProfileIdFromProfile,
+} from '@/utils/artistProfileStorage';
 
 export interface User {
     id: number;
@@ -49,6 +53,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
             // Assuming response.data.data or similar contains the structured user. Adjust based on your backend response structure.
             const userData = response?.data?.data || response?.data;
+            syncArtistProfileIdFromProfile(userData?.artist_profile_id);
             set({ user: userData, isLoading: false, isLoggedIn: true });
             return userData ?? null;
         } catch (err: any) {
@@ -72,5 +77,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         set({ isInitialized: true });
     },
 
-    clearUser: () => set({ user: null, error: null, isLoggedIn: false, isInitialized: true }),
+    clearUser: () => {
+        clearArtistProfileIdStorage();
+        set({ user: null, error: null, isLoggedIn: false, isInitialized: true });
+    },
 }));

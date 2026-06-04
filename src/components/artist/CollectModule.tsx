@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Minus, Plus } from 'lucide-react';
 import {
@@ -48,7 +48,7 @@ interface CollectModuleProps {
   available_fractals?: number;
   total_fractals?: number;
   firstArtworkId?: number | null;
-  onCollectSuccess?: () => void;
+  onCollectSuccess?: (result?: CompleteBuyOrderResponse) => void;
   isAtwork?: boolean;
   /** Shown in the collect dialog title: "Collect from {collectContextLabel}" */
   collectContextLabel?: string;
@@ -71,20 +71,20 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 }) => {
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [quote, setQuote] = useState<BufferPriceQuote | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [marketLoading, setMarketLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [availabilityOverride, setAvailabilityOverride] = useState<number | null>(null);
+  const prevArtworkIdRef = useRef<number | null>(null);
 
   const total = total_fractals || totalSupply;
-  const propAvail = available_fractals ?? available;
-  const availShow = availabilityOverride ?? propAvail;
-  const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
+  const showMarketSkeleton = marketLoading || quote == null;
 
-  useEffect(() => {
-    setAvailabilityOverride(null);
-  }, [available_fractals, available, total_fractals, totalSupply]);
+  const availShow =
+    quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares)
+      ? quote.total_available_shares
+      : 0;
+  const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
 
   useEffect(() => {
     if (ENABLE_RAZORPAY) {
@@ -105,10 +105,19 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     const id = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     if (id == null) {
       setQuote(null);
+      setMarketLoading(false);
+      prevArtworkIdRef.current = null;
       return;
     }
+
+    const artworkChanged = prevArtworkIdRef.current !== id;
+    prevArtworkIdRef.current = id;
+    if (artworkChanged) {
+      setQuote(null);
+      setMarketLoading(true);
+    }
+
     let cancelled = false;
-    setQuoteLoading(true);
     const q = quantity === '' ? 1 : quantity;
     getBufferPriceQuote(id, q)()
       .then((data) => {
@@ -118,9 +127,11 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         if (!cancelled) setQuote(null);
       })
       .finally(() => {
-        if (!cancelled) setQuoteLoading(false);
+        if (!cancelled) setMarketLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [firstArtworkId, quantity]);
 
   const maxQty = Math.max(0, availShow);
@@ -133,7 +144,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     });
   }, [dialogOpen, maxQty]);
 
-  const currentPrice = quote?.current_price ?? pricePerFractal;
+  const currentPrice = quote?.current_price ?? 0;
   const bufferPercent = quote?.buffer_percent ?? 0;
 
   const parsedQty = parseInt(String(quantity), 10);
@@ -201,28 +212,21 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     source === 'SECONDARY_SALE' ? 'Reseller' : 'Artist';
 
   const refreshAfterPurchase = useCallback(
-    async (
-      artworkId: number,
-      complete: CompleteBuyOrderResponse,
-      purchasedQty: number,
-      priorAvailable: number,
-    ) => {
-      const raw = complete.available_shares_after;
-      const nextAvail =
-        typeof raw === 'number' && Number.isFinite(raw)
-          ? raw
-          : Math.max(0, priorAvailable - purchasedQty);
-
-      setAvailabilityOverride(nextAvail);
+    async (artworkId: number, complete: CompleteBuyOrderResponse) => {
       setQuantity(1);
+      setMarketLoading(true);
+      setQuote(null);
 
-      setQuoteLoading(true);
       try {
         const fresh = await getBufferPriceQuote(artworkId, 1)();
         setQuote(fresh);
       } catch {
         const p = parseFloat(complete.fractal_price_after);
-        const price = Number.isFinite(p) ? p : pricePerFractal;
+        const price = Number.isFinite(p) ? p : 0;
+        const rawAvail =
+          complete.artwork_available_shares_after ?? complete.available_shares_after;
+        const nextAvail =
+          typeof rawAvail === 'number' && Number.isFinite(rawAvail) ? rawAvail : 0;
         setQuote({
           current_price: price,
           buffer_percent: null,
@@ -233,14 +237,14 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           sufficient_for_quantity: nextAvail >= 1,
         });
       } finally {
-        setQuoteLoading(false);
+        setMarketLoading(false);
         setCollecting(false);
       }
 
       toast.success('Fractals collected successfully');
-      onCollectSuccess?.();
+      onCollectSuccess?.(complete);
     },
-    [onCollectSuccess, pricePerFractal],
+    [onCollectSuccess],
   );
 
   const openDialog = () => {
@@ -280,8 +284,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       return;
     }
 
-    const priorAvailable = availShow;
-    const quotedFractalPrice = quote?.current_price ?? pricePerFractal;
+    const quotedFractalPrice = quote?.current_price ?? 0;
 
     setCollecting(true);
 
@@ -311,8 +314,9 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 razorpay_signature: response.razorpay_signature,
                 max_slippage_pct: 5,
                 quoted_price: quotedFractalPrice,
+                payment_response: response,
               })();
-              await refreshAfterPurchase(artworkId, completed, effectiveQty, priorAvailable);
+              await refreshAfterPurchase(artworkId, completed);
             } catch (err: any) {
               const s = err?.response?.status;
               toast.error(
@@ -354,7 +358,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           quoted_price: quotedFractalPrice,
         })();
 
-        await refreshAfterPurchase(artworkId, completed, effectiveQty, priorAvailable);
+        await refreshAfterPurchase(artworkId, completed);
       }
     } catch (err: any) {
       const s = err?.response?.status;
@@ -411,7 +415,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 Current Valuation
               </h3>
               <div className="flex items-baseline space-x-1 min-h-[2.5rem]">
-                {quoteLoading && firstArtworkId != null ? (
+                {showMarketSkeleton && firstArtworkId != null ? (
                   <Skeleton
                     className={cn(
                       'h-10 w-40 rounded-lg',
@@ -431,20 +435,42 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           </div>
 
           <div className="space-y-3">
-            <div className="flex justify-between text-sm font-sans">
+            <div className="flex justify-between text-sm font-sans min-h-[1.25rem]">
               <span className={summaryMutedCls}>Available fractals</span>
-              <span className={summaryMutedCls}>
-                {availShow.toLocaleString()} / {total.toLocaleString()}
-              </span>
+              {showMarketSkeleton && firstArtworkId != null ? (
+                <Skeleton
+                  className={cn(
+                    'h-4 w-28 rounded',
+                    layout === 'floating'
+                      ? 'bg-white/15'
+                      : 'bg-slate-200 dark:bg-zinc-700',
+                  )}
+                />
+              ) : (
+                <span className={summaryMutedCls}>
+                  {availShow.toLocaleString()} / {total.toLocaleString()}
+                </span>
+              )}
             </div>
 
             <div className={cn('h-2 w-full rounded-full overflow-hidden', summaryBarTrackCls)}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${availableBarPercent}%` }}
-                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
-                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
-              />
+              {showMarketSkeleton && firstArtworkId != null ? (
+                <Skeleton
+                  className={cn(
+                    'h-full w-full rounded-full',
+                    layout === 'floating'
+                      ? 'bg-white/15'
+                      : 'bg-slate-200 dark:bg-zinc-700',
+                  )}
+                />
+              ) : (
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${availableBarPercent}%` }}
+                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
+                  className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
+                />
+              )}
             </div>
           </div>
 
@@ -526,7 +552,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
               <div className="space-y-2">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Order breakdown</span>
-                {quoteLoading ? (
+                {showMarketSkeleton ? (
                   <Skeleton className="h-24 w-full rounded-xl bg-muted" />
                 ) : quote?.fill_breakdown?.length ? (
                   <div className="space-y-2 rounded-xl bg-muted px-4 py-3 border border-border">
@@ -572,13 +598,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal (pre-tax)</span>
                   <div className="flex items-center gap-2">
-                    {quoteLoading ? <Skeleton className="h-5 w-20 bg-muted" /> : (
+                    {showMarketSkeleton ? <Skeleton className="h-5 w-20 bg-muted" /> : (
                       <span className="text-foreground inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(subTotalPreTax)}
                       </span>
                     )}
-                    {!quoteLoading && (
+                    {!showMarketSkeleton && (
                       <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
@@ -587,7 +613,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{hasFillPreview ? 'Taxes & fees' : 'G.S.T. (18%)'}</span>
-                  {quoteLoading ? <Skeleton className="h-5 w-16 bg-muted" /> : (
+                  {showMarketSkeleton ? <Skeleton className="h-5 w-16 bg-muted" /> : (
                     <span className="text-foreground inline-flex items-baseline gap-px">
                       <span>{'\u20B9'}</span>
                       {formatCurrencyWithSmallDecimals(taxesAndFeesAmount)}
@@ -598,13 +624,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 <div className="flex justify-between text-base font-semibold">
                   <span className="text-primary">Total payable</span>
                   <div className="flex items-center gap-2">
-                    {quoteLoading ? <Skeleton className="h-6 w-24 bg-muted" /> : (
+                    {showMarketSkeleton ? <Skeleton className="h-6 w-24 bg-muted" /> : (
                       <span className="text-primary inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(totalPayableInr)}
                       </span>
                     )}
-                    {!quoteLoading && (
+                    {!showMarketSkeleton && (
                       <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
@@ -630,7 +656,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 disabled={
                   collecting ||
                   !razorpayLoaded ||
-                  quoteLoading ||
+                  showMarketSkeleton ||
                   effectiveQty < 1 ||
                   quote?.sufficient_for_quantity === false
                 }
