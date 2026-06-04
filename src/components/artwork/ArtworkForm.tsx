@@ -7,6 +7,7 @@ import * as z from "zod"
 import { PlusCircle, Upload, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ARTIST_PROFILE_ID_KEY } from "@/utils/artistProfileStorage"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -92,7 +93,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
     })
 
     useEffect(() => {
-        const raw = localStorage.getItem("artist_profile_id")
+        const raw = localStorage.getItem(ARTIST_PROFILE_ID_KEY)
         if (!raw) return
         console.log("raw: ", raw)
         const id = parseInt(raw, 10)

@@ -89,6 +89,8 @@ export const ArtworksTab = () => {
     [filteredArtworks]
   );
 
+  console.log(cardArtworks);
+
   const canAddArtwork = user?.artist_profile_approved === true;
 
   const filterButtons: { value: FilterStatus; label: string }[] = [

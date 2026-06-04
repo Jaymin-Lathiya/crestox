@@ -16,6 +16,8 @@ export interface Artwork {
 
 interface ArtworksGridProps {
   artworks: Artwork[];
+  /** Increment after a fractal purchase to refetch live prices on cards. */
+  priceRefreshKey?: number;
 }
 
 export function ArtworksGridSkeleton() {
@@ -34,13 +36,13 @@ export function ArtworksGridSkeleton() {
   );
 }
 
-const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
+const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks, priceRefreshKey = 0 }) => {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
       {artworks.length > 0 ? (
         <> {artworks.map((artwork, index) => (
           <motion.div
-            key={artwork.id}
+            key={`${artwork.id}-${priceRefreshKey}`}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -50,7 +52,7 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
             }}
             className="break-inside-avoid"
           >
-            <ArtworkCard artwork={artwork} />
+            <ArtworkCard artwork={artwork} priceRefreshKey={priceRefreshKey} />
           </motion.div>
         ))}
 
@@ -67,9 +69,10 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks }) => {
 
 interface ArtworkCardProps {
   artwork: Artwork;
+  priceRefreshKey?: number;
 }
 
-const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
+const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 }) => {
   const artworkId = Number(artwork.id);
   const router = useRouter();
   const [bufferPrice, setBufferPrice] = useState<number | null>(null);
@@ -83,6 +86,8 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
       return;
     }
     let cancelled = false;
+    setPriceLoading(true);
+    setBufferPrice(null);
     getBufferPriceOfArtwork(artworkId)()
       .then((price) => {
         if (!cancelled) {
@@ -95,8 +100,10 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
       .finally(() => {
         if (!cancelled) setPriceLoading(false);
       });
-    return () => { cancelled = true; };
-  }, [artworkId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [artworkId, priceRefreshKey]);
 
   const displayValue = bufferPrice ?? artwork.valuation;
 
@@ -125,8 +132,12 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork }) => {
             <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-600 dark:text-white/70">
               Value
             </span>
-            <span className="font-mono text-sm font-semibold tabular-nums tracking-tight text-neutral-900 dark:text-white dark:[text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
-              {priceLoading ? '—' : `₹${displayValue.toLocaleString() || '-'}`}
+            <span className="font-mono text-sm font-semibold tabular-nums tracking-tight text-neutral-900 dark:text-white dark:[text-shadow:0_1px_2px_rgba(0,0,0,0.5)] min-w-[4.5rem] inline-block">
+              {priceLoading ? (
+                <Skeleton className="h-4 w-16 bg-neutral-300/80 dark:bg-white/20" />
+              ) : (
+                `₹${displayValue.toLocaleString() || '-'}`
+              )}
             </span>
           </div>
           <div className="h-6 w-px shrink-0 bg-neutral-900/18 dark:bg-white/25" />

@@ -37,7 +37,8 @@ import {
     StepperSeparator,
     StepperPanel
 } from "@/components/reui/stepper"
-import { CheckIcon, LoaderCircleIcon, CheckCircle2, Mail, Pencil, Check } from "lucide-react"
+import { CheckIcon, LoaderCircleIcon, CheckCircle2, Mail, Pencil, Check, Info } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import GradientButton from "@/components/ui/gradiant-button"
 import ArtistProfileForm from "./ArtistProfileForm"
 import { useAuthStore } from "@/store/useAuthStore"
@@ -53,7 +54,7 @@ const formSchema = z.object({
 })
 
 function SignupFormContent() {
-    const { requestMagicLink, isLoading, isSuccess, error, googleSignIn, clearStore } = useAuthStore()
+    const { requestMagicLink, isLoading, isSuccess, isExistingUser, magicLinkMessage, error, googleSignIn, clearStore } = useAuthStore()
     const [activeStep, setActiveStep] = useState(1);
     const [googleLoading, setGoogleLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -73,12 +74,14 @@ function SignupFormContent() {
     const userType = Object.values(UserType).includes(rawType as UserType)
         ? (rawType as UserType)
         : UserType.COLLECTOR;
+    const emailFromLogin = searchParams.get("email");
+    const redirectedFromLogin = searchParams.get("from") === "login";
 
     const handleGoogleSuccess = async (idToken: string) => {
         setGoogleLoading(true);
         try {
-            const result = await googleSignIn(idToken, userType);
-            if (result?.accessToken) {
+            const result = await googleSignIn(idToken, userType, "signup");
+            if (result && "accessToken" in result && result.accessToken) {
                 // Kick off profile load before redirecting so the destination page shows
                 // its skeleton instead of the signed-out state.
                 void useUserStore.getState().initialize();
@@ -112,11 +115,19 @@ function SignupFormContent() {
         defaultValues: {
             firstName: "",
             lastName: "",
-            email: "",
+            email: emailFromLogin ?? "",
             user_type: userType,
         },
         mode: "onChange"
     })
+
+    useEffect(() => {
+        if (!emailFromLogin) return;
+        form.setValue("email", emailFromLogin);
+        if (redirectedFromLogin) {
+            toast.info("Enter your first and last name to continue — your email will be confirmed on the next step.");
+        }
+    }, [emailFromLogin, redirectedFromLogin, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const name = `${values.firstName} ${values.lastName}`.trim();
@@ -152,8 +163,12 @@ function SignupFormContent() {
                     </CardTitle>
                     <CardDescription className="font-sans">
                         {isSuccess
-                            ? "Check your email for the verification link."
-                            : "Create your account in 3 simple steps"
+                            ? isExistingUser
+                                ? "We found an account with this email and sent you a sign-in link."
+                                : "Check your email for the verification link."
+                            : redirectedFromLogin
+                                ? "Enter your name, then confirm your email to finish signing up"
+                                : "Create your account in 2 simple steps"
                         }
                     </CardDescription>
                 </CardHeader>
@@ -161,9 +176,21 @@ function SignupFormContent() {
                     {isSuccess ? (
                         !isEditing ? (
                             <div className="flex flex-col items-center justify-center space-y-6 py-8">
+                                {isExistingUser && (
+                                    <Alert className="w-full border-primary/30 bg-primary/5 text-left">
+                                        <Info className="h-4 w-4 text-primary" />
+                                        <AlertTitle className="text-foreground">Account already exists</AlertTitle>
+                                        <AlertDescription className="text-muted-foreground">
+                                            {magicLinkMessage ||
+                                                "This email is already registered. We are logging you in — check your inbox for a sign-in link sent to your email."}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
                                 <CheckCircle2 className="h-16 w-16 text-primary" />
                                 <div className="text-center text-[17px] text-muted-foreground w-full">
-                                    We've sent a secure verification link to
+                                    {isExistingUser
+                                        ? "We've sent a sign-in link to"
+                                        : "We've sent a secure verification link to"}
                                 </div>
                                 <div className="flex items-center space-x-3 text-[19px]">
                                     <Mail className="h-6 w-6 text-primary shrink-0" />
@@ -224,6 +251,17 @@ function SignupFormContent() {
                         )
                     ) : (
                         <>
+                            {redirectedFromLogin && emailFromLogin && (
+                                <Alert className="mb-6 border-primary/30 bg-primary/5 text-left">
+                                    <Info className="h-4 w-4 text-primary" />
+                                    <AlertTitle className="text-foreground">No account found</AlertTitle>
+                                    <AlertDescription className="text-muted-foreground">
+                                        <span className="font-medium text-foreground">{emailFromLogin}</span> is not
+                                        registered yet. Please enter your first and last name below, then confirm
+                                        your email on the next step.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <Stepper
                                 value={activeStep}
                                 onValueChange={setActiveStep}
@@ -300,6 +338,12 @@ function SignupFormContent() {
                                             </StepperContent>
 
                                             <StepperContent value={2} className="space-y-4">
+                                                {redirectedFromLogin && emailFromLogin && (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Confirm the email you tried to sign in with, or update it if
+                                                        needed.
+                                                    </p>
+                                                )}
                                                 <FormField
                                                     control={form.control}
                                                     name="email"

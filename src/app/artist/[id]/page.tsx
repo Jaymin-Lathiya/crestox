@@ -23,6 +23,7 @@ import {
   type ArtistCollector,
   type ArtistAnalyticsPayload,
   getArtistArtworks,
+  type CompleteBuyOrderResponse,
 } from '@/apis/artists/artistActions';
 import { strings } from '@/utils/strings';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -102,6 +103,7 @@ const ArtistPage = () => {
   const [artworks, setArtworks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [artworkPriceRefreshKey, setArtworkPriceRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!id || isNaN(id)) {
@@ -186,7 +188,22 @@ const ArtistPage = () => {
     };
   }, [id]);
 
-  const refetchAfterCollect = useCallback(async () => {
+  const refetchAfterCollect = useCallback(async (result?: CompleteBuyOrderResponse) => {
+    if (result) {
+      setArtworkPriceRefreshKey((k) => k + 1);
+      const nextAvail = result.available_shares_after;
+      const nextPrice = parseFloat(result.fractal_price_after);
+      setBasicDetails((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...(typeof nextAvail === 'number' && Number.isFinite(nextAvail)
+            ? { available_fractals: nextAvail }
+            : {}),
+          ...(Number.isFinite(nextPrice) ? { current_share_value: nextPrice } : {}),
+        };
+      });
+    }
     if (id == null || isNaN(id)) return;
     try {
       const [basic, collectorsData, artworksResponse, analyticsRes] = await Promise.all([
@@ -299,7 +316,9 @@ const ArtistPage = () => {
     switch (activeTab) {
       case 'artworks':
         if (isLoading) return <ArtworksGridSkeleton />;
-        return <ArtworksGrid artworks={artworks} />;
+        return (
+          <ArtworksGrid artworks={artworks} priceRefreshKey={artworkPriceRefreshKey} />
+        );
       case 'analytics':
         return (
           <AnalyticsTab
@@ -315,7 +334,9 @@ const ArtistPage = () => {
       case 'collectors':
         return <CollectorsTab collectors={collectorsForTab} />;
       default:
-        return <ArtworksGrid artworks={artworks} />;
+        return (
+          <ArtworksGrid artworks={artworks} priceRefreshKey={artworkPriceRefreshKey} />
+        );
     }
   };
 

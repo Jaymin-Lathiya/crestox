@@ -12,6 +12,24 @@ export interface VerifyResponseData {
     isNewCollector?: boolean;
 }
 
+export type MagicLinkRequestResult =
+    | { ok: true }
+    | { ok: false; userNotFound?: boolean; email?: string };
+
+export type GoogleSignInResult =
+    | VerifyResponseData
+    | { userNotFound: true; email?: string }
+    | null;
+
+function parseUserNotFoundError(err: unknown): { email?: string } | null {
+    const body = (err as { response?: { data?: { error?: string; data?: { email?: string } } } })
+        ?.response?.data;
+    if (body?.error === 'USER_NOT_FOUND') {
+        return { email: body.data?.email };
+    }
+    return null;
+}
+
 interface AuthState {
     email: string;
     setEmail: (email: string) => void;
@@ -21,10 +39,16 @@ interface AuthState {
     setError: (error: string | null) => void;
     isSuccess: boolean;
     setIsSuccess: (isSuccess: boolean) => void;
-    requestMagicLink: (email: string, name?: string, user_type?: string) => Promise<void>;
+    isExistingUser: boolean;
+    magicLinkMessage: string | null;
+    requestMagicLink: (email: string, name?: string, user_type?: string) => Promise<MagicLinkRequestResult>;
     verifyMagicLinkToken: (token: string) => Promise<VerifyResponseData | null>;
     fetchUserToken: (accessToken: string) => Promise<boolean>;
-    googleSignIn: (idToken: string, user_type?: string) => Promise<VerifyResponseData | null>;
+    googleSignIn: (
+        idToken: string,
+        user_type?: string,
+        intent?: 'login' | 'signup',
+    ) => Promise<GoogleSignInResult>;
     clearStore: () => void;
 }
 
@@ -37,15 +61,38 @@ export const useAuthStore = create<AuthState>((set) => ({
     setError: (error) => set({ error }),
     isSuccess: false,
     setIsSuccess: (isSuccess) => set({ isSuccess }),
+    isExistingUser: false,
+    magicLinkMessage: null,
 
     requestMagicLink: async (email: string, name?: string, user_type?: string) => {
-        set({ isLoading: true, error: null, isSuccess: false });
+        set({ isLoading: true, error: null, isSuccess: false, isExistingUser: false, magicLinkMessage: null });
         try {
             const action = getMagicLink({ email, name, user_type });
-            await action();
-            set({ isSuccess: true });
-        } catch (err: any) {
-            set({ error: err?.response?.data?.message || err.message || 'Something went wrong while sending the magic link' });
+            const response = await action();
+            const payload = response.data?.data ?? response.data;
+            set({
+                isSuccess: true,
+                isExistingUser: payload?.existingUser === true,
+                magicLinkMessage: payload?.message ?? null,
+            });
+            return { ok: true as const };
+        } catch (err: unknown) {
+            const notFound = parseUserNotFoundError(err);
+            if (notFound) {
+                return {
+                    ok: false as const,
+                    userNotFound: true,
+                    email: notFound.email ?? email,
+                };
+            }
+            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+            set({
+                error:
+                    axiosErr?.response?.data?.message ||
+                    axiosErr.message ||
+                    'Something went wrong while sending the magic link',
+            });
+            return { ok: false as const };
         } finally {
             set({ isLoading: false });
         }
@@ -108,10 +155,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    googleSignIn: async (idToken: string, user_type?: string) => {
+    googleSignIn: async (
+        idToken: string,
+        user_type?: string,
+        intent: 'login' | 'signup' = 'signup',
+    ) => {
         set({ isLoading: true, error: null, isSuccess: false });
         try {
-            const googleAuthAction = googleAuth({ idToken, user_type });
+            const googleAuthAction = googleAuth({ idToken, user_type, intent });
             const response = await googleAuthAction();
 
             if (response.status !== 200) {
@@ -131,15 +182,33 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             set({ isSuccess: true });
             return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const notFound = parseUserNotFoundError(err);
+            if (notFound) {
+                return { userNotFound: true as const, email: notFound.email };
+            }
+            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
             console.log(err);
-            set({ error: err?.response?.data?.message || err.message || 'Google sign-in failed.' });
+            set({
+                error:
+                    axiosErr?.response?.data?.message ||
+                    axiosErr.message ||
+                    'Google sign-in failed.',
+            });
             return null;
         } finally {
             set({ isLoading: false });
         }
     },
 
-    clearStore: () => set({ email: '', isLoading: false, error: null, isSuccess: false }),
+    clearStore: () =>
+        set({
+            email: '',
+            isLoading: false,
+            error: null,
+            isSuccess: false,
+            isExistingUser: false,
+            magicLinkMessage: null,
+        }),
 }));
 

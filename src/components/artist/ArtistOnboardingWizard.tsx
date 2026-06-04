@@ -29,6 +29,7 @@ import {
 import GradientButton from "@/components/ui/gradiant-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProfile } from "@/apis/user/userActions";
+import { syncArtistProfileIdFromProfile } from "@/utils/artistProfileStorage";
 import {
   getArtistOnboardingState,
   submitArtistOnboardingStep1,
@@ -252,6 +253,7 @@ export default function ArtistOnboardingWizard({ variant = "portfolio", classNam
         const fetchProfileAction = getProfile();
         const profileRes = await fetchProfileAction();
         const userData = profileRes.data?.data ?? profileRes.data;
+        syncArtistProfileIdFromProfile(userData?.artist_profile_id);
         if (userData?.name && !form.getValues("artistName")?.trim()) {
           form.setValue("artistName", userData.name);
         }

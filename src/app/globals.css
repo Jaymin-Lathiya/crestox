@@ -629,10 +629,10 @@
   }
 
   .animate-ticker {
-    animation: ticker 40s linear infinite;
+    animation: ticker 100s linear infinite;
   }
 
-  .pause-animation:hover {
+  .pause-animation {
     animation-play-state: paused;
   }
 }

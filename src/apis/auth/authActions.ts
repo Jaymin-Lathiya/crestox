@@ -32,7 +32,11 @@ export const getToken = (data: any) => async () => {
     }
 }
 
-export const googleAuth = (data: { idToken: string; user_type?: string }) => async () => {
+export const googleAuth = (data: {
+    idToken: string;
+    user_type?: string;
+    intent?: 'login' | 'signup';
+}) => async () => {
     try {
         const response = await instance.post(AUTH_URLS.GOOGLE_AUTH, data);
         return response;

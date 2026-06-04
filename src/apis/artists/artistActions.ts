@@ -371,6 +371,8 @@ export interface CompleteBuyOrderResponse {
     fractal_price_after: string;
     /** Portfolio-level count of fractals still available (primary + listed secondary). */
     available_shares_after?: number;
+    /** Per-artwork available fractals (use on art detail page). */
+    artwork_available_shares_after?: number;
     razorpay_payment_id: string;
     fills: unknown[];
 }
@@ -383,6 +385,7 @@ export const completeBuyOrder = (data: {
     razorpay_signature: string;
     max_slippage_pct?: number;
     quoted_price?: number;
+    payment_response?: Record<string, unknown>;
 }) => async (): Promise<CompleteBuyOrderResponse> => {
     const response = await instance.post(ARTIST_URLS.COMPLETE_BUY, data);
     return response.data?.data;

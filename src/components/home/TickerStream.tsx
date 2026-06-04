@@ -1,12 +1,39 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import GradientButton from '../ui/gradiant-button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  getFeaturedArtworksForTicker,
+  type FeaturedTickerArtwork,
+} from '@/apis/artwork/artworkActions';
 
-interface ArtPiece {
-  id: string;
+const PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=200&h=200&fit=crop';
+
+function formatInr(n: number, compact?: boolean): string {
+  if (!Number.isFinite(n)) return '—';
+  if (compact && (n >= 100000 || n <= -100000)) {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(n);
+  }
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: n % 1 === 0 ? 0 : 2,
+  }).format(n);
+}
+
+interface TickerArtPiece {
+  id: number;
   title: string;
   artist: string;
   thumbnail: string;
@@ -17,77 +44,23 @@ interface ArtPiece {
   bio: string;
 }
 
-const artPieces: ArtPiece[] = [
-  {
-    id: '1',
-    title: 'Ethereal Dawn',
-    artist: 'Marina Volkov',
-    thumbnail: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=200&h=200&fit=crop',
-    fractalPrice: 24.50,
-    change24h: 12.4,
-    totalValue: '$245,000',
-    fractalsRemaining: 420,
-    bio: 'Russian-born abstract expressionist known for her luminous color fields and meditative compositions.'
-  },
-  {
-    id: '2',
-    title: 'Urban Decay #7',
-    artist: 'Marcus Chen',
-    thumbnail: 'https://images.unsplash.com/photo-1549887534-1541e9326642?w=200&h=200&fit=crop',
-    fractalPrice: 18.75,
-    change24h: -3.2,
-    totalValue: '$187,500',
-    fractalsRemaining: 156,
-    bio: 'Hong Kong street artist exploring themes of urban transformation and cultural identity.'
-  },
-  {
-    id: '3',
-    title: 'Quantum Garden',
-    artist: 'Sophie Laurent',
-    thumbnail: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=200&h=200&fit=crop',
-    fractalPrice: 156.00,
-    change24h: 8.7,
-    totalValue: '$1,560,000',
-    fractalsRemaining: 89,
-    bio: 'French digital artist pioneering the intersection of generative algorithms and classical aesthetics.'
-  },
-  {
-    id: '4',
-    title: 'Silent Witness',
-    artist: 'Kwame Asante',
-    thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=200&h=200&fit=crop',
-    fractalPrice: 42.30,
-    change24h: 5.1,
-    totalValue: '$423,000',
-    fractalsRemaining: 312,
-    bio: 'Ghanaian sculptor and painter whose work confronts colonial histories and celebrates African futurism.'
-  },
-  {
-    id: '5',
-    title: 'Neon Requiem',
-    artist: 'Yuki Tanaka',
-    thumbnail: 'https://images.unsplash.com/photo-1582201942988-13e60e4556ee?w=200&h=200&fit=crop',
-    fractalPrice: 67.80,
-    change24h: -1.4,
-    totalValue: '$678,000',
-    fractalsRemaining: 567,
-    bio: 'Tokyo-based new media artist blending traditional ukiyo-e techniques with cyberpunk aesthetics.'
-  },
-  {
-    id: '6',
-    title: 'Fragments of Memory',
-    artist: 'Elena Rossi',
-    thumbnail: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=200&h=200&fit=crop',
-    fractalPrice: 89.25,
-    change24h: 15.3,
-    totalValue: '$892,500',
-    fractalsRemaining: 234,
-    bio: 'Italian mixed-media artist known for her haunting explorations of nostalgia and collective memory.'
-  },
-];
+function mapFeaturedToTickerPiece(item: FeaturedTickerArtwork): TickerArtPiece {
+  const bio = item.description?.trim() || 'No description available.';
+  return {
+    id: item.artwork_id,
+    title: item.artwork_name,
+    artist: item.artist_name?.trim() || 'Unknown artist',
+    thumbnail: item.primary_image_url?.trim() || PLACEHOLDER_IMAGE,
+    fractalPrice: item.fractal_price,
+    change24h: item.change_24h,
+    totalValue: formatInr(item.valuation, true),
+    fractalsRemaining: item.available_shares,
+    bio: bio.length > 220 ? `${bio.slice(0, 217)}…` : bio,
+  };
+}
 
 interface HoveredCardState {
-  piece: ArtPiece;
+  piece: TickerArtPiece;
   anchorRect: DOMRect;
 }
 
@@ -96,7 +69,7 @@ const TickerItem = ({
   onMouseEnter,
   onMouseLeave,
 }: {
-  piece: ArtPiece;
+  piece: TickerArtPiece;
   onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
   onMouseLeave: () => void;
 }) => {
@@ -109,7 +82,6 @@ const TickerItem = ({
       onMouseLeave={onMouseLeave}
       whileHover={{ scale: 1.02 }}
     >
-      {/* Thumbnail */}
       <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
         <img
           src={piece.thumbnail}
@@ -119,27 +91,24 @@ const TickerItem = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
       </div>
 
-      {/* Info */}
       <div className="flex flex-col min-w-0">
         <span className="font-display text-sm text-foreground truncate">{piece.title}</span>
         <span className="terminal-text text-muted-foreground text-[10px]">{piece.artist}</span>
       </div>
 
-      {/* Price */}
       <div className="flex flex-col items-end ml-4">
-        <span className="font-mono text-sm text-foreground">${piece.fractalPrice.toFixed(2)}</span>
+        <span className="font-mono text-sm text-foreground">{formatInr(piece.fractalPrice)}</span>
         <span className={`font-mono text-xs ${isPositive ? 'text-terminal' : 'text-signal'}`}>
           {isPositive ? '+' : ''}{piece.change24h.toFixed(1)}%
         </span>
       </div>
 
-      {/* Separator */}
       <div className="w-px h-8 bg-border ml-4" />
     </motion.div>
   );
 };
 
-const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFractals: () => void }) => {
+const HolographicCard = ({ piece, onViewFractals }: { piece: TickerArtPiece; onViewFractals: () => void }) => {
   const isPositive = piece.change24h >= 0;
 
   return (
@@ -149,7 +118,6 @@ const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFra
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       className="w-80 glass-card rounded-lg p-6 holographic z-50"
     >
-      {/* Image */}
       <div className="relative w-full h-40 rounded overflow-hidden mb-4">
         <img
           src={piece.thumbnail}
@@ -158,7 +126,6 @@ const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFra
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
 
-        {/* Scarcity badge */}
         <div className="absolute top-3 right-3 px-2 py-1 bg-destructive/90 rounded">
           <span className="font-mono text-xs text-foreground">
             Only {piece.fractalsRemaining} left
@@ -166,25 +133,22 @@ const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFra
         </div>
       </div>
 
-      {/* Title & Artist */}
       <h3 className="font-display text-xl italic text-foreground mb-1">{piece.title}</h3>
       <p className="terminal-text text-primary mb-3">{piece.artist}</p>
 
-      {/* Bio */}
       <p className="font-mono text-xs text-muted-foreground leading-relaxed mb-4">
         {piece.bio}
       </p>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3 p-3 bg-secondary/50 rounded">
         <div className="text-center">
           <p className="terminal-text text-muted-foreground text-[10px] mb-1">FLOOR</p>
-          <p className="font-mono text-sm text-foreground">${piece.fractalPrice}</p>
+          <p className="font-mono text-sm text-foreground">{formatInr(piece.fractalPrice)}</p>
         </div>
         <div className="text-center">
           <p className="terminal-text text-muted-foreground text-[10px] mb-1">24H</p>
           <p className={`font-mono text-sm ${isPositive ? 'text-terminal' : 'text-signal'}`}>
-            {isPositive ? '+' : ''}{piece.change24h}%
+            {isPositive ? '+' : ''}{piece.change24h.toFixed(1)}%
           </p>
         </div>
         <div className="text-center">
@@ -193,93 +157,140 @@ const HolographicCard = ({ piece, onViewFractals }: { piece: ArtPiece; onViewFra
         </div>
       </div>
 
-      {/* Action */}
-      <GradientButton label='View Fractals' className="w-full mt-2" onClick={onViewFractals}>
-      </GradientButton>
+      <GradientButton label="View Fractals" className="w-full mt-2" onClick={onViewFractals} />
     </motion.div>
   );
 };
 
+function TickerSkeleton() {
+  return (
+    <div className="relative flex ml-16">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="flex items-center gap-4 px-6 py-3">
+          <Skeleton className="w-12 h-12 rounded flex-shrink-0" />
+          <div className="flex flex-col gap-2 min-w-[120px]">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="flex flex-col items-end gap-2 ml-4">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-3 w-10" />
+          </div>
+          <div className="w-px h-8 bg-border ml-4" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const HOVER_BRIDGE_MS = 200;
+
 const TickerStream = () => {
   const [hoveredCard, setHoveredCard] = useState<HoveredCardState | null>(null);
-  const tickerRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isAnimationPaused, setIsAnimationPaused] = useState(false);
+  const hoverBridgeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interactionDepthRef = useRef(0);
   const router = useRouter();
 
-  const handleMouseEnterItem = (piece: ArtPiece, anchorRect: DOMRect) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+  const clearHoverBridge = useCallback(() => {
+    if (hoverBridgeRef.current) {
+      clearTimeout(hoverBridgeRef.current);
+      hoverBridgeRef.current = null;
     }
+  }, []);
+
+  const enterInteraction = useCallback(() => {
+    clearHoverBridge();
+    interactionDepthRef.current += 1;
+    setIsAnimationPaused(true);
+  }, [clearHoverBridge]);
+
+  const leaveInteraction = useCallback(() => {
+    interactionDepthRef.current = Math.max(0, interactionDepthRef.current - 1);
+    clearHoverBridge();
+    hoverBridgeRef.current = setTimeout(() => {
+      if (interactionDepthRef.current === 0) {
+        setIsAnimationPaused(false);
+        setHoveredCard(null);
+      }
+    }, HOVER_BRIDGE_MS);
+  }, [clearHoverBridge]);
+
+  const { data: raw = [], isLoading, isError } = useQuery({
+    queryKey: ['featured-ticker-artworks'],
+    queryFn: () => getFeaturedArtworksForTicker()(),
+    staleTime: 60_000,
+  });
+
+  const artPieces = raw.map(mapFeaturedToTickerPiece);
+  const duplicatedPieces =
+    artPieces.length > 0 ? [...artPieces, ...artPieces] : [];
+
+  const handleMouseEnterItem = (piece: TickerArtPiece, anchorRect: DOMRect) => {
+    enterInteraction();
     setHoveredCard({ piece, anchorRect });
   };
 
   const handleMouseLeaveItem = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      setHoveredCard(null);
-    }, 200);
+    leaveInteraction();
   };
 
   const handleMouseEnterCard = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+    enterInteraction();
   };
 
   const handleMouseLeaveCard = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      setHoveredCard(null);
-    }, 200);
+    leaveInteraction();
   };
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Duplicate items for seamless loop
-  const duplicatedPieces = [...artPieces, ...artPieces];
+    return () => clearHoverBridge();
+  }, [clearHoverBridge]);
 
   return (
     <section id="market" className="relative py-12 bg-background border-y border-border overflow-hidden">
-      {/* Label */}
       <div className="absolute left-6 top-1/2 -translate-y-1/2 z-10">
         <span className="terminal-text text-primary text-xs tracking-[0.3em] [writing-mode:vertical-lr] rotate-180">
           LIVE MARKET
         </span>
       </div>
 
-      {/* Gradient masks */}
       <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
-      {/* Ticker */}
-      <div
-        ref={tickerRef}
-        className="relative flex animate-ticker hover:pause-animation ml-16"
-        style={{ width: 'max-content' }}
-      >
-        {duplicatedPieces.map((piece, index) => (
-          <TickerItem
-            key={`${piece.id}-${index}`}
-            piece={piece}
-            onMouseEnter={(e) => handleMouseEnterItem(piece, e.currentTarget.getBoundingClientRect())}
-            onMouseLeave={handleMouseLeaveItem}
-          />
-        ))}
-      </div>
+      {isLoading && <TickerSkeleton />}
 
-      {/* Holographic card on hover */}
+      {!isLoading && isError && (
+        <p className="ml-16 px-6 font-mono text-sm text-muted-foreground">
+          Could not load the live market. Please try again later.
+        </p>
+      )}
+
+      {!isLoading && !isError && artPieces.length === 0 && (
+        <p className="ml-16 px-6 font-mono text-sm text-muted-foreground">
+          No featured artworks in the live market yet.
+        </p>
+      )}
+
+      {!isLoading && !isError && duplicatedPieces.length > 0 && (
+        <div
+          className={cn(
+            'relative flex animate-ticker ml-16',
+            isAnimationPaused && 'pause-animation',
+          )}
+          style={{ width: 'max-content' }}
+        >
+          {duplicatedPieces.map((piece, index) => (
+            <TickerItem
+              key={`${piece.id}-${index}`}
+              piece={piece}
+              onMouseEnter={(e) => handleMouseEnterItem(piece, e.currentTarget.getBoundingClientRect())}
+              onMouseLeave={handleMouseLeaveItem}
+            />
+          ))}
+        </div>
+      )}
+
       <AnimatePresence>
         {hoveredCard && (
           <div
@@ -287,13 +298,12 @@ const TickerStream = () => {
             onMouseEnter={handleMouseEnterCard}
             onMouseLeave={handleMouseLeaveCard}
             style={{
-              // Keep card anchored to hovered item and clamped within viewport.
               left: Math.min(
                 Math.max(hoveredCard.anchorRect.left + hoveredCard.anchorRect.width / 2, 176),
-                (typeof window !== "undefined" ? window.innerWidth : 1200) - 176
+                (typeof window !== 'undefined' ? window.innerWidth : 1200) - 176
               ),
               top: Math.max(hoveredCard.anchorRect.top - 16, 16),
-              transform: "translate(-50%, -100%)",
+              transform: 'translate(-50%, -100%)',
             }}
           >
             <HolographicCard

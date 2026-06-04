@@ -31,6 +31,7 @@ import { useUserStore } from "@/store/useUserStore"
 import { CheckCircle2, Mail, Pencil, Check, LoaderCircle } from "lucide-react"
 import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
 import { toast } from "sonner"
+import { redirectUnknownUserToSignup } from "@/utils/authRedirect"
 
 const formSchema = z.object({
     email: z.string().email({
@@ -61,8 +62,22 @@ function LoginFormContent() {
     const handleGoogleSuccess = async (idToken: string) => {
         setGoogleLoading(true);
         try {
-            const result = await googleSignIn(idToken, userType || undefined);
-            if (result?.accessToken) {
+            const result = await googleSignIn(idToken, userType || undefined, "login");
+            if (result && "userNotFound" in result && result.userNotFound) {
+                const email = result.email;
+                toast.warning(
+                    email
+                        ? `No account found for ${email}. Please sign up to continue.`
+                        : "No account found for this Google email. Please sign up to continue.",
+                );
+                if (email) {
+                    redirectUnknownUserToSignup(router, email, userType);
+                } else {
+                    router.push(userType ? `/signup?user_type=${userType}&from=login` : "/signup?from=login");
+                }
+                return;
+            }
+            if (result && "accessToken" in result && result.accessToken) {
                 // Kick off profile load before redirecting so the destination page shows
                 // its skeleton instead of the signed-out state.
                 void useUserStore.getState().initialize();
@@ -111,8 +126,15 @@ function LoginFormContent() {
             return;
         }
 
-        await requestMagicLink(values.email, undefined, userType || undefined)
-        setIsEditing(false)
+        const result = await requestMagicLink(values.email, undefined, userType || undefined);
+        if (result.userNotFound) {
+            toast.warning("This email is not registered with Crestox. Please sign up to create an account.");
+            redirectUnknownUserToSignup(router, result.email ?? values.email, userType);
+            return;
+        }
+        if (result.ok) {
+            setIsEditing(false);
+        }
     }
 
     return (
@@ -264,7 +286,10 @@ function LoginFormContent() {
                 <CardFooter className="justify-center pb-6 border-t pt-6 bg-muted/20">
                     <div className="text-sm text-muted-foreground font-sans">
                         Don&apos;t have an account?{" "}
-                        <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
+                        <Link
+                            href={userType ? `/signup?user_type=${userType}` : "/signup"}
+                            className="underline underline-offset-4 hover:text-primary"
+                        >
                             Sign up
                         </Link>
                     </div>
