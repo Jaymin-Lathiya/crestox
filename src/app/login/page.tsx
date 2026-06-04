@@ -127,7 +127,7 @@ function LoginFormContent() {
         }
 
         const result = await requestMagicLink(values.email, undefined, userType || undefined);
-        if (result.userNotFound) {
+        if (!result.ok && "userNotFound" in result && result.userNotFound) {
             toast.warning("This email is not registered with Crestox. Please sign up to create an account.");
             redirectUnknownUserToSignup(router, result.email ?? values.email, userType);
             return;
