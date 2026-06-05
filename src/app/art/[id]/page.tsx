@@ -1,6 +1,8 @@
 "use client";
 
-import ExplodedCanvas from "@/components/canvas/ExplodedCanvas";
+import dynamic from "next/dynamic";
+
+const ExplodedCanvas = dynamic(() => import("@/components/canvas/ExplodedCanvas"), { ssr: false });
 import { useCallback, useEffect, useRef, useState } from "react";
 import CollectModule from "@/components/artist/CollectModule";
 import AnalyticsTab from "@/components/artist/AnalyticsTab";
@@ -18,6 +20,7 @@ import {
 } from "@/apis/artwork/artworkActions";
 import type { CompleteBuyOrderResponse } from "@/apis/artists/artistActions";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
 
 /** API artwork media item */
@@ -172,9 +175,9 @@ const Index = () => {
     setMouseDownPos(null);
   };
 
-  const fetchArtworkById = useCallback(async () => {
+  const fetchArtworkById = useCallback(async (options?: { silent?: boolean }) => {
     if (!id || typeof id !== "string") return;
-    setLoading(true);
+    if (!options?.silent) setLoading(true);
     try {
       const res = await getArtworkById(id)();
       if (res?.status === 200 && res?.data?.data) {
@@ -189,7 +192,7 @@ const Index = () => {
         }
       }
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }, [id]);
 
@@ -260,7 +263,7 @@ const Index = () => {
           };
         });
       }
-      void fetchArtworkById();
+      void fetchArtworkById({ silent: true });
       void refetchAnalyticsAfterCollect();
     },
     [fetchArtworkById, refetchAnalyticsAfterCollect],
@@ -306,12 +309,12 @@ const Index = () => {
             <p className="text-muted-foreground text-sm mb-6">
               This artwork could not be loaded. It may have been removed or the link is invalid.
             </p>
-            <button
-              onClick={() => router.push("/explore")}
+            <Link
+              href="/explore"
               className="text-sm text-primary hover:underline underline-offset-4"
             >
               Browse other artworks
-            </button>
+            </Link>
           </div>
         </main>
         <NavigationPill />

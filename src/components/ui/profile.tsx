@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 import {
@@ -35,7 +35,6 @@ export default function ProfileDropdown({
     logout,
     ...props
 }: ProfileDropdownProps) {
-    const router = useRouter()
     const [isOpen, setIsOpen] = React.useState(false)
     const { user } = useUserStore()
 
@@ -126,36 +125,32 @@ export default function ProfileDropdown({
                         <DropdownMenuSeparator />
 
                         {/* Navigation */}
-                        <DropdownMenuItem
-                            className="rounded-xl px-3 py-2"
-                            onClick={() => router.push("/collection")}
-                        >
-                            <LayoutGrid className="mr-2 h-4 w-4" />
-                            <span>My Collection</span>
+                        <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                            <Link href="/collection" prefetch>
+                                <LayoutGrid className="mr-2 h-4 w-4" />
+                                <span>My Collection</span>
+                            </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                            className="rounded-xl px-3 py-2"
-                            onClick={() => router.push("/portfolio")}
-                        >
-                            <BookOpen className="mr-2 h-4 w-4" />
-                            <span>My Portfolio</span>
+                        <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                            <Link href="/portfolio" prefetch>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                <span>My Portfolio</span>
+                            </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                            className="rounded-xl px-3 py-2"
-                            onClick={() => router.push("/subscription")}
-                        >
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Manage Subscription</span>
+                        <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                            <Link href="/subscription" prefetch>
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Manage Subscription</span>
+                            </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem
-                            className="rounded-xl px-3 py-2"
-                            onClick={() => router.push("/terms")}
-                        >
-                            <Shield className="mr-2 h-4 w-4" />
-                            <span>Terms & Policies</span>
+                        <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                            <Link href="/terms" prefetch>
+                                <Shield className="mr-2 h-4 w-4" />
+                                <span>Terms & Policies</span>
+                            </Link>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />

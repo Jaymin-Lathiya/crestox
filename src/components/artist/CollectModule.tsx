@@ -72,18 +72,35 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [quote, setQuote] = useState<BufferPriceQuote | null>(null);
   const [marketLoading, setMarketLoading] = useState(true);
+  const [dialogQuoteLoading, setDialogQuoteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const prevArtworkIdRef = useRef<number | null>(null);
+  const prevDialogOpenRef = useRef(false);
+  const quoteRequestRef = useRef(0);
 
   const total = total_fractals || totalSupply;
-  const showMarketSkeleton = marketLoading || quote == null;
+  const showMarketSkeleton = marketLoading && quote == null;
+  const showDialogQuoteSkeleton = dialogQuoteLoading || showMarketSkeleton;
+
+  // Artwork pages pass per-artwork availability; artist pages pass portfolio-wide totals.
+  const displayAvailable =
+    available_fractals != null && Number.isFinite(Number(available_fractals))
+      ? Number(available_fractals)
+      : available != null && Number.isFinite(Number(available))
+        ? Number(available)
+        : null;
 
   const availShow =
-    quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares)
-      ? quote.total_available_shares
-      : 0;
+    displayAvailable != null
+      ? displayAvailable
+      : quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares)
+        ? quote.total_available_shares
+        : 0;
+
+  const showAvailabilitySkeleton =
+    displayAvailable == null && showMarketSkeleton && firstArtworkId != null;
   const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
 
   useEffect(() => {
@@ -101,11 +118,37 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     return undefined;
   }, []);
 
+  type QuoteFetchMode = 'initial' | 'silent' | 'dialog';
+
+  const fetchQuote = useCallback(async (artworkId: number, qty: number, mode: QuoteFetchMode) => {
+    const requestId = ++quoteRequestRef.current;
+    if (mode === 'initial') {
+      setMarketLoading(true);
+    } else if (mode === 'dialog') {
+      setDialogQuoteLoading(true);
+    }
+
+    try {
+      const data = await getBufferPriceQuote(artworkId, qty)();
+      if (requestId !== quoteRequestRef.current) return;
+      setQuote(data);
+    } catch {
+      if (requestId !== quoteRequestRef.current) return;
+      if (mode === 'initial') setQuote(null);
+    } finally {
+      if (requestId !== quoteRequestRef.current) return;
+      if (mode === 'initial') setMarketLoading(false);
+      if (mode === 'dialog') setDialogQuoteLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const id = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     if (id == null) {
+      quoteRequestRef.current += 1;
       setQuote(null);
       setMarketLoading(false);
+      setDialogQuoteLoading(false);
       prevArtworkIdRef.current = null;
       return;
     }
@@ -114,25 +157,22 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     prevArtworkIdRef.current = id;
     if (artworkChanged) {
       setQuote(null);
-      setMarketLoading(true);
     }
 
-    let cancelled = false;
+    const dialogJustClosed = !dialogOpen && prevDialogOpenRef.current;
+    prevDialogOpenRef.current = dialogOpen;
+    if (dialogJustClosed && !artworkChanged) {
+      return;
+    }
+
     const q = quantity === '' ? 1 : quantity;
-    getBufferPriceQuote(id, q)()
-      .then((data) => {
-        if (!cancelled) setQuote(data);
-      })
-      .catch(() => {
-        if (!cancelled) setQuote(null);
-      })
-      .finally(() => {
-        if (!cancelled) setMarketLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [firstArtworkId, quantity]);
+    const mode: QuoteFetchMode = artworkChanged
+      ? 'initial'
+      : dialogOpen
+        ? 'dialog'
+        : 'silent';
+    void fetchQuote(id, q, mode);
+  }, [firstArtworkId, quantity, dialogOpen, fetchQuote]);
 
   const maxQty = Math.max(0, availShow);
 
@@ -211,40 +251,41 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const fillSourceLabel = (source: 'SECONDARY_SALE' | 'PRIMARY_SALE') =>
     source === 'SECONDARY_SALE' ? 'Reseller' : 'Artist';
 
+  const quoteFromComplete = useCallback(
+    (complete: CompleteBuyOrderResponse): BufferPriceQuote => {
+      const p = parseFloat(complete.fractal_price_after);
+      const price = Number.isFinite(p) ? p : 0;
+      const rawAvail =
+        complete.artwork_available_shares_after ?? complete.available_shares_after;
+      const nextAvail =
+        typeof rawAvail === 'number' && Number.isFinite(rawAvail) ? rawAvail : 0;
+      return {
+        current_price: price,
+        buffer_percent: null,
+        fill_breakdown: [],
+        fill_subtotal_pre_tax: null,
+        fill_total_buyer_pays: null,
+        total_available_shares: nextAvail,
+        sufficient_for_quantity: nextAvail >= 1,
+      };
+    },
+    [],
+  );
+
   const refreshAfterPurchase = useCallback(
     async (artworkId: number, complete: CompleteBuyOrderResponse) => {
       setQuantity(1);
-      setMarketLoading(true);
-      setQuote(null);
+      setCollecting(false);
 
-      try {
-        const fresh = await getBufferPriceQuote(artworkId, 1)();
-        setQuote(fresh);
-      } catch {
-        const p = parseFloat(complete.fractal_price_after);
-        const price = Number.isFinite(p) ? p : 0;
-        const rawAvail =
-          complete.artwork_available_shares_after ?? complete.available_shares_after;
-        const nextAvail =
-          typeof rawAvail === 'number' && Number.isFinite(rawAvail) ? rawAvail : 0;
-        setQuote({
-          current_price: price,
-          buffer_percent: null,
-          fill_breakdown: [],
-          fill_subtotal_pre_tax: null,
-          fill_total_buyer_pays: null,
-          total_available_shares: nextAvail,
-          sufficient_for_quantity: nextAvail >= 1,
-        });
-      } finally {
-        setMarketLoading(false);
-        setCollecting(false);
-      }
+      setQuote(quoteFromComplete(complete));
+      setMarketLoading(false);
 
       toast.success('Fractals collected successfully');
       onCollectSuccess?.(complete);
+
+      await fetchQuote(artworkId, 1, dialogOpen ? 'dialog' : 'silent');
     },
-    [onCollectSuccess],
+    [onCollectSuccess, quoteFromComplete, fetchQuote, dialogOpen],
   );
 
   const openDialog = () => {
@@ -437,7 +478,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between text-sm font-sans min-h-[1.25rem]">
               <span className={summaryMutedCls}>Available fractals</span>
-              {showMarketSkeleton && firstArtworkId != null ? (
+              {showAvailabilitySkeleton ? (
                 <Skeleton
                   className={cn(
                     'h-4 w-28 rounded',
@@ -454,7 +495,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             </div>
 
             <div className={cn('h-2 w-full rounded-full overflow-hidden', summaryBarTrackCls)}>
-              {showMarketSkeleton && firstArtworkId != null ? (
+              {showAvailabilitySkeleton ? (
                 <Skeleton
                   className={cn(
                     'h-full w-full rounded-full',
@@ -552,7 +593,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
               <div className="space-y-2">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Order breakdown</span>
-                {showMarketSkeleton ? (
+                {showDialogQuoteSkeleton ? (
                   <Skeleton className="h-24 w-full rounded-xl bg-muted" />
                 ) : quote?.fill_breakdown?.length ? (
                   <div className="space-y-2 rounded-xl bg-muted px-4 py-3 border border-border">
@@ -598,13 +639,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal (pre-tax)</span>
                   <div className="flex items-center gap-2">
-                    {showMarketSkeleton ? <Skeleton className="h-5 w-20 bg-muted" /> : (
+                    {showDialogQuoteSkeleton ? <Skeleton className="h-5 w-20 bg-muted" /> : (
                       <span className="text-foreground inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(subTotalPreTax)}
                       </span>
                     )}
-                    {!showMarketSkeleton && (
+                    {!showDialogQuoteSkeleton && (
                       <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
@@ -613,7 +654,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{hasFillPreview ? 'Taxes & fees' : 'G.S.T. (18%)'}</span>
-                  {showMarketSkeleton ? <Skeleton className="h-5 w-16 bg-muted" /> : (
+                  {showDialogQuoteSkeleton ? <Skeleton className="h-5 w-16 bg-muted" /> : (
                     <span className="text-foreground inline-flex items-baseline gap-px">
                       <span>{'\u20B9'}</span>
                       {formatCurrencyWithSmallDecimals(taxesAndFeesAmount)}
@@ -624,13 +665,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 <div className="flex justify-between text-base font-semibold">
                   <span className="text-primary">Total payable</span>
                   <div className="flex items-center gap-2">
-                    {showMarketSkeleton ? <Skeleton className="h-6 w-24 bg-muted" /> : (
+                    {showDialogQuoteSkeleton ? <Skeleton className="h-6 w-24 bg-muted" /> : (
                       <span className="text-primary inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(totalPayableInr)}
                       </span>
                     )}
-                    {!showMarketSkeleton && (
+                    {!showDialogQuoteSkeleton && (
                       <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                         ±{bufferPercent.toFixed(2)}
                       </span>
@@ -656,7 +697,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 disabled={
                   collecting ||
                   !razorpayLoaded ||
-                  showMarketSkeleton ||
+                  showDialogQuoteSkeleton ||
                   effectiveQty < 1 ||
                   quote?.sufficient_for_quantity === false
                 }

@@ -103,6 +103,7 @@ const ArtistPage = () => {
   const [artworks, setArtworks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [artworkPriceOverrides, setArtworkPriceOverrides] = useState<Record<string, number>>({});
   const [artworkPriceRefreshKey, setArtworkPriceRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -188,11 +189,20 @@ const ArtistPage = () => {
     };
   }, [id]);
 
-  const refetchAfterCollect = useCallback(async (result?: CompleteBuyOrderResponse) => {
+  const refetchAfterCollect = useCallback((result?: CompleteBuyOrderResponse) => {
     if (result) {
-      setArtworkPriceRefreshKey((k) => k + 1);
       const nextAvail = result.available_shares_after;
       const nextPrice = parseFloat(result.fractal_price_after);
+      if (Number.isFinite(nextPrice)) {
+        setArtworks((prev) => {
+          const overrides = Object.fromEntries(
+            prev.map((artwork) => [String(artwork.id), nextPrice]),
+          );
+          setArtworkPriceOverrides((existing) => ({ ...existing, ...overrides }));
+          return prev.map((artwork) => ({ ...artwork, valuation: nextPrice }));
+        });
+        setArtworkPriceRefreshKey((k) => k + 1);
+      }
       setBasicDetails((prev) => {
         if (!prev) return prev;
         return {
@@ -205,42 +215,45 @@ const ArtistPage = () => {
       });
     }
     if (id == null || isNaN(id)) return;
-    try {
-      const [basic, collectorsData, artworksResponse, analyticsRes] = await Promise.all([
-        getArtistBasicDetails(id)(),
-        getArtistCollectors(id)(),
-        getArtistArtworks(id)(),
-        getArtistAnalytics(id)(),
-      ]);
-      setBasicDetails(basic ?? null);
-      setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
-      if (analyticsRes?.status === 200 && analyticsRes?.data?.data) {
-        setArtistAnalytics(analyticsRes.data.data as ArtistAnalyticsPayload);
-        setArtistAnalyticsError(null);
+
+    void (async () => {
+      try {
+        const [basic, collectorsData, artworksResponse, analyticsRes] = await Promise.all([
+          getArtistBasicDetails(id)(),
+          getArtistCollectors(id)(),
+          getArtistArtworks(id)(),
+          getArtistAnalytics(id)(),
+        ]);
+        setBasicDetails(basic ?? null);
+        setCollectors(Array.isArray(collectorsData) ? collectorsData : []);
+        if (analyticsRes?.status === 200 && analyticsRes?.data?.data) {
+          setArtistAnalytics(analyticsRes.data.data as ArtistAnalyticsPayload);
+          setArtistAnalyticsError(null);
+        }
+        const list = Array.isArray(artworksResponse) ? artworksResponse : [];
+        const mapped = list.length > 0
+          ? list.map((a: any) => {
+              const item = a as Record<string, unknown>;
+              const mediaList = item.artwork_media as Array<{ is_primary?: boolean; media?: { file_path?: string } }> | undefined;
+              const primaryOrFirst = Array.isArray(mediaList)
+                ? mediaList.find((m) => m.is_primary) ?? mediaList[0]
+                : undefined;
+              const imageUrl = primaryOrFirst?.media?.file_path ?? (item.image as string) ?? '/assets/artwork-1.jpg';
+              return {
+                id: String(item.id ?? ''),
+                title: (item.name ?? item.title ?? 'Untitled') as string,
+                image: imageUrl,
+                valuation: Number(item.valuation ?? item.starting_price ?? 0),
+                roi: (item.roi as string) ?? '+0%',
+                aspectRatio: (item.aspect_ratio ?? item.aspectRatio ?? 'portrait') as 'portrait' | 'landscape' | 'square',
+              };
+            })
+          : [];
+        setArtworks(mapped);
+      } catch (_err) {
+        // Background sync failed; optimistic UI already updated
       }
-      const list = Array.isArray(artworksResponse) ? artworksResponse : [];
-      const mapped = list.length > 0
-        ? list.map((a: any) => {
-            const item = a as Record<string, unknown>;
-            const mediaList = item.artwork_media as Array<{ is_primary?: boolean; media?: { file_path?: string } }> | undefined;
-            const primaryOrFirst = Array.isArray(mediaList)
-              ? mediaList.find((m) => m.is_primary) ?? mediaList[0]
-              : undefined;
-            const imageUrl = primaryOrFirst?.media?.file_path ?? (item.image as string) ?? '/assets/artwork-1.jpg';
-            return {
-              id: String(item.id ?? ''),
-              title: (item.name ?? item.title ?? 'Untitled') as string,
-              image: imageUrl,
-              valuation: Number(item.valuation ?? item.starting_price ?? 0),
-              roi: (item.roi as string) ?? '+0%',
-              aspectRatio: (item.aspect_ratio ?? item.aspectRatio ?? 'portrait') as 'portrait' | 'landscape' | 'square',
-            };
-          })
-        : [];
-      setArtworks(mapped);
-    } catch (_err) {
-      // Optionally toast or ignore refetch errors
-    }
+    })();
   }, [id]);
 
   const artistData = basicDetails
@@ -317,7 +330,11 @@ const ArtistPage = () => {
       case 'artworks':
         if (isLoading) return <ArtworksGridSkeleton />;
         return (
-          <ArtworksGrid artworks={artworks} priceRefreshKey={artworkPriceRefreshKey} />
+          <ArtworksGrid
+            artworks={artworks}
+            priceOverrides={artworkPriceOverrides}
+            priceRefreshKey={artworkPriceRefreshKey}
+          />
         );
       case 'analytics':
         return (
@@ -335,7 +352,11 @@ const ArtistPage = () => {
         return <CollectorsTab collectors={collectorsForTab} />;
       default:
         return (
-          <ArtworksGrid artworks={artworks} priceRefreshKey={artworkPriceRefreshKey} />
+          <ArtworksGrid
+            artworks={artworks}
+            priceOverrides={artworkPriceOverrides}
+            priceRefreshKey={artworkPriceRefreshKey}
+          />
         );
     }
   };
