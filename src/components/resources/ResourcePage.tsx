@@ -74,6 +74,10 @@ export default function ResourcePage({
   --c-tint: hsl(var(--color-primary-accent) / 0.06);
   --radius: 0.75rem;
   --radius-lg: 1rem;
+  /* Match the header's container: max-w-7xl (80rem) with 1rem side margins. */
+  --container: 80rem;
+  --container-w: calc(100% - 2rem);
+  --gutter: clamp(1rem, 4vw, 3.5rem);
 
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   color: var(--c-text);
@@ -93,7 +97,7 @@ export default function ResourcePage({
 .cx-resource-page *::after { box-sizing: border-box; }
 
 /* HERO */
-.cx-resource-page .cx-hero { text-align: center; padding: 5rem 1.5rem 3rem; max-width: 880px; margin: 0 auto; }
+.cx-resource-page .cx-hero { text-align: center; padding: 5rem var(--gutter) 3rem; width: var(--container-w); max-width: var(--container); margin: 0 auto; }
 .cx-resource-page .cx-hero .eyebrow {
   display: inline-flex; align-items: center; gap: 0.5rem;
   background: var(--c-primary-soft); color: var(--c-primary);
@@ -126,15 +130,15 @@ export default function ResourcePage({
 
 /* CONTENT */
 .cx-resource-page .cx-content {
-  max-width: 780px; margin: 0 auto; padding: 1rem 1.5rem 4rem;
+  width: var(--container-w); max-width: var(--container); margin: 0 auto 3rem;
+  padding: 1.5rem var(--gutter) 4rem;
   background: var(--c-surface);
   border-radius: 1rem;
   border: 1px solid var(--c-border);
   box-shadow: 0 12px 40px rgba(15,23,42,0.05);
-  margin-bottom: 3rem;
 }
 @media (min-width: 768px) {
-  .cx-resource-page .cx-content { padding: 3rem 3.5rem 4rem; }
+  .cx-resource-page .cx-content { padding: 3rem var(--gutter) 4rem; }
 }
 
 .cx-resource-page .cx-content h1 {
@@ -275,7 +279,7 @@ export default function ResourcePage({
 
 /* Back link */
 .cx-resource-page .cx-back {
-  max-width: 780px; margin: 0 auto; padding: 0 1.5rem 4rem; text-align: center;
+  width: var(--container-w); max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter) 4rem; text-align: center;
 }
 .cx-resource-page .cx-back a {
   font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700;
