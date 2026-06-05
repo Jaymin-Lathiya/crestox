@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Compass,
   Info,
@@ -67,7 +68,7 @@ export function Header() {
       icon: (
         <WandSparkles className="h-full w-full text-foreground/80" />
       ),
-      href: "/ai-curator",
+      href: "/product",
     },
     {
       title: "About Us",
@@ -93,9 +94,17 @@ export function Header() {
       <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 px-6 py-3 md:py-4 bg-card/90 dark:bg-background/80 backdrop-blur-lg border border-border dark:border-border/50 rounded-2xl shadow-lg shadow-foreground/5 dark:shadow-sm dark:shadow-transparent">
         <div className="flex justify-between items-center w-full">
           <div
-            className="flex-shrink-0 cursor-pointer"
+            className="flex-shrink-0 cursor-pointer flex items-center gap-2"
             onClick={() => router.push("/")}
           >
+            <Image
+              src="/logo.png"
+              alt="Crestox Logo"
+              width={36}
+              height={36}
+              className="w-8 h-8 md:w-9 md:h-9"
+              priority
+            />
             <h1 className="text-foreground text-xl font-bold tracking-[0.3em] font-mono">
               CRESTOX
             </h1>
