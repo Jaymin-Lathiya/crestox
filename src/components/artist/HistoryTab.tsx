@@ -28,7 +28,7 @@ const DEFAULT_HISTORY: HistoryEvent[] = [
     type: 'sale',
     title: 'Void Symphony #12',
     date: 'Jan 15, 2024',
-    value: '$45,000',
+    value: '₹45,000',
     description:
       'Sold to a private collector in Tokyo. This piece is part of the Void Symphony series, exploring the visualization of silence through generative algorithms.',
     image:
@@ -59,7 +59,7 @@ const DEFAULT_HISTORY: HistoryEvent[] = [
     type: 'sale',
     title: 'Void Symphony #7',
     date: 'Oct 30, 2023',
-    value: '$1,200,000',
+    value: '₹1,200,000',
     description:
       'Record-breaking sale at Christie’s Digital Art Auction. "Void Symphony #7" is considered a seminal work in the artist’s career.',
     image:
@@ -70,7 +70,7 @@ const DEFAULT_HISTORY: HistoryEvent[] = [
     type: 'sale',
     title: 'Digital Finitude #3',
     date: 'Sep 15, 2023',
-    value: '$28,500',
+    value: '₹28,500',
     description:
       'Sold via the gallery platform. "Digital Finitude" questions the infinite reproducibility of digital assets through unique, one-time generation processes.',
     image:
@@ -201,11 +201,11 @@ export default HistoryTab;
 // }
 
 // const historyEvents: HistoryEvent[] = [
-//   { id: '1', type: 'sale', title: 'Void Symphony #12 sold', date: 'Jan 15, 2024', value: '$45,000' },
+//   { id: '1', type: 'sale', title: 'Void Symphony #12 sold', date: 'Jan 15, 2024', value: '₹45,000' },
 //   { id: '2', type: 'exhibition', title: 'Featured in Art Basel Miami', date: 'Dec 8, 2023' },
 //   { id: '3', type: 'mint', title: 'New collection: Algorithmic Decay II', date: 'Nov 22, 2023' },
-//   { id: '4', type: 'sale', title: 'Void Symphony #7 sold', date: 'Oct 30, 2023', value: '$1,200,000' },
-//   { id: '5', type: 'sale', title: 'Digital Finitude #3 sold', date: 'Sep 15, 2023', value: '$28,500' },
+//   { id: '4', type: 'sale', title: 'Void Symphony #7 sold', date: 'Oct 30, 2023', value: '₹1,200,000' },
+//   { id: '5', type: 'sale', title: 'Digital Finitude #3 sold', date: 'Sep 15, 2023', value: '₹28,500' },
 //   { id: '6', type: 'exhibition', title: 'Solo show at MoMA Digital', date: 'Aug 1, 2023' },
 // ];
 

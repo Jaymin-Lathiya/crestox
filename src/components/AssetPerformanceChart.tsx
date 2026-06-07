@@ -21,7 +21,7 @@ interface AssetPerformanceChartProps {
 }
 
 const formatCurrency = (val: number) => 
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -87,7 +87,7 @@ const AssetPerformanceChart: React.FC<AssetPerformanceChartProps> = ({
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#444', fontSize: 10, fontFamily: 'Space Mono' }}
-              tickFormatter={(value) => `$${value / 1000}k`}
+              tickFormatter={(value) => `₹${value / 1000}k`}
               dx={-10}
             />
             

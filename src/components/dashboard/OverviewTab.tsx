@@ -205,9 +205,9 @@ export const OverviewTab = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard label="Portfolio Valuation" value={d.portfolio_valuation} prefix="$" delay={0} />
-          <MetricCard label="Total Earnings" value={d.total_earnings} prefix="$" delay={0.1} />
-          <MetricCard label="Fractal Price" value={d.fractal_price} prefix="$" decimals={2} delay={0.2} />
+          <MetricCard label="Portfolio Valuation" value={d.portfolio_valuation} prefix="₹" delay={0} />
+          <MetricCard label="Total Earnings" value={d.total_earnings} prefix="₹" delay={0.1} />
+          <MetricCard label="Fractal Price" value={d.fractal_price} prefix="₹" decimals={2} delay={0.2} />
           <MetricCard label="Fractals Sold" value={d.fractals_sold} delay={0.3} />
         </div>
 
@@ -237,7 +237,7 @@ export const OverviewTab = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-mono text-accent">
-                        {`+$${tx.artist_net_after_platform_fee.toFixed(2)}`}
+                        {`+₹${tx.artist_net_after_platform_fee.toFixed(2)}`}
                       </p>
                       <p className="text-xs text-muted-foreground">{tx.share_quantity} fractals</p>
                     </div>
