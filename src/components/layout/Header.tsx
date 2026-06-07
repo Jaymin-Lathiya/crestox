@@ -1,16 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
   Compass,
   Info,
-  Mail,
-  Map,
   Moon,
-  Package,
-  ScrollText,
   Sun,
   SunMoon,
   WandSparkles,
@@ -26,7 +22,6 @@ import { SignupModal } from "../ui/signup-modal";
 import { Skeleton } from "../ui/skeleton";
 
 export function Header() {
-  const router = useRouter();
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -93,9 +88,9 @@ export function Header() {
     <>
       <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-7xl z-50 px-6 py-3 md:py-4 bg-card/90 dark:bg-background/80 backdrop-blur-lg border border-border dark:border-border/50 rounded-2xl shadow-lg shadow-foreground/5 dark:shadow-sm dark:shadow-transparent">
         <div className="flex justify-between items-center w-full">
-          <div
+          <Link
+            href="/"
             className="flex-shrink-0 cursor-pointer flex items-center gap-2"
-            onClick={() => router.push("/")}
           >
             <Image
               src="/logo.png"
@@ -108,7 +103,7 @@ export function Header() {
             <h1 className="text-foreground text-xl font-bold tracking-[0.3em] font-mono">
               CRESTOX
             </h1>
-          </div>
+          </Link>
 
           {/* <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
                     <Link
@@ -133,23 +128,29 @@ export function Header() {
 
           <div className="absolute top-1/2 left-1/2 max-w-full -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
             <Dock direction="middle" className="items-center">
-              {data.map((item, idx) => (
-                <DockItem
-                  key={idx}
-                  className="aspect-square rounded-full bg-background dark:bg-card border border-border dark:border-border/60 hover:bg-accent dark:hover:bg-card transition-colors"
-                  onClick={() => {
-                    if (item.type === "theme") {
-                      toggleTheme();
-                    } else if (item.href) {
-                      router.push(item.href);
-                    }
-                  }}
-                >
-                  <DockLabel>{item.title}</DockLabel>
-                  {/* <DockIcon className="text-[10px] font-medium">{item.title}</DockIcon> */}
-                  <DockIcon>{item.icon}</DockIcon>
-                </DockItem>
-              ))}
+              {data.map((item, idx) =>
+                item.href ? (
+                  <Link key={idx} href={item.href} prefetch>
+                    <DockItem
+                      className="aspect-square rounded-full bg-background dark:bg-card border border-border dark:border-border/60 hover:bg-accent dark:hover:bg-card transition-colors"
+                    >
+                      <DockLabel>{item.title}</DockLabel>
+                      <DockIcon>{item.icon}</DockIcon>
+                    </DockItem>
+                  </Link>
+                ) : (
+                  <DockItem
+                    key={idx}
+                    className="aspect-square rounded-full bg-background dark:bg-card border border-border dark:border-border/60 hover:bg-accent dark:hover:bg-card transition-colors"
+                    onClick={() => {
+                      if (item.type === "theme") toggleTheme();
+                    }}
+                  >
+                    <DockLabel>{item.title}</DockLabel>
+                    <DockIcon>{item.icon}</DockIcon>
+                  </DockItem>
+                )
+              )}
             </Dock>
           </div>
 
@@ -198,25 +199,42 @@ export function Header() {
       {/* Mobile/Tablet Bottom Nav — below lg */}
       <div className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
         <div className="flex items-center gap-4 px-6 py-3 rounded-2xl bg-card/90 dark:bg-background/80 backdrop-blur-lg border border-border dark:border-border/50 shadow-lg shadow-foreground/5 dark:shadow-sm dark:shadow-transparent">
-          {data.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => {
-                if (item.type === "theme") toggleTheme();
-                else if (item.href) router.push(item.href);
-              }}
-              className="flex flex-col items-center gap-1 shrink-0 w-12" // 👈 fixed width
-            >
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background dark:bg-card border border-border dark:border-border/60">
-                <div className="w-5 h-5 text-foreground dark:text-foreground/80">
-                  {item.icon}
+          {data.map((item, idx) =>
+            item.href ? (
+              <Link
+                key={idx}
+                href={item.href}
+                prefetch
+                className="flex flex-col items-center gap-1 shrink-0 w-12"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background dark:bg-card border border-border dark:border-border/60">
+                  <div className="w-5 h-5 text-foreground dark:text-foreground/80">
+                    {item.icon}
+                  </div>
                 </div>
-              </div>
-              <span className="text-[10px] text-muted-foreground leading-none text-center w-full">
-                {item.title}
-              </span>
-            </button>
-          ))}
+                <span className="text-[10px] text-muted-foreground leading-none text-center w-full">
+                  {item.title}
+                </span>
+              </Link>
+            ) : (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (item.type === "theme") toggleTheme();
+                }}
+                className="flex flex-col items-center gap-1 shrink-0 w-12"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-background dark:bg-card border border-border dark:border-border/60">
+                  <div className="w-5 h-5 text-foreground dark:text-foreground/80">
+                    {item.icon}
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted-foreground leading-none text-center w-full">
+                  {item.title}
+                </span>
+              </button>
+            )
+          )}
         </div>
       </div>
 

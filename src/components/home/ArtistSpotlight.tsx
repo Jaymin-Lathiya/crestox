@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import GradientButton from '../ui/gradiant-button';
@@ -27,7 +27,6 @@ interface SpotlightCardModel extends HomepageArtist {
 }
 
 const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: number }) => {
-  const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -210,11 +209,12 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <GradientButton
-              variant="primary"
-              label="Back This Artist"
-              onClick={() => router.push(`/artist/${artist.artist_profile_id}`)}
-            />
+            <Link href={`/artist/${artist.artist_profile_id}`} prefetch>
+              <GradientButton
+                variant="primary"
+                label="Back This Artist"
+              />
+            </Link>
           </motion.div>
         </motion.div>
       </div>

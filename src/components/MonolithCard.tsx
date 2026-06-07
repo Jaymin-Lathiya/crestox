@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Award, Zap, User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface MonolithCardProps {
   artistName: string;
@@ -34,7 +34,6 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
   onCertificate,
 }) => {
   const isPositive = gainLossPerc >= 0;
-  const router = useRouter();
 
   return (
     <motion.div
@@ -157,15 +156,16 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
           </div>
         </motion.button>
 
-        <button
+        <Link
+          href={`/artist/${artistId}`}
+          prefetch
           className="flex items-center gap-2"
-          onClick={() => router.push(`/artist/${artistId}`)}
         >
           <User size={14} className="text-primary" />
           <span className="font-cyber text-xs md:text-sm text-primary tracking-widest font-bold whitespace-nowrap">
             Artist Profile
           </span>
-        </button>
+        </Link>
       </div>
       </div>
     </motion.div>

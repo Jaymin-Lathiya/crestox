@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getBufferPriceOfArtwork } from '@/apis/artists/artistActions';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export interface Artwork {
   id: string;
@@ -16,7 +16,9 @@ export interface Artwork {
 
 interface ArtworksGridProps {
   artworks: Artwork[];
-  /** Increment after a fractal purchase to refetch live prices on cards. */
+  /** Live prices applied immediately after purchase (skips refetch skeleton). */
+  priceOverrides?: Record<string, number>;
+  /** Increment after purchase to refetch live buffer prices from the API. */
   priceRefreshKey?: number;
 }
 
@@ -36,13 +38,17 @@ export function ArtworksGridSkeleton() {
   );
 }
 
-const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks, priceRefreshKey = 0 }) => {
+const ArtworksGrid: React.FC<ArtworksGridProps> = ({
+  artworks,
+  priceOverrides = {},
+  priceRefreshKey = 0,
+}) => {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
       {artworks.length > 0 ? (
         <> {artworks.map((artwork, index) => (
           <motion.div
-            key={`${artwork.id}-${priceRefreshKey}`}
+            key={artwork.id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -52,7 +58,11 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks, priceRefreshKey =
             }}
             className="break-inside-avoid"
           >
-            <ArtworkCard artwork={artwork} priceRefreshKey={priceRefreshKey} />
+            <ArtworkCard
+              artwork={artwork}
+              priceOverride={priceOverrides[artwork.id]}
+              priceRefreshKey={priceRefreshKey}
+            />
           </motion.div>
         ))}
 
@@ -69,25 +79,39 @@ const ArtworksGrid: React.FC<ArtworksGridProps> = ({ artworks, priceRefreshKey =
 
 interface ArtworkCardProps {
   artwork: Artwork;
+  priceOverride?: number;
   priceRefreshKey?: number;
 }
 
-const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 }) => {
+const ArtworkCard: React.FC<ArtworkCardProps> = ({
+  artwork,
+  priceOverride,
+  priceRefreshKey = 0,
+}) => {
   const artworkId = Number(artwork.id);
-  const router = useRouter();
   const [bufferPrice, setBufferPrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
 
-  // console.log("artworkId", artwork);
+  useEffect(() => {
+    if (priceOverride != null && Number.isFinite(priceOverride)) {
+      setBufferPrice(priceOverride);
+      setPriceLoading(false);
+    }
+  }, [priceOverride]);
 
   useEffect(() => {
     if (!artworkId || isNaN(artworkId)) {
       setPriceLoading(false);
       return;
     }
+
     let cancelled = false;
-    setPriceLoading(true);
-    setBufferPrice(null);
+    const hasOptimisticPrice = priceOverride != null && Number.isFinite(priceOverride);
+    if (!hasOptimisticPrice) {
+      setPriceLoading(true);
+      setBufferPrice(null);
+    }
+
     getBufferPriceOfArtwork(artworkId)()
       .then((price) => {
         if (!cancelled) {
@@ -95,7 +119,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 
         }
       })
       .catch(() => {
-        if (!cancelled) setBufferPrice(null);
+        if (!cancelled && !hasOptimisticPrice) setBufferPrice(null);
       })
       .finally(() => {
         if (!cancelled) setPriceLoading(false);
@@ -103,12 +127,12 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 
     return () => {
       cancelled = true;
     };
-  }, [artworkId, priceRefreshKey]);
+  }, [artworkId, priceRefreshKey, priceOverride]);
 
-  const displayValue = bufferPrice ?? artwork.valuation;
+  const displayValue = priceOverride ?? bufferPrice ?? artwork.valuation;
 
   return (
-    <div className="group relative overflow-hidden rounded-sm cursor-pointer">
+    <Link href={`/art/${artwork.id}`} prefetch className="group relative overflow-hidden rounded-sm cursor-pointer block">
       {/* Image Container */}
       <div className="relative w-full overflow-hidden">
         <img
@@ -118,9 +142,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 
         />
 
         {/* Overlay on Hover */}
-        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" onClick={() => {
-          router.push(`/art/${artwork.id}`);
-        }} />
+        <div className="absolute inset-0 bg-void/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
         {/* Value pill — high contrast on any image; tuned for light + dark app theme */}
         <motion.div
@@ -152,7 +174,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, priceRefreshKey = 0 
       <div className="absolute top-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <p className="font-display text-lg text-foreground italic">{artwork.title}</p>
       </div>
-    </div>
+    </Link>
   );
 };
 
