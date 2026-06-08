@@ -54,17 +54,17 @@ export function Footer() {
                         <h3 className="text-sm font-bold tracking-widest text-[#3B82F6] uppercase">Product</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Features
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Pricing
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/integrations" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Integrations
                                 </Link>
                             </li>
