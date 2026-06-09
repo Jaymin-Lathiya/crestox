@@ -44,3 +44,18 @@ export const googleAuth = (data: {
         throw err;
     }
 }
+
+export const appleAuth = (data: {
+    idToken: string;
+    authorizationCode?: string;
+    name?: string;
+    user_type?: string;
+    intent?: 'login' | 'signup';
+}) => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.APPLE_AUTH, data);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}

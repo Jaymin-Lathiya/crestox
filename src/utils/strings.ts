@@ -6,4 +6,8 @@ export const strings = {
     
     // Google OAuth - Replace with your actual Client ID from Google Cloud Console
     google_client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "your-google-client-id.apps.googleusercontent.com",
+
+    // Apple Sign In
+    apple_client_id: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || "your.apple.service.id",
+    apple_redirect_uri: process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || "https://your-domain.com/auth/apple/callback",
 };

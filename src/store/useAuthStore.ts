@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getMagicLink, verifyMagicLink, getToken, googleAuth } from '@/apis/auth/authActions';
+import { getMagicLink, verifyMagicLink, getToken, googleAuth, appleAuth } from '@/apis/auth/authActions';
 import { setCookie } from '@/utils/cookieUtils';
 import { UserType } from '@/enums/userType';
 
@@ -17,6 +17,11 @@ export type MagicLinkRequestResult =
     | { ok: false; userNotFound?: boolean; email?: string };
 
 export type GoogleSignInResult =
+    | VerifyResponseData
+    | { userNotFound: true; email?: string }
+    | null;
+
+export type AppleSignInResult =
     | VerifyResponseData
     | { userNotFound: true; email?: string }
     | null;
@@ -49,6 +54,13 @@ interface AuthState {
         user_type?: string,
         intent?: 'login' | 'signup',
     ) => Promise<GoogleSignInResult>;
+    appleSignIn: (
+        idToken: string,
+        authorizationCode?: string,
+        name?: string,
+        user_type?: string,
+        intent?: 'login' | 'signup',
+    ) => Promise<AppleSignInResult>;
     clearStore: () => void;
 }
 
@@ -194,6 +206,54 @@ export const useAuthStore = create<AuthState>((set) => ({
                     axiosErr?.response?.data?.message ||
                     axiosErr.message ||
                     'Google sign-in failed.',
+            });
+            return null;
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    appleSignIn: async (
+        idToken: string,
+        authorizationCode?: string,
+        name?: string,
+        user_type?: string,
+        intent: 'login' | 'signup' = 'signup',
+    ) => {
+        set({ isLoading: true, error: null, isSuccess: false });
+        try {
+            const appleAuthAction = appleAuth({ idToken, authorizationCode, name, user_type, intent });
+            const response = await appleAuthAction();
+
+            if (response.status !== 200) {
+                set({ error: response.data?.message || 'Apple sign-in failed.' });
+                return null;
+            }
+
+            const accessToken = response.data?.accessToken || response.data?.data?.accessToken;
+            const isNewUser = response.data?.isNewUser || response.data?.data?.isNewUser;
+            const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
+            const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
+            const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+
+            if (accessToken) {
+                setCookie("token", accessToken, 30);
+            }
+
+            set({ isSuccess: true });
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+        } catch (err: unknown) {
+            const notFound = parseUserNotFoundError(err);
+            if (notFound) {
+                return { userNotFound: true as const, email: notFound.email };
+            }
+            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+            console.error(err);
+            set({
+                error:
+                    axiosErr?.response?.data?.message ||
+                    axiosErr.message ||
+                    'Apple sign-in failed.',
             });
             return null;
         } finally {

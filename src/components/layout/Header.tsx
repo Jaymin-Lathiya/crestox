@@ -59,7 +59,7 @@ export function Header() {
       href: "/explore",
     },
     {
-      title: "Products",
+      title: "Crea AI",
       icon: (
         <WandSparkles className="h-full w-full text-foreground/80" />
       ),
