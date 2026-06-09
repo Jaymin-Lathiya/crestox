@@ -35,7 +35,7 @@ const DEFAULT_ACHIEVEMENTS: Achievement[] = [
     title: "Christie's Digital Art Auction",
     year: '2023',
     description:
-      'Record-breaking sale of "Void Symphony #7" at $1.2M. This piece marked a turning point in the valuation of generative art, attracting collectors from traditional and crypto spheres alike.',
+      'Record-breaking sale of "Void Symphony #7" at ₹1.2M. This piece marked a turning point in the valuation of generative art, attracting collectors from traditional and crypto spheres alike.',
     image:
       'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop',
   },

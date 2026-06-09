@@ -13,7 +13,7 @@ export function Footer() {
             </div>
 
             <div className="container relative z-10 px-4 md:px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
                     <div className="space-y-4">
                         <Link href="/" className="flex items-center gap-2">
                             {/* Logo Icon Placeholder - keeping it text for now as per header */}
@@ -54,17 +54,17 @@ export function Footer() {
                         <h3 className="text-sm font-bold tracking-widest text-[#3B82F6] uppercase">Product</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Features
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Pricing
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                                <Link href="/integrations" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Integrations
                                 </Link>
                             </li>
@@ -123,6 +123,37 @@ export function Footer() {
                             <li>
                                 <Link href="/security" className="text-muted-foreground hover:text-foreground transition-colors">
                                     Security
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold tracking-widest text-[#3B82F6] uppercase">Legal</h3>
+                        <ul className="space-y-2 text-sm">
+                            <li>
+                                <Link href="/terms-of-use" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    Terms of Use
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/risk-disclosure" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    Risk Disclosure
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    Privacy Policy
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/artist-agreement" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    Artist Agreement
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/secondary-marketplace-terms" className="text-muted-foreground hover:text-foreground transition-colors">
+                                    Secondary Marketplace Terms
                                 </Link>
                             </li>
                         </ul>

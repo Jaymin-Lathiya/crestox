@@ -8,10 +8,10 @@ import GradientButton from '../ui/gradiant-button';
 import { getHomepageArtists, type HomepageArtist } from '@/apis/artists/artistActions';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('en-US', {
+function formatInr(value: number) {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     maximumFractionDigits: 0,
   }).format(Number.isFinite(value) ? value : 0);
 }
@@ -120,7 +120,7 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
             <span className="font-display text-2xl italic text-gradient-gold">{safePct}%</span>
             <span className="font-mono text-[10px] text-muted-foreground tracking-wide">of</span>
             <span className="font-mono text-sm text-foreground tabular-nums">
-              {formatUsd(artist.total_portfolio_value)}
+              {formatInr(artist.total_portfolio_value)}
             </span>
           </div>
           <div className="w-32 h-1.5 bg-secondary rounded-full overflow-hidden">
@@ -196,11 +196,11 @@ const ArtistCard = ({ artist, index }: { artist: SpotlightCardModel; index: numb
           <div className="flex gap-8 mb-6">
             <div>
               <p className="terminal-text text-muted-foreground text-[10px] mb-1">Fractal price</p>
-              <p className="font-mono text-lg text-primary">{formatUsd(artist.fractal_price)}</p>
+              <p className="font-mono text-lg text-primary">{formatInr(artist.fractal_price)}</p>
             </div>
             <div>
               <p className="terminal-text text-muted-foreground text-[10px] mb-1">Portfolio value</p>
-              <p className="font-mono text-lg text-foreground">{formatUsd(artist.total_portfolio_value)}</p>
+              <p className="font-mono text-lg text-foreground">{formatInr(artist.total_portfolio_value)}</p>
             </div>
           </div>
 

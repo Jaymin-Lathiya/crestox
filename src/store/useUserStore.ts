@@ -38,6 +38,14 @@ interface UserState {
     clearUser: () => void;
 }
 
+// Request-deduplication guards. These live at module scope (not in the store
+// state) so they are shared across every caller without triggering re-renders.
+// The same network request can never be in flight more than once: concurrent
+// callers (Header + auth pages, React StrictMode double-invoke, multiple
+// components) all await the single in-flight promise instead of firing again.
+let inFlightProfile: Promise<User | null> | null = null;
+let inFlightInit: Promise<void> | null = null;
+
 export const useUserStore = create<UserState>((set, get) => ({
     user: null,
     isLoading: false,
@@ -46,35 +54,54 @@ export const useUserStore = create<UserState>((set, get) => ({
     error: null,
 
     fetchProfile: async () => {
-        set({ isLoading: true, error: null });
-        try {
-            const getProfileAction = getProfile();
-            const response = await getProfileAction();
+        // De-dupe: if a profile request is already in flight, reuse it.
+        if (inFlightProfile) return inFlightProfile;
 
-            // Assuming response.data.data or similar contains the structured user. Adjust based on your backend response structure.
-            const userData = response?.data?.data || response?.data;
-            syncArtistProfileIdFromProfile(userData?.artist_profile_id);
-            set({ user: userData, isLoading: false, isLoggedIn: true });
-            return userData ?? null;
-        } catch (err: any) {
-            console.error(err);
-            set({ error: err?.response?.data?.message || err.message || 'Failed to fetch user profile', isLoading: false });
-            return null;
-        }
+        set({ isLoading: true, error: null });
+        inFlightProfile = (async () => {
+            try {
+                const getProfileAction = getProfile();
+                const response = await getProfileAction();
+
+                // Assuming response.data.data or similar contains the structured user. Adjust based on your backend response structure.
+                const userData = response?.data?.data || response?.data;
+                syncArtistProfileIdFromProfile(userData?.artist_profile_id);
+                set({ user: userData, isLoading: false, isLoggedIn: true });
+                return userData ?? null;
+            } catch (err: any) {
+                console.error(err);
+                set({ error: err?.response?.data?.message || err.message || 'Failed to fetch user profile', isLoading: false });
+                return null;
+            } finally {
+                inFlightProfile = null;
+            }
+        })();
+        return inFlightProfile;
     },
 
     initialize: async () => {
-        const token = getCookie('token');
-        if (token === undefined || token === '') {
-            // No credential: definitively logged out.
-            set({ isLoggedIn: false, user: null, isLoading: false, isInitialized: true });
-            return;
-        }
-        // Credential present: mark as logged in immediately so the UI can show a skeleton
-        // (instead of the signed-out state) while the profile request is in flight.
-        set({ isLoggedIn: true });
-        await get().fetchProfile();
-        set({ isInitialized: true });
+        // De-dupe: a single initialization runs at a time even if several
+        // components (Header in the layout + the auth pages) call it together.
+        if (inFlightInit) return inFlightInit;
+
+        inFlightInit = (async () => {
+            try {
+                const token = getCookie('token');
+                if (token === undefined || token === '') {
+                    // No credential: definitively logged out.
+                    set({ isLoggedIn: false, user: null, isLoading: false, isInitialized: true });
+                    return;
+                }
+                // Credential present: mark as logged in immediately so the UI can show a skeleton
+                // (instead of the signed-out state) while the profile request is in flight.
+                set({ isLoggedIn: true });
+                await get().fetchProfile();
+                set({ isInitialized: true });
+            } finally {
+                inFlightInit = null;
+            }
+        })();
+        return inFlightInit;
     },
 
     clearUser: () => {

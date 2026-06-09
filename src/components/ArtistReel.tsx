@@ -19,7 +19,7 @@ interface ArtistReelProps {
 }
 
 const formatCurrency = (val: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
 const ArtworkCard: React.FC<{ artwork: Artwork }> = ({ artwork }) => {
   return (

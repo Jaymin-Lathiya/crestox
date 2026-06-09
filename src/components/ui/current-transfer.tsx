@@ -358,7 +358,7 @@ export default function CurrencyTransfer() {
                                                                 scale: 1.05,
                                                             }}
                                                         >
-                                                            $
+                                                            ₹
                                                         </motion.span>
                                                         <div className="flex flex-col items-start">
                                                             <AnimatePresence mode="wait">

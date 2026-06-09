@@ -59,7 +59,7 @@ export default function ResourcePage({
         <Link href="/">← Back to Home</Link>
       </div>
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
 .cx-resource-page {
   /* Derived from the app's theme tokens (see globals.css) so these pages
      follow the global dark / light toggle automatically. */
@@ -289,7 +289,7 @@ export default function ResourcePage({
   transition: background 0.15s;
 }
 .cx-resource-page .cx-back a:hover { background: hsl(var(--color-primary-accent) / 0.28); }
-            `}</style>
+            ` }} />
     </div>
   );
 }
