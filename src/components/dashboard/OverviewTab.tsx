@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MetricCard } from "./MetricCard";
+import { AnimatedCounter } from "./AnimatedCounter";
+import { WithdrawModal } from "./WithdrawModal";
 import {
   getPortfolioDashboard,
   type PortfolioDashboard,
@@ -12,7 +14,9 @@ import {
 import { getArtistOnboardingState } from "@/apis/artists/artistActions";
 import { useUserStore } from "@/store/useUserStore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import ArtistOnboardingWizard from "@/components/artist/ArtistOnboardingWizard";
+import { ArrowDownToLine } from "lucide-react";
 
 const PENDING_REVIEW_COPY =
   "Our admin team will review your profile within 24 hours. You will get access to the full artist dashboard as soon as your profile is approved.";
@@ -30,6 +34,7 @@ function formatTxDate(iso: string) {
 
 export const OverviewTab = () => {
   const { user, isLoading: profileLoading, isInitialized: profileInitialized } = useUserStore();
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const {
     data: onboarding,
@@ -193,6 +198,13 @@ export const OverviewTab = () => {
 
     return (
       <div className="space-y-8">
+        <WithdrawModal
+          open={withdrawOpen}
+          onOpenChange={setWithdrawOpen}
+          walletBalance={d.total_earnings}
+          totalEarnings={d.total_earnings}
+        />
+
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -206,7 +218,31 @@ export const OverviewTab = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard label="Portfolio Valuation" value={d.portfolio_valuation} prefix="₹" delay={0} />
-          <MetricCard label="Total Earnings" value={d.total_earnings} prefix="₹" delay={0.1} />
+
+          {/* Total Earnings card with integrated Withdraw button */}
+          <motion.div
+            className="glass-capsule p-6 relative overflow-hidden flex flex-col justify-between"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div>
+              <span className="text-label block mb-3">Total Earnings</span>
+              <div className="text-metric mb-4">
+                <AnimatedCounter value={d.total_earnings} prefix="₹" />
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setWithdrawOpen(true)}
+              className="w-full h-8 text-xs gap-1.5 border-border/50 text-muted-foreground hover:text-foreground hover:border-accent/40 hover:bg-accent/5 transition-colors"
+            >
+              <ArrowDownToLine size={12} />
+              Withdraw
+            </Button>
+          </motion.div>
+
           <MetricCard label="Fractal Price" value={d.fractal_price} prefix="₹" decimals={2} delay={0.2} />
           <MetricCard label="Fractals Sold" value={d.fractals_sold} delay={0.3} />
         </div>
