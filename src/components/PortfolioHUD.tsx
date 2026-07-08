@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Loader2 } from 'lucide-react';
+import { getAvailableWithdrawalAmount } from '@/apis/withdrawal/withdrawalActions';
 
 interface PortfolioMetric {
   label: string;
@@ -18,6 +19,7 @@ interface PortfolioHUDProps {
   };
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onWithdrawClick?: () => void;
 }
 
 const Counter = ({ value, isCurrency = false }: { value: number; isCurrency?: boolean }) => {
@@ -65,13 +67,29 @@ const MetricCard = ({ label, value, delta, isCurrency = true }: PortfolioMetric)
   );
 };
 
-const PortfolioHUD: React.FC<PortfolioHUDProps> = ({ metrics, activeTab, onTabChange }) => {
+const PortfolioHUD: React.FC<PortfolioHUDProps> = ({ metrics, activeTab, onTabChange, onWithdrawClick }) => {
   const tabs = ['My Holdings', 'Listed for Sale', 'Watchlist'];
+  const [availableWithdrawal, setAvailableWithdrawal] = useState<string | null>(null);
+  const [loadingWithdrawal, setLoadingWithdrawal] = useState(true);
+
+  const fetchWithdrawalAmount = useCallback(async () => {
+    try {
+      const data = await getAvailableWithdrawalAmount('collector');
+      setAvailableWithdrawal(data.available_to_withdraw);
+    } catch {
+      setAvailableWithdrawal('0.00');
+    } finally {
+      setLoadingWithdrawal(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWithdrawalAmount();
+  }, [fetchWithdrawalAmount]);
+
+  const withdrawalValue = parseFloat(availableWithdrawal ?? '0');
 
   return (
-    // <header className=" w-full backdrop-blur-xl border-b border-border/50 vault-noise">
-     
-    // </header>
     <>
      <div className=" inset-0 bg-background/80 -z-10" />
 
@@ -82,12 +100,29 @@ const PortfolioHUD: React.FC<PortfolioHUDProps> = ({ metrics, activeTab, onTabCh
           <MetricCard label="Total Gain/Loss" value={metrics.gainLoss} delta={metrics.gainLossPercent} />
           <div className="hidden md:flex flex-col justify-center pl-6 transition-opacity duration-500 group-hover/grid:opacity-30 hover:!opacity-100">
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-sans font-medium mb-1">
-              Market Status
+              Available to Withdraw
             </span>
-            <div className="flex items-center gap-2 text-muted-foreground font-mono text-sm">
-              <Activity size={14} className="text-verdigris animate-pulse" />
-              <span>LIVE • MUMBAI</span>
-            </div>
+            {loadingWithdrawal ? (
+              <div className="flex items-center gap-2 text-muted-foreground font-mono text-sm">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="text-2xl font-mono font-medium text-foreground tracking-tight">
+                  <Counter value={withdrawalValue} isCurrency />
+                </div>
+                {onWithdrawClick && (
+                  <button
+                    onClick={onWithdrawClick}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-verdigris/40 bg-verdigris/10 text-verdigris hover:bg-verdigris/20 transition-colors"
+                  >
+                    <Wallet size={12} />
+                    Withdraw
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -17,9 +17,14 @@ export const supportContent = `
 <td>Use the <a href="#submit-a-ticket">Submit a Ticket</a> form below</td>
 </tr>
 <tr>
-<td><strong>Email Support</strong></td>
+<td><strong>General Support</strong></td>
 <td>24 / 7 submission</td>
-<td><a href="mailto:support@crestox.com">support@crestox.com</a></td>
+<td><a href="mailto:hello@india.crestox.com">hello@india.crestox.com</a></td>
+</tr>
+<tr>
+<td><strong>Payments &amp; Withdrawals</strong></td>
+<td>24 / 7 submission</td>
+<td><a href="mailto:admin@india.crestox.com">admin@india.crestox.com</a></td>
 </tr>
 <tr>
 <td><strong>Priority Support</strong></td>

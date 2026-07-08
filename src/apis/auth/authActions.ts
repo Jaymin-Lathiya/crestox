@@ -45,6 +45,56 @@ export const googleAuth = (data: {
     }
 }
 
+export const googleAuthCode = (data: {
+    code: string;
+    redirect_uri: string;
+    user_type?: string;
+    intent?: 'login' | 'signup';
+}) => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.GOOGLE_AUTH_CODE, data);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
+
+export const passkeyRegisterOptions = () => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.PASSKEY_REGISTER_OPTIONS);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
+
+export const passkeyRegister = (data: any) => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.PASSKEY_REGISTER, data);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
+
+export const passkeyAuthenticateOptions = () => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.PASSKEY_AUTHENTICATE_OPTIONS);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
+
+export const passkeyAuthenticate = (data: any) => async () => {
+    try {
+        const response = await instance.post(AUTH_URLS.PASSKEY_AUTHENTICATE, data);
+        return response;
+    } catch (err: any) {
+        throw err;
+    }
+}
+
 export const appleAuth = (data: {
     idToken: string;
     authorizationCode?: string;

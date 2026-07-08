@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getMagicLink, verifyMagicLink, getToken, googleAuth, appleAuth } from '@/apis/auth/authActions';
+import { getMagicLink, verifyMagicLink, getToken, googleAuth, googleAuthCode, appleAuth } from '@/apis/auth/authActions';
 import { setCookie } from '@/utils/cookieUtils';
 import { UserType } from '@/enums/userType';
 
@@ -51,6 +51,12 @@ interface AuthState {
     fetchUserToken: (accessToken: string) => Promise<boolean>;
     googleSignIn: (
         idToken: string,
+        user_type?: string,
+        intent?: 'login' | 'signup',
+    ) => Promise<GoogleSignInResult>;
+    googleSignInWithCode: (
+        code: string,
+        redirect_uri: string,
         user_type?: string,
         intent?: 'login' | 'signup',
     ) => Promise<GoogleSignInResult>;
@@ -201,6 +207,52 @@ export const useAuthStore = create<AuthState>((set) => ({
             }
             const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
             console.log(err);
+            set({
+                error:
+                    axiosErr?.response?.data?.message ||
+                    axiosErr.message ||
+                    'Google sign-in failed.',
+            });
+            return null;
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    googleSignInWithCode: async (
+        code: string,
+        redirect_uri: string,
+        user_type?: string,
+        intent: 'login' | 'signup' = 'signup',
+    ) => {
+        set({ isLoading: true, error: null, isSuccess: false });
+        try {
+            const action = googleAuthCode({ code, redirect_uri, user_type, intent });
+            const response = await action();
+
+            if (response.status !== 200) {
+                set({ error: response.data?.message || 'Google sign-in failed.' });
+                return null;
+            }
+
+            const accessToken = response.data?.accessToken || response.data?.data?.accessToken;
+            const isNewUser = response.data?.isNewUser || response.data?.data?.isNewUser;
+            const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
+            const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
+            const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+
+            if (accessToken) {
+                setCookie("token", accessToken, 30);
+            }
+
+            set({ isSuccess: true });
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+        } catch (err: unknown) {
+            const notFound = parseUserNotFoundError(err);
+            if (notFound) {
+                return { userNotFound: true as const, email: notFound.email };
+            }
+            const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
             set({
                 error:
                     axiosErr?.response?.data?.message ||

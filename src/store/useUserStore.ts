@@ -82,7 +82,17 @@ export const useUserStore = create<UserState>((set, get) => ({
     initialize: async () => {
         // De-dupe: a single initialization runs at a time even if several
         // components (Header in the layout + the auth pages) call it together.
-        if (inFlightInit) return inFlightInit;
+        if (inFlightInit) {
+            await inFlightInit;
+            const tokenAfterWait = getCookie('token');
+            // A credential may have been written while a no-token init was in flight
+            // (e.g. Google OAuth callback). Re-run so we actually fetch the profile.
+            if (tokenAfterWait && !get().user) {
+                inFlightInit = null;
+            } else {
+                return;
+            }
+        }
 
         inFlightInit = (async () => {
             try {

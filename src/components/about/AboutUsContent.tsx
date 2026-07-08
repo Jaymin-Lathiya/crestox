@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   BarChart3,
   Palette,
@@ -42,6 +42,14 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+
+const TAB_IDS = new Set<string>(TABS.map((t) => t.id));
+
+function tabFromHash(): TabId | null {
+  if (typeof window === 'undefined') return null;
+  const id = window.location.hash.slice(1);
+  return TAB_IDS.has(id) ? (id as TabId) : null;
+}
 
 const CAREERS_COPY =
   'Join us in revolutionizing the art world. We are always looking for passionate, talented individuals to join our team. If you are excited by our mission, please check back for future job openings.';
@@ -224,6 +232,22 @@ function TextPanel({ title, body }: { title: string; body: string }) {
 export default function AboutUsContent() {
   const [tab, setTab] = useState<TabId>('crestox');
 
+  useEffect(() => {
+    const syncTabFromHash = () => {
+      const fromHash = tabFromHash();
+      if (fromHash) setTab(fromHash);
+    };
+
+    syncTabFromHash();
+    window.addEventListener('hashchange', syncTabFromHash);
+    return () => window.removeEventListener('hashchange', syncTabFromHash);
+  }, []);
+
+  const selectTab = (id: TabId) => {
+    setTab(id);
+    window.history.replaceState(null, '', `#${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-24 pt-24 md:pt-28 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
@@ -245,7 +269,7 @@ export default function AboutUsContent() {
               type="button"
               role="tab"
               aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => selectTab(t.id)}
               className={cn(
                 'font-serif text-sm px-4 py-2.5 rounded-lg transition-colors duration-200',
                 'text-muted-foreground hover:text-foreground',

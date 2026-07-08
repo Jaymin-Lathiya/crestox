@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Compass,
@@ -18,11 +19,10 @@ import GradientButton from "../ui/gradiant-button";
 import ProfileDropdown from "../ui/profile";
 import { clearCookie, getCookie } from "@/utils/cookieUtils";
 import { useUserStore } from "@/store/useUserStore";
-import { SignupModal } from "../ui/signup-modal";
 import { Skeleton } from "../ui/skeleton";
 
 export function Header() {
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const { toggleTheme } = useThemeToggle({
@@ -32,8 +32,7 @@ export function Header() {
   });
 
   const token = getCookie("token");
-  const { initialize, clearUser, user, isLoading, isLoggedIn, isInitialized } =
-    useUserStore();
+  const { initialize, clearUser, user, isLoggedIn } = useUserStore();
 
   React.useEffect(() => {
     // `initialize` reads the token cookie itself, so re-running on token change
@@ -42,13 +41,36 @@ export function Header() {
   }, [token, initialize]);
 
   React.useEffect(() => {
+    const syncAuthOnFocus = () => {
+      if (getCookie("token")) {
+        initialize();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        syncAuthOnFocus();
+      }
+    };
+
+    window.addEventListener("focus", syncAuthOnFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", syncAuthOnFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [initialize]);
+
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 
+  const hasToken = token !== "";
+
   // While we hold a credential but the profile hasn't resolved yet, show a skeleton
   // rather than flashing the "Sign Up" button or rendering nothing.
-  const profilePending =
-    (isLoggedIn || token !== "") && !user && (isLoading || !isInitialized);
+  const profilePending = (hasToken || isLoggedIn) && !user;
 
   const data = [
     {
@@ -107,7 +129,7 @@ export function Header() {
 
           {/* <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
                     <Link
-                        href="/app"
+                        href="/"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Explore
@@ -183,7 +205,7 @@ export function Header() {
                   label="Sign Up"
                   variant="primary"
                   className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm"
-                  onClick={() => setIsSignupModalOpen(true)}
+                  onClick={() => router.push("/login")}
                 ></GradientButton>
                 {/* <GradientButton
                                     variant="secondary"
@@ -238,10 +260,6 @@ export function Header() {
         </div>
       </div>
 
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-      />
     </>
   );
 }

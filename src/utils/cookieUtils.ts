@@ -17,8 +17,8 @@ export function getCookie(cname : String) {
 export function setCookie(cname : String, cvalue : String, exdays = 30) {
   if (typeof document === 'undefined') return;
   var d = new Date();
-  d.setTime(d.getTime() + exdays * 8 * 60 * 60 * 1000);
-  var expires = 'expires='
+  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+  var expires = 'expires=' + d.toUTCString();
   document.cookie = cname + '=' + cvalue + ";" + expires + ';path=/';
 }
 export function clearCookie(cname : String) {

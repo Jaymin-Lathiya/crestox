@@ -67,8 +67,7 @@ export function WithdrawModal({
   const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: ["withdrawal-requests"],
     queryFn: async () => {
-      const res = await getMyWithdrawalRequests()();
-      return res?.data as { requests: WithdrawalRequest[]; pagination: { total: number } };
+      return await getMyWithdrawalRequests() as { requests: WithdrawalRequest[]; pagination: { total: number } };
     },
     enabled: open && tab === "history",
   });
@@ -79,8 +78,7 @@ export function WithdrawModal({
       if (isNaN(parsedAmount) || parsedAmount < 100) {
         throw new Error("Minimum withdrawal amount is ₹100");
       }
-      const res = await createWithdrawalRequest({ amount: parsedAmount, user_note: note || undefined })();
-      return res?.data;
+      return await createWithdrawalRequest({ amount: parsedAmount, user_note: note || undefined });
     },
     onSuccess: (data: any) => {
       toast.success(
@@ -92,6 +90,7 @@ export function WithdrawModal({
       setNote("");
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
       queryClient.invalidateQueries({ queryKey: ["portfolio-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-withdrawal-amount"] });
       setTab("history");
     },
     onError: (err: any) => {
@@ -103,13 +102,13 @@ export function WithdrawModal({
 
   const cancelMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await cancelWithdrawalRequest(id)();
-      return res?.data;
+      return await cancelWithdrawalRequest(id);
     },
     onSuccess: () => {
       toast.success("Withdrawal request cancelled. Funds returned to your wallet.");
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
       queryClient.invalidateQueries({ queryKey: ["portfolio-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["artist-withdrawal-amount"] });
     },
     onError: (err: any) => {
       const msg =

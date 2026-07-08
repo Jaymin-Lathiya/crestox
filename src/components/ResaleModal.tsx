@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, Loader2 } from 'lucide-react';
+import { getResaleFeePreview, type ResaleFeePreview } from '@/apis/trading/tradingActions';
 
 interface ResaleModalProps {
   isOpen: boolean;
   onClose: () => void;
   artistName: string;
+  artistProfileId: number;
   maxQuantity: number;
-  royaltyRate: number;
   onSubmit: (data: { price: number; quantity: number }) => void;
 }
 
@@ -22,38 +23,51 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
   isOpen,
   onClose,
   artistName,
+  artistProfileId,
   maxQuantity,
-  royaltyRate,
   onSubmit,
 }) => {
   const [price, setPrice] = useState<string>('');
   const [quantity, setQuantity] = useState<string>('1');
+  const [feeRates, setFeeRates] = useState<ResaleFeePreview | null>(null);
+  const [loadingFees, setLoadingFees] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !artistProfileId) return;
+    setLoadingFees(true);
+    getResaleFeePreview(artistProfileId)
+      .then(setFeeRates)
+      .catch(() => setFeeRates(null))
+      .finally(() => setLoadingFees(false));
+  }, [isOpen, artistProfileId]);
 
   const calculations = useMemo(() => {
     const numPrice = parseFloat(price) || 0;
     const numQty = parseInt(quantity) || 0;
-
     const safeQty = Math.min(numQty, maxQuantity);
-
     const gross = numPrice * safeQty;
 
-    const platformFee = gross * 0.02;
+    const crestoxRate = feeRates?.crestox_fee_percentage ?? 0;
+    const royaltyRate = feeRates?.royalty_enabled ? (feeRates?.royalty_percentage ?? 0) : 0;
+    const totalFeeRate = crestoxRate + royaltyRate;
 
-    const royalty = 0;
-
-    const totalCharges = platformFee + royalty;
-
-    const net = gross - totalCharges;
+    const platformFee = (gross * totalFeeRate) / 100;
+    const crestoxFee = (gross * crestoxRate) / 100;
+    const royalty = (gross * royaltyRate) / 100;
+    const net = gross - platformFee;
 
     return {
       gross,
       platformFee,
+      crestoxFee,
       royalty,
-      totalCharges,
+      crestoxRate,
+      royaltyRate,
+      totalFeeRate,
       net,
       safeQty,
     };
-  }, [price, quantity, maxQuantity]);
+  }, [price, quantity, maxQuantity, feeRates]);
 
   const handleSubmit = () => {
     if (calculations.net > 0) {
@@ -68,7 +82,6 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -77,7 +90,6 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
             className="fixed inset-0 z-40 bg-background/80 backdrop-blur-md"
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -86,10 +98,8 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
           >
             <div className="pointer-events-auto w-full max-w-lg bg-card/95 border border-border shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-2xl">
-              {/* Top accent line */}
               <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyber-lime to-transparent opacity-50" />
 
-              {/* Header */}
               <div className="flex justify-between items-start p-8 pb-4">
                 <div>
                   <h2 className="font-renaissance text-2xl text-foreground tracking-wide">
@@ -107,15 +117,13 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                 </button>
               </div>
 
-              {/* Body */}
               <div className="pt-6 px-6 pb-0 space-y-6">
-                {/* Price Input */}
                 <div>
                   <label className="block font-cyber text-[10px] text-cyber-lime uppercase tracking-widest mb-2">
                     Listing Price (per Fractal)
                   </label>
                   <div className="relative flex items-center">
-                    <span className="absolute  font-cyber text-2xl text-muted-foreground">₹</span>
+                    <span className="absolute font-cyber text-2xl text-muted-foreground">₹</span>
                     <input
                       type="number"
                       value={price}
@@ -127,7 +135,6 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                   </div>
                 </div>
 
-                {/* Quantity Input */}
                 <div>
                   <div className="flex justify-between">
                     <label className="block font-cyber text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
@@ -145,61 +152,78 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                     onChange={(e) => setQuantity(e.target.value)}
                     min="1"
                     max={maxQuantity}
-                    className={`holographic-input pl-5 w-full h-10 ${isOverMax ? '!border-alert-crimson !text-alert-crimson' : ''
-                      }`}
+                    className={`holographic-input pl-5 w-full h-10 ${
+                      isOverMax ? '!border-alert-crimson !text-alert-crimson' : ''
+                    }`}
                   />
                 </div>
 
                 <div className="glass-panel p-6 space-y-3">
-                  <div className="flex justify-between items-center font-cyber text-xs text-foreground/60">
-                    <span>Gross Value</span>
-                    <span>{formatCurrency(calculations.gross)}</span>
-                  </div>
+                  {loadingFees ? (
+                    <div className="flex items-center justify-center py-4 gap-2 text-muted-foreground">
+                      <Loader2 className="animate-spin" size={16} />
+                      <span className="font-cyber text-xs">Loading fee rates…</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center font-cyber text-xs text-foreground/60">
+                        <span>Gross Value</span>
+                        <span>{formatCurrency(calculations.gross)}</span>
+                      </div>
 
-                  <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
-                    <span>Platform Fee (2%)</span>
-                    <span>+ {formatCurrency(calculations.platformFee)}</span>
-                  </div>
+                      <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
+                        <span>Platform Fee ({calculations.totalFeeRate.toFixed(1)}%)</span>
+                        <span>− {formatCurrency(calculations.platformFee)}</span>
+                      </div>
 
-                  <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
-                    <span>Artist Royalty (0%)</span>
-                    <span>+ {formatCurrency(calculations.royalty)}</span>
-                  </div>
+                      {calculations.crestoxRate > 0 && (
+                        <div className="flex justify-between items-center font-cyber text-[10px] text-muted-foreground/80 pl-2">
+                          <span>Crestox ({calculations.crestoxRate.toFixed(1)}%)</span>
+                          <span>{formatCurrency(calculations.crestoxFee)}</span>
+                        </div>
+                      )}
 
-                  <div className="flex justify-between items-center font-cyber text-xs text-muted-foreground">
-                    <span>Total Charges</span>
-                    <span>+ {formatCurrency(calculations.totalCharges)}</span>
-                  </div>
+                      {calculations.royaltyRate > 0 && (
+                        <div className="flex justify-between items-center font-cyber text-[10px] text-muted-foreground/80 pl-2">
+                          <span>Artist Royalty ({calculations.royaltyRate.toFixed(1)}%)</span>
+                          <span>{formatCurrency(calculations.royalty)}</span>
+                        </div>
+                      )}
 
-                  <div className="h-px bg-white/10 my-2" />
+                      <div className="h-px bg-white/10 my-2" />
 
-                  <div className="flex justify-between items-center">
-                    <span className="font-cyber text-xs text-cyber-lime uppercase tracking-widest">
-                      Est. Net Payout
-                    </span>
-
-                    <motion.span
-                      key={calculations.net}
-                      initial={{ scale: 1.1 }}
-                      animate={{ scale: 1 }}
-                      className="font-cyber text-xl font-bold text-cyber-lime text-glow-lime"
-                    >
-                      {formatCurrency(Math.max(0, calculations.net))}
-                    </motion.span>
-                  </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-cyber text-xs text-cyber-lime uppercase tracking-widest">
+                          Est. Net Payout
+                        </span>
+                        <motion.span
+                          key={calculations.net}
+                          initial={{ scale: 1.1 }}
+                          animate={{ scale: 1 }}
+                          className="font-cyber text-xl font-bold text-cyber-lime text-glow-lime"
+                        >
+                          {formatCurrency(Math.max(0, calculations.net))}
+                        </motion.span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="p-8 pt-0">
                 <button
                   onClick={handleSubmit}
+                  disabled={loadingFees || calculations.net <= 0 || isOverMax}
                   className="w-full group relative px-6 py-4 rounded-lg bg-primary/50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="font-cyber text-primary-foreground font-bold tracking-widest uppercase">
                       Confirm Listing
                     </span>
-                    <ArrowRight size={18} className="text-primary-foreground group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                      size={18}
+                      className="text-primary-foreground group-hover:translate-x-1 transition-transform"
+                    />
                   </div>
                 </button>
               </div>

@@ -12,6 +12,7 @@ import {
   type PortfolioDashboard,
 } from "@/apis/my-portfolio/myPortfolioActions";
 import { getArtistOnboardingState } from "@/apis/artists/artistActions";
+import { getAvailableWithdrawalAmount } from "@/apis/withdrawal/withdrawalActions";
 import { useUserStore } from "@/store/useUserStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,12 @@ export const OverviewTab = () => {
       const payload = res?.data as { data?: PortfolioDashboard };
       return payload?.data as PortfolioDashboard;
     },
+    enabled: Boolean(user) && isApprovedArtist,
+  });
+
+  const { data: withdrawalData } = useQuery({
+    queryKey: ["artist-withdrawal-amount"],
+    queryFn: () => getAvailableWithdrawalAmount('artist'),
     enabled: Boolean(user) && isApprovedArtist,
   });  
 
@@ -201,7 +208,7 @@ export const OverviewTab = () => {
         <WithdrawModal
           open={withdrawOpen}
           onOpenChange={setWithdrawOpen}
-          walletBalance={d.total_earnings}
+          walletBalance={parseFloat(withdrawalData?.wallet_balance ?? '0')}
           totalEarnings={d.total_earnings}
         />
 

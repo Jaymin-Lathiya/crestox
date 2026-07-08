@@ -29,7 +29,7 @@ interface SellModalProps {
   onConfirm: (quantity: number, price: number, sellingPeriod: number) => void;
 }
 
-const PLATFORM_FEE_PERCENT = 2;
+const PLATFORM_FEE_PERCENT = 0; // Loaded dynamically via API when listing
 const SELLING_PERIODS = [
   { value: 7, label: '7 Days' },
   { value: 14, label: '14 Days' },

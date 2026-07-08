@@ -541,6 +541,7 @@ import MonolithCard from '@/components/MonolithCard';
 import { toast } from 'sonner';
 import ResaleModal from '@/components/ResaleModal';
 import CertificateModal from '@/components/CertificateModal';
+import WithdrawalModal from '@/components/WithdrawalModal';
 import { getMyCollection, getWatchlist, sellFractal } from '@/apis/my-collection/myCollectionActions';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -620,6 +621,7 @@ export default function CollectionPage() {
   const [activeTab, setActiveTab] = useState('My Holdings');
   const [resaleTarget, setResaleTarget] = useState<MyCollectionArtist | null>(null);
   const [certificateTarget, setCertificateTarget] = useState<MyCollectionArtist | null>(null);
+  const [withdrawalOpen, setWithdrawalOpen] = useState(false);
   const [myCollection, setMyCollection] = useState<MyCollectionResponse | null>(null);
   const [isLoadingCollection, setIsLoadingCollection] = useState(true);
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true);
@@ -699,6 +701,7 @@ export default function CollectionPage() {
           metrics={{ totalValue: portfolio.totalValue, invested: portfolio.totalInvested, gainLoss: portfolio.gainLossAbs, gainLossPercent: portfolio.gainLossPerc }}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onWithdrawClick={() => setWithdrawalOpen(true)}
         />
 
         <main className="py-8 container mx-auto px-4 sm:px-6 lg:px-8">
@@ -778,8 +781,8 @@ export default function CollectionPage() {
           isOpen={!!resaleTarget}
           onClose={() => setResaleTarget(null)}
           artistName={resaleTarget?.artist_name ?? ''}
+          artistProfileId={resaleTarget?.artist_profile_id ?? 0}
           maxQuantity={resaleTarget?.total_shares ?? 0}
-          royaltyRate={5}
           onSubmit={async (data) => {
             if (!resaleTarget) return;
             try {
@@ -795,6 +798,13 @@ export default function CollectionPage() {
               toast.error(err?.response?.data?.message ?? 'Failed to list fractals');
             }
           }}
+        />
+
+        <WithdrawalModal
+          isOpen={withdrawalOpen}
+          onClose={() => setWithdrawalOpen(false)}
+          onSuccess={() => fetchMyCollection()}
+          source="collector"
         />
       </div>
     </div>

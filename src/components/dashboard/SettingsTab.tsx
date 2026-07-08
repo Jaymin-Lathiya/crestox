@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Shield, CreditCard, Moon, Monitor, Smartphone } from "lucide-react";
+import { Bell, Shield, CreditCard, Moon, Monitor, Smartphone, Key, LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
+import { toast } from "sonner";
 
 interface SettingToggleProps {
   label: string;
@@ -33,6 +36,17 @@ const SettingToggle = ({ label, description, enabled, onChange }: SettingToggleP
 );
 
 export const SettingsTab = () => {
+  const { registerPasskey, isLoading: passkeyLoading } = usePasskeyAuth();
+  const [passkeyRegistered, setPasskeyRegistered] = useState(false);
+
+  const handleRegisterPasskey = async () => {
+    const success = await registerPasskey();
+    if (success) {
+      setPasskeyRegistered(true);
+      toast.success("Passkey registered successfully! You can now use it to log in.");
+    }
+  };
+
   return (
     <div className="max-w-8xl mx-auto space-y-8">
       {/* Header */}
@@ -110,6 +124,38 @@ export const SettingsTab = () => {
         <button className="mt-4 text-sm text-primary hover:underline">
           Change Password
         </button>
+
+        {/* Passkey Registration */}
+        <div className="mt-6 pt-4 border-t border-border">
+          <div className="flex items-center gap-3 mb-2">
+            <Key className="w-4 h-4 text-muted-foreground" />
+            <h4 className="text-sm font-medium text-foreground">Passkey</h4>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Register a passkey to sign in with your fingerprint, face, or device PIN instead of email.
+          </p>
+          <button
+            onClick={handleRegisterPasskey}
+            disabled={passkeyLoading}
+            className={cn(
+              "px-4 py-2 text-sm border transition-colors flex items-center gap-2",
+              passkeyRegistered
+                ? "border-green-500/50 text-green-500 cursor-default"
+                : "border-primary/50 text-primary hover:bg-primary/10"
+            )}
+          >
+            {passkeyLoading ? (
+              <>
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+                Setting up...
+              </>
+            ) : passkeyRegistered ? (
+              "Passkey registered"
+            ) : (
+              "Register a Passkey"
+            )}
+          </button>
+        </div>
       </motion.div>
 
       {/* Payment Section */}

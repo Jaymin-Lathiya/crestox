@@ -1,0 +1,79 @@
+import { Metadata } from "next";
+import { interpolateTemplate } from "@/utils/getPageMetadata";
+
+const BASE_URL =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    "https://crestox-backend-production-6031.up.railway.app/api";
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+    const { id } = await params;
+
+    // Fetch entity data and DB template in parallel
+    const [artworkRes, templateRes] = await Promise.allSettled([
+        fetch(`${BASE_URL}/artwork/${id}`, { next: { revalidate: 3600 } }),
+        fetch(`${BASE_URL}/seo/metadata?path=${encodeURIComponent("/art/[id]")}`, {
+            next: { revalidate: 3600 },
+        }),
+    ]);
+
+    // Parse artwork entity
+    let artwork: Record<string, string | number | null> = {};
+    if (artworkRes.status === "fulfilled" && artworkRes.value.ok) {
+        const json = await artworkRes.value.json();
+        artwork = json?.data ?? json ?? {};
+    }
+
+    const artworkName = String(artwork?.artwork_name ?? "Artwork");
+    const description = artwork?.description ? String(artwork.description) : null;
+    const image = artwork?.primary_image_url ? String(artwork.primary_image_url) : null;
+    const artistName = String(
+        (artwork?.artist_profile as Record<string, string> | null)?.artist_name ??
+        artwork?.artist_name ??
+        "Crestox"
+    );
+
+    // Build variable map for template interpolation
+    const vars: Record<string, string> = {
+        artwork_name: artworkName,
+        description: description ?? "",
+        artist_name: artistName,
+        valuation: String(artwork?.value ?? artwork?.valuation ?? ""),
+        available_shares: String(artwork?.available_shares ?? ""),
+        fractal_price: String(artwork?.fractal_price ?? ""),
+    };
+
+    // Derive title and description: use DB template if available, else fall back
+    let title = `${artworkName} | Crestox`;
+    let metaDescription = description ?? `Invest in fractional ownership of "${artworkName}" on Crestox.`;
+    let ogImageAlt: string | null = null;
+
+    if (templateRes.status === "fulfilled" && templateRes.value.ok) {
+        const tmpl = await templateRes.value.json();
+        if (tmpl?.title) title = interpolateTemplate(tmpl.title, vars);
+        if (tmpl?.description) metaDescription = interpolateTemplate(tmpl.description, vars);
+        if (tmpl?.og_image_alt) ogImageAlt = interpolateTemplate(tmpl.og_image_alt, vars);
+    }
+
+    const metadata: Metadata = { title, description: metaDescription };
+
+    if (image) {
+        const ogImage = ogImageAlt ? { url: image, alt: ogImageAlt } : { url: image };
+        metadata.openGraph = { title, description: metaDescription, images: [ogImage] };
+        metadata.twitter = {
+            card: "summary_large_image",
+            title,
+            description: metaDescription,
+            images: [image],
+        };
+    }
+
+    return metadata;
+}
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+}

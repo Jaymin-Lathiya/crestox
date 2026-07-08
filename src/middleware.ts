@@ -6,7 +6,8 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // If user is logged in (has a token) and tries to access login or signup pages,
-    // redirect them to the home page (or dashboard)
+    // redirect them to the home page (or dashboard).
+    // Allow /auth/google/callback through — it handles its own redirect after processing.
     if (token && (pathname === '/login' || pathname === '/signup')) {
         return NextResponse.redirect(new URL('/', request.url));
     }
