@@ -74,7 +74,7 @@ function LoginFormContent() {
             void useUserStore.getState().initialize();
             toast.success("Successfully logged in with passkey!");
             if (result.isNewArtist) {
-                router.push("/artist/onboarding");
+                router.push("/onboarding/artist");
             } else if (result.isNewCollector) {
                 router.push("/explore");
             } else {
@@ -105,7 +105,7 @@ function LoginFormContent() {
                 void useUserStore.getState().initialize();
                 toast.success("Successfully logged in with Apple!");
                 if (result.isNewArtist) {
-                    router.push("/artist/onboarding");
+                    router.push("/onboarding/artist");
                 } else if (result.isNewCollector) {
                     router.push("/explore");
                 } else {

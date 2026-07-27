@@ -6,6 +6,7 @@ const baseUrl = strings.base_url ?? "";
 const instance = axios.create({ baseURL: baseUrl });
 
 const token = "token";
+let handlingUnauthorized = false;
 
 // ---------------------------------------------------------------------------
 // Concurrent-request de-duplication (idempotent GETs only).
@@ -79,11 +80,31 @@ instance.interceptors.request.use(
 instance.interceptors.response.use((response) => {
     return response;
 }, (error) => {
-    console.log(error);
-    if (error.response?.status === 401 && error.config?.url !== "/auth/login") {
-        // clearCookie(token);
-        // localStorage.removeItem(USER_DETAILS);
-        // window.location.href = "/";
+    const requestUrl = String(error.config?.url ?? "");
+    const hadToken = Boolean(getCookie(token));
+    const isAuthRequest = requestUrl.startsWith("/auth/");
+
+    if (
+        error.response?.status === 401 &&
+        hadToken &&
+        !isAuthRequest &&
+        typeof window !== "undefined" &&
+        !handlingUnauthorized
+    ) {
+        handlingUnauthorized = true;
+        clearCookie(token);
+        window.dispatchEvent(new Event("crestox:session-expired"));
+
+        const isAlreadyOnAuthPage =
+            window.location.pathname === "/login" ||
+            window.location.pathname === "/signup" ||
+            window.location.pathname.startsWith("/auth/");
+        if (!isAlreadyOnAuthPage) {
+            const returnTo = `${window.location.pathname}${window.location.search}`;
+            window.location.replace(`/login?session=expired&returnTo=${encodeURIComponent(returnTo)}`);
+        } else {
+            handlingUnauthorized = false;
+        }
     }
     return Promise.reject(error);
 });

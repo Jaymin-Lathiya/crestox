@@ -28,6 +28,11 @@ export const getMyListings = async () => {
     }
 }
 
+export const cancelListing = async (listingId: number) => {
+    const response = await instance.post(myCollectionURLS.CANCEL_LISTING(listingId));
+    return response.data?.data ?? response.data;
+}
+
 export const getWatchlist = async () => {
     try {
         const response = await instance.get(myCollectionURLS.ADD_TO_WATCHLIST);

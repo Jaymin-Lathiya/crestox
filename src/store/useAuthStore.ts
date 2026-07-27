@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getMagicLink, verifyMagicLink, getToken, googleAuth, googleAuthCode, appleAuth } from '@/apis/auth/authActions';
+import { getMagicLink, verifyMagicLink, googleAuth, googleAuthCode, appleAuth } from '@/apis/auth/authActions';
 import { setCookie } from '@/utils/cookieUtils';
 import { UserType } from '@/enums/userType';
 
@@ -7,7 +7,6 @@ export interface VerifyResponseData {
     accessToken: string;
     isNewUser: boolean;
     userTypes: UserType[] | string[];
-    isTypeSelected?: boolean;
     isNewArtist?: boolean;
     isNewCollector?: boolean;
 }
@@ -48,7 +47,6 @@ interface AuthState {
     magicLinkMessage: string | null;
     requestMagicLink: (email: string, name?: string, user_type?: string) => Promise<MagicLinkRequestResult>;
     verifyMagicLinkToken: (token: string) => Promise<VerifyResponseData | null>;
-    fetchUserToken: (accessToken: string) => Promise<boolean>;
     googleSignIn: (
         idToken: string,
         user_type?: string,
@@ -121,53 +119,25 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const verifyAction = verifyMagicLink({ token });
             const verifyResponse = await verifyAction();
-
-            console.log({ verifyResponse });
-
-
-            if (verifyResponse.status !== 200) {
-                set({ error: verifyResponse.data.message || 'Verification failed. The link might be expired or invalid.' });
-                return null;
+            const payload = verifyResponse.data?.data ?? verifyResponse.data;
+            const accessToken = payload?.accessToken;
+            if (typeof accessToken !== 'string' || !accessToken) {
+                throw new Error('Verification succeeded without an access token.');
             }
 
-            const accessToken = verifyResponse.data.data?.accessToken;
-            const isNewUser = verifyResponse.data.data?.isNewUser || verifyResponse.data?.isNewUser;
-            const userTypes = verifyResponse.data.data?.userTypes || [];
-            const isTypeSelected = verifyResponse.data.data?.isTypeSelected;
-            const isNewArtist = verifyResponse.data.data?.isNewArtist;
-            const isNewCollector = verifyResponse.data.data?.isNewCollector;
-
-            return { accessToken, isNewUser, userTypes, isTypeSelected, isNewArtist, isNewCollector };
+            const result: VerifyResponseData = {
+                accessToken,
+                isNewUser: payload?.isNewUser === true,
+                userTypes: Array.isArray(payload?.userTypes) ? payload.userTypes : [],
+                isNewArtist: payload?.isNewArtist === true,
+                isNewCollector: payload?.isNewCollector === true,
+            };
+            setCookie('token', accessToken, 30);
+            set({ isSuccess: true });
+            return result;
         } catch (err: any) {
-            console.log(err);
             set({ error: err?.response?.data?.message || err.message || 'Verification failed. The link might be expired or invalid.' });
             return null;
-        } finally {
-            set({ isLoading: false });
-        }
-    },
-
-    fetchUserToken: async (accessToken: string) => {
-        set({ isLoading: true, error: null, isSuccess: false });
-        try {
-            const getTokenAction = getToken({ token: accessToken });
-            const tokenResponse = await getTokenAction();
-            console.log("herer", tokenResponse.status)
-
-            console.log(tokenResponse);
-            if (tokenResponse.status !== 200) {
-                set({ isSuccess: false })
-            } else {
-                set({ isSuccess: true })
-                const finalToken = tokenResponse.data.token || tokenResponse.data.data?.token || tokenResponse.data.accessToken;
-                setCookie("token", finalToken, 30);
-            }
-
-            return true;
-        } catch (err: any) {
-            console.log(err);
-            set({ error: err?.response?.data?.message || err.message || 'Verification failed. Failed to get user token.' });
-            return false;
         } finally {
             set({ isLoading: false });
         }

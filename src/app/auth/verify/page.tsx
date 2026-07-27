@@ -6,14 +6,13 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { useUserStore } from "@/store/useUserStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoaderCircleIcon, CheckCircle2, XCircle } from "lucide-react"
-import { setCookie } from "@/utils/cookieUtils"
 import { UserType } from "@/enums/userType"
 
 function VerifyContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const token = searchParams.get("token")
-    const { verifyMagicLinkToken, fetchUserToken, clearStore, isLoading, isSuccess, error } = useAuthStore()
+    const { verifyMagicLinkToken, clearStore, isLoading, isSuccess, error } = useAuthStore()
     const lastVerifiedToken = useRef<string | null>(null)
 
     useEffect(() => {
@@ -23,17 +22,10 @@ function VerifyContent() {
                 const verifyResult = await verifyMagicLinkToken(token)
 
                 if (verifyResult && verifyResult.accessToken) {
-                    setCookie("token", verifyResult.accessToken, 30);
-
                     // Start loading the profile NOW (synchronously sets isLoggedIn + isLoading)
                     // so the page we redirect to renders its loading skeleton instead of the
                     // signed-out "Sign in" state before the Header's effect kicks in.
                     void useUserStore.getState().initialize();
-
-                    if (!!verifyResult.isTypeSelected) {
-                        router.push("/");
-                        return;
-                    }
 
                     const types = verifyResult.userTypes as string[];
                     const isArtist = types.includes(UserType.ARTIST) || types.includes("artist");
@@ -75,7 +67,7 @@ function VerifyContent() {
         }
 
         processToken()
-    }, [token, verifyMagicLinkToken, fetchUserToken, clearStore, router])
+    }, [token, verifyMagicLinkToken, clearStore, router])
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">

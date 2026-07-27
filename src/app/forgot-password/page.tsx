@@ -1,10 +1,6 @@
 "use client"
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -14,68 +10,25 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
-import { ArrowLeft } from "lucide-react"
-
-const formSchema = z.object({
-    email: z.string().email({
-        message: "Please enter a valid email address.",
-    }),
-})
+import { ArrowLeft, Mail } from "lucide-react"
 
 export default function ForgotPasswordPage() {
-    const router = useRouter()
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            email: "",
-        },
-    })
-
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
-        // Simulate sending OTP
-        router.push("/forgot-password/otp")
-    }
-
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-serif">Forgot Password</CardTitle>
+                    <CardTitle className="text-2xl font-serif">Passwordless sign in</CardTitle>
                     <CardDescription>
-                        Enter your email to receive a password reset code
+                        Crestox accounts do not use passwords. Request a secure magic link from the login page instead.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="m@example.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                                Send OTP
-                            </Button>
-                        </form>
-                    </Form>
+                <CardContent className="flex justify-center">
+                    <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Link href="/login">
+                            <Mail className="mr-2 h-4 w-4" />
+                            Request a sign-in link
+                        </Link>
+                    </Button>
                 </CardContent>
                 <CardFooter className="justify-center">
                     <Link

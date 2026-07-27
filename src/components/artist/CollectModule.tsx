@@ -3,29 +3,23 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Minus, Plus } from 'lucide-react';
 import {
   getBufferPriceQuote,
+  getBuyOrderStatus,
   initiateBuyOrder,
   completeBuyOrder,
   type BufferPriceQuote,
+  type InitiateBuyResponse,
   type CompleteBuyOrderResponse,
 } from '@/apis/artists/artistActions';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getCookie } from '@/utils/cookieUtils';
 import { cn } from '@/lib/utils';
-import { markPurchasePending, clearPurchasePending, isPurchasePending } from '@/utils/pendingPurchase';
+import { markPurchasePending, clearPurchasePending, getPendingPurchase, isPurchasePending } from '@/utils/pendingPurchase';
 
-const NOT_LOGGED_IN_BUY_MESSAGE =
-  'You are not logged in. Log in to buy the fractal.';
+const NOT_LOGGED_IN_BUY_MESSAGE = 'You are not logged in. Log in to buy the fractal.';
 
 function hasAuthToken(): boolean {
   if (typeof document === 'undefined') return false;
@@ -84,12 +78,14 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const [dialogQuoteLoading, setDialogQuoteLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
+  const [initiatedOrder, setInitiatedOrder] = useState<InitiateBuyResponse | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   // True while a Razorpay payment is in flight (checkout opened, outcome not yet known).
   // Lets us tell a genuine "still fetching the first quote" skeleton apart from a
   // "just returned from the payment app, force-refreshing stale numbers" skeleton.
   const [forceRefreshSkeleton, setForceRefreshSkeleton] = useState(false);
   const paymentPendingRef = useRef(false);
+  const collectInFlightRef = useRef(false);
   const prevArtworkIdRef = useRef<number | null>(null);
   const prevDialogOpenRef = useRef(false);
   const quoteRequestRef = useRef(0);
@@ -102,22 +98,11 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   // Artwork pages pass per-artwork availability; artist pages pass portfolio-wide totals.
   const displayAvailable =
-    available_fractals != null && Number.isFinite(Number(available_fractals))
-      ? Number(available_fractals)
-      : available != null && Number.isFinite(Number(available))
-        ? Number(available)
-        : null;
+    available_fractals != null && Number.isFinite(Number(available_fractals)) ? Number(available_fractals) : available != null && Number.isFinite(Number(available)) ? Number(available) : null;
 
-  const availShow =
-    displayAvailable != null
-      ? displayAvailable
-      : quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares)
-        ? quote.total_available_shares
-        : 0;
+  const availShow = displayAvailable != null ? displayAvailable : quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares) ? quote.total_available_shares : 0;
 
-  const showAvailabilitySkeleton =
-    firstArtworkId != null &&
-    (forceLoading || forceRefreshSkeleton || (displayAvailable == null && showMarketSkeleton));
+  const showAvailabilitySkeleton = firstArtworkId != null && (forceLoading || forceRefreshSkeleton || (displayAvailable == null && showMarketSkeleton));
   const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
 
   useEffect(() => {
@@ -227,11 +212,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     }
 
     const q = quantity === '' ? 1 : quantity;
-    const mode: QuoteFetchMode = artworkChanged
-      ? 'initial'
-      : dialogOpen
-        ? 'dialog'
-        : 'silent';
+    const mode: QuoteFetchMode = artworkChanged ? 'initial' : dialogOpen ? 'dialog' : 'silent';
     void fetchQuote(id, q, mode);
   }, [firstArtworkId, quantity, dialogOpen, fetchQuote]);
 
@@ -249,31 +230,26 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const bufferPercent = quote?.buffer_percent ?? 0;
 
   const parsedQty = parseInt(String(quantity), 10);
-  const effectiveQty =
-    !isAtwork ? 0 : quantity === '' ? 0 : Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty);
+  const effectiveQty = !isAtwork ? 0 : quantity === '' ? 0 : Number.isNaN(parsedQty) ? 0 : Math.max(0, parsedQty);
+
+  useEffect(() => {
+    setInitiatedOrder(null);
+  }, [firstArtworkId, effectiveQty]);
 
   const baseAmount = effectiveQty * currentPrice;
-  const hasFillPreview =
-    Boolean(quote?.fill_breakdown?.length) &&
-    quote?.fill_subtotal_pre_tax != null &&
-    quote?.fill_total_buyer_pays != null;
-  const subTotalPreTax = hasFillPreview
-    ? parseFloat(quote!.fill_subtotal_pre_tax!)
-    : baseAmount;
+  const hasFillPreview = Boolean(quote?.fill_breakdown?.length) && quote?.fill_subtotal_pre_tax != null && quote?.fill_total_buyer_pays != null;
+  const subTotalPreTax = hasFillPreview ? parseFloat(quote!.fill_subtotal_pre_tax!) : baseAmount;
   const fallbackGst = baseAmount * 0.18;
-  const totalPayableInr = hasFillPreview
-    ? parseFloat(quote!.fill_total_buyer_pays!)
-    : baseAmount + fallbackGst;
-  const taxesAndFeesAmount = hasFillPreview
-    ? Math.max(0, totalPayableInr - subTotalPreTax)
-    : fallbackGst;
+  const totalPayableInr = hasFillPreview ? parseFloat(quote!.fill_total_buyer_pays!) : baseAmount + fallbackGst;
+  const taxesAndFeesAmount = hasFillPreview ? Math.max(0, totalPayableInr - subTotalPreTax) : fallbackGst;
 
   const formatCurrencyWithSmallDecimals = (val: number) => {
     const parts = val.toFixed(2).split('.');
     if (parts.length !== 2) return val.toFixed(2);
     return (
       <>
-        {parts[0]}<span className="text-[0.7em] opacity-70">.{parts[1]}</span>
+        {parts[0]}
+        <span className="text-[0.7em] opacity-70">.{parts[1]}</span>
       </>
     );
   };
@@ -309,45 +285,90 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     }
   };
 
-  const fillSourceLabel = (source: 'SECONDARY_SALE' | 'PRIMARY_SALE') =>
-    source === 'SECONDARY_SALE' ? 'Reseller' : 'Artist';
+  const fillSourceLabel = (source: 'SECONDARY_SALE' | 'PRIMARY_SALE') => (source === 'SECONDARY_SALE' ? 'Reseller' : 'Artist');
 
-  const quoteFromComplete = useCallback(
-    (complete: CompleteBuyOrderResponse): BufferPriceQuote => {
-      const p = parseFloat(complete.fractal_price_after);
-      const price = Number.isFinite(p) ? p : 0;
-      const rawAvail =
-        complete.artwork_available_shares_after ?? complete.available_shares_after;
-      const nextAvail =
-        typeof rawAvail === 'number' && Number.isFinite(rawAvail) ? rawAvail : 0;
-      return {
-        current_price: price,
-        buffer_percent: null,
-        fill_breakdown: [],
-        fill_subtotal_pre_tax: null,
-        fill_total_buyer_pays: null,
-        total_available_shares: nextAvail,
-        sufficient_for_quantity: nextAvail >= 1,
-      };
-    },
-    [],
-  );
+  const quoteFromComplete = useCallback((complete: CompleteBuyOrderResponse): BufferPriceQuote => {
+    const p = parseFloat(complete.fractal_price_after ?? '0');
+    const price = Number.isFinite(p) ? p : 0;
+    const rawAvail = complete.artwork_available_shares_after ?? complete.available_shares_after;
+    const nextAvail = typeof rawAvail === 'number' && Number.isFinite(rawAvail) ? rawAvail : 0;
+    return {
+      current_price: price,
+      buffer_percent: null,
+      fill_breakdown: [],
+      fill_subtotal_pre_tax: null,
+      fill_total_buyer_pays: null,
+      total_available_shares: nextAvail,
+      sufficient_for_quantity: nextAvail >= 1,
+    };
+  }, []);
 
   const refreshAfterPurchase = useCallback(
     async (artworkId: number, complete: CompleteBuyOrderResponse) => {
       setQuantity(1);
       setCollecting(false);
 
-      setQuote(quoteFromComplete(complete));
+      if (complete.fractal_price_after) {
+        setQuote(quoteFromComplete(complete));
+      }
       setMarketLoading(false);
 
-      toast.success('Fractals collected successfully');
+      const refund = parseFloat(complete.refund_amount ?? '0');
+      toast.success(refund > 0 ? `Fractals collected. ₹${refund.toFixed(2)} buffer refund initiated.` : 'Fractals collected successfully');
       onCollectSuccess?.(complete);
 
       await fetchQuote(artworkId, 1, dialogOpen ? 'dialog' : 'silent');
     },
     [onCollectSuccess, quoteFromComplete, fetchQuote, dialogOpen],
   );
+
+  useEffect(() => {
+    const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
+    const pending = getPendingPurchase(artworkId);
+    if (artworkId == null || !pending) return;
+
+    let cancelled = false;
+    let timer: number | undefined;
+    const poll = async () => {
+      try {
+        const order = await getBuyOrderStatus(pending.razorpayOrderId)();
+        if (cancelled) return;
+
+        if (!order.terminal) {
+          timer = window.setTimeout(poll, 2000);
+          return;
+        }
+
+        clearPurchasePending();
+        paymentPendingRef.current = false;
+        setInitiatedOrder(null);
+        setCollecting(false);
+        setForceRefreshSkeleton(false);
+
+        if (order.status === 'COMPLETED') {
+          const refund = parseFloat(order.refund_amount ?? '0');
+          toast.success(refund > 0 ? `Fractals collected. ₹${refund.toFixed(2)} buffer refund recorded.` : 'Fractals collected successfully');
+          onCollectSuccess?.({
+            status: 'COMPLETED',
+            refund_amount: order.refund_amount ?? undefined,
+          });
+        } else {
+          toast.error(order.message);
+        }
+        await fetchQuote(artworkId, 1, 'silent');
+      } catch {
+        if (!cancelled) {
+          timer = window.setTimeout(poll, 3000);
+        }
+      }
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, [firstArtworkId, initiatedOrder?.razorpay_order_id, fetchQuote, onCollectSuccess]);
 
   const openDialog = () => {
     if (!canInteract) {
@@ -357,10 +378,19 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     setDialogOpen(true);
   };
 
-  const inventoryShort =
-    quote?.sufficient_for_quantity === false && quote?.total_available_shares != null;
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open && !paymentPendingRef.current) {
+      setInitiatedOrder(null);
+      clearPurchasePending();
+    }
+    setDialogOpen(open);
+  };
+
+  const inventoryShort = quote?.sufficient_for_quantity === false && quote?.total_available_shares != null;
 
   const handleCollectConfirm = async () => {
+    if (collectInFlightRef.current) return;
+
     if (!hasAuthToken()) {
       toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
       return;
@@ -378,25 +408,52 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     }
 
     if (quote?.sufficient_for_quantity === false) {
-      toast.error(
-        quote.total_available_shares != null
-          ? `Only ${quote.total_available_shares} fractal(s) available at this price mix.`
-          : 'Not enough fractals available for this quantity.',
-      );
+      toast.error(quote.total_available_shares != null ? `Only ${quote.total_available_shares} fractal(s) available at this price mix.` : 'Not enough fractals available for this quantity.');
       return;
     }
 
     const quotedFractalPrice = quote?.current_price ?? 0;
 
+    collectInFlightRef.current = true;
     setCollecting(true);
 
     try {
-      const orderData = await initiateBuyOrder({
-        artwork_id: artworkId,
-        quantity: effectiveQty,
-        max_slippage_pct: 5,
-        quoted_price: quotedFractalPrice,
-      })();
+      if (!initiatedOrder) {
+        const orderData = await initiateBuyOrder({
+          artwork_id: artworkId,
+          quantity: effectiveQty,
+          max_slippage_pct: 5,
+          quoted_price: quotedFractalPrice,
+        })();
+
+        setInitiatedOrder(orderData);
+        markPurchasePending({
+          artworkId,
+          quantity: orderData.quantity,
+          razorpayOrderId: orderData.razorpay_order_id,
+          receipt: orderData.receipt,
+          amount: orderData.amount,
+          estimatedCost: orderData.estimated_cost,
+          maxCharge: orderData.max_charge,
+          currency: orderData.currency,
+          expiresAt: orderData.expires_at,
+        });
+        setCollecting(false);
+        return;
+      }
+
+      const orderData = initiatedOrder;
+      const handleCompletedOrder = async (completed: CompleteBuyOrderResponse) => {
+        if (completed.total_shares_purchased != null) {
+          await refreshAfterPurchase(artworkId, completed);
+          return;
+        }
+
+        setCollecting(false);
+        toast.info(completed.message ?? 'Payment received. Your collection is being updated.');
+        onCollectSuccess?.(completed);
+        await fetchQuote(artworkId, 1, 'silent');
+      };
 
       if (ENABLE_RAZORPAY) {
         const options = {
@@ -407,6 +464,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           description: `Purchase ${effectiveQty} fractals`,
           order_id: orderData.razorpay_order_id,
           handler: async function (response: any) {
+            let terminalConfirmed = false;
             try {
               const completed = await completeBuyOrder({
                 artwork_id: artworkId,
@@ -418,18 +476,15 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 quoted_price: quotedFractalPrice,
                 payment_response: response,
               })();
-              await refreshAfterPurchase(artworkId, completed);
+              terminalConfirmed = completed.status !== 'PROCESSING';
+              await handleCompletedOrder(completed);
             } catch (err: any) {
               const s = err?.response?.status;
-              toast.error(
-                s === 401 || s === 403
-                  ? NOT_LOGGED_IN_BUY_MESSAGE
-                  : err?.response?.data?.message ?? 'Failed to complete purchase',
-              );
+              toast.info(s === 401 || s === 403 ? NOT_LOGGED_IN_BUY_MESSAGE : 'Payment received. We are confirming the order status.');
               setCollecting(false);
             } finally {
-              paymentPendingRef.current = false;
-              clearPurchasePending();
+              paymentPendingRef.current = !terminalConfirmed;
+              if (terminalConfirmed) clearPurchasePending();
             }
           },
           modal: {
@@ -449,7 +504,6 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         setDialogOpen(false);
 
         paymentPendingRef.current = true;
-        markPurchasePending(artworkId);
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       } else {
@@ -468,41 +522,27 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           quoted_price: quotedFractalPrice,
         })();
 
-        await refreshAfterPurchase(artworkId, completed);
+        await handleCompletedOrder(completed);
+        clearPurchasePending();
       }
     } catch (err: any) {
       const s = err?.response?.status;
-      toast.error(
-        s === 401 || s === 403
-          ? NOT_LOGGED_IN_BUY_MESSAGE
-          : err?.response?.data?.message ?? 'Failed to complete purchase',
-      );
+      toast.error(s === 401 || s === 403 ? NOT_LOGGED_IN_BUY_MESSAGE : (err?.response?.data?.message ?? 'Failed to complete purchase'));
       setCollecting(false);
+    } finally {
+      collectInFlightRef.current = false;
     }
   };
 
-  const asideClass =
-    layout === 'floating'
-      ? 'relative lg:fixed lg:left-auto lg:right-8 lg:bottom-8 lg:top-auto z-50 w-full lg:w-[340px]'
-      : 'w-full';
+  const asideClass = layout === 'floating' ? 'relative lg:fixed lg:left-auto lg:right-8 lg:bottom-8 lg:top-auto z-50 w-full lg:w-[340px]' : 'w-full';
 
-  const innerSurface =
-    layout === 'floating'
-      ? 'glass-panel border border-foreground/10 bg-background/80'
-      : 'bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B]';
+  const innerSurface = layout === 'floating' ? 'glass-panel border border-foreground/10 bg-background/80' : 'bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-[#1E293B]';
 
-  const summaryHeadingCls =
-    layout === 'floating'
-      ? 'text-[#60A5FA]'
-      : 'text-blue-600 dark:text-[#3B82F6]';
-  const summaryPriceCls =
-    layout === 'floating' ? 'text-white' : 'text-slate-900 dark:text-white';
-  const summaryMutedCls =
-    layout === 'floating' ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400';
-  const summaryBarTrackCls =
-    layout === 'floating' ? 'bg-white/10' : 'bg-slate-200 dark:bg-[#1E293B]';
-  const summaryHintCls =
-    layout === 'floating' ? 'text-zinc-500' : 'text-slate-400 dark:text-zinc-500';
+  const summaryHeadingCls = layout === 'floating' ? 'text-[#60A5FA]' : 'text-blue-600 dark:text-[#3B82F6]';
+  const summaryPriceCls = layout === 'floating' ? 'text-white' : 'text-slate-900 dark:text-white';
+  const summaryMutedCls = layout === 'floating' ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400';
+  const summaryBarTrackCls = layout === 'floating' ? 'bg-white/10' : 'bg-slate-200 dark:bg-[#1E293B]';
+  const summaryHintCls = layout === 'floating' ? 'text-zinc-500' : 'text-slate-400 dark:text-zinc-500';
 
   return (
     <>
@@ -512,28 +552,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         transition={{ delay: layout === 'floating' ? 0.5 : 0.4, duration: 0.8 }}
         className={cn(asideClass, className)}
       >
-        <div
-          className={cn(
-            'relative overflow-hidden rounded-2xl p-6 flex flex-col gap-6 shadow-2xl w-full text-left',
-            innerSurface,
-            !canInteract || !razorpayLoaded ? 'opacity-60' : '',
-          )}
-        >
+        <div className={cn('relative overflow-hidden rounded-2xl p-6 flex flex-col gap-6 shadow-2xl w-full text-left', innerSurface, !canInteract || !razorpayLoaded ? 'opacity-60' : '')}>
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
-              <h3 className={cn('font-sans text-sm font-medium tracking-wide uppercase', summaryHeadingCls)}>
-                Current Valuation
-              </h3>
+              <h3 className={cn('font-sans text-sm font-medium tracking-wide uppercase', summaryHeadingCls)}>Current Valuation</h3>
               <div className="flex items-baseline space-x-1 min-h-[2.5rem]">
                 {showMarketSkeleton && firstArtworkId != null ? (
-                  <Skeleton
-                    className={cn(
-                      'h-10 w-40 rounded-lg',
-                      layout === 'floating'
-                        ? 'bg-white/15'
-                        : 'bg-slate-200 dark:bg-zinc-700',
-                    )}
-                  />
+                  <Skeleton className={cn('h-10 w-40 rounded-lg', layout === 'floating' ? 'bg-white/15' : 'bg-slate-200 dark:bg-zinc-700')} />
                 ) : (
                   <span className={cn('font-sans text-4xl font-bold tracking-tight', summaryPriceCls)}>
                     {'\u20B9'}
@@ -548,14 +573,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             <div className="flex justify-between text-sm font-sans min-h-[1.25rem]">
               <span className={summaryMutedCls}>Available fractals</span>
               {showAvailabilitySkeleton ? (
-                <Skeleton
-                  className={cn(
-                    'h-4 w-28 rounded',
-                    layout === 'floating'
-                      ? 'bg-white/15'
-                      : 'bg-slate-200 dark:bg-zinc-700',
-                  )}
-                />
+                <Skeleton className={cn('h-4 w-28 rounded', layout === 'floating' ? 'bg-white/15' : 'bg-slate-200 dark:bg-zinc-700')} />
               ) : (
                 <span className={summaryMutedCls}>
                   {availShow.toLocaleString()} / {total.toLocaleString()}
@@ -565,19 +583,16 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
             <div className={cn('h-2 w-full rounded-full overflow-hidden', summaryBarTrackCls)}>
               {showAvailabilitySkeleton ? (
-                <Skeleton
-                  className={cn(
-                    'h-full w-full rounded-full',
-                    layout === 'floating'
-                      ? 'bg-white/15'
-                      : 'bg-slate-200 dark:bg-zinc-700',
-                  )}
-                />
+                <Skeleton className={cn('h-full w-full rounded-full', layout === 'floating' ? 'bg-white/15' : 'bg-slate-200 dark:bg-zinc-700')} />
               ) : (
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${availableBarPercent}%` }}
-                  transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
+                  transition={{
+                    duration: 1.5,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: 0.6,
+                  }}
                   className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 dark:to-[#3B82F6] rounded-full"
                 />
               )}
@@ -590,19 +605,15 @@ const CollectModule: React.FC<CollectModuleProps> = ({
             disabled={!canInteract || !razorpayLoaded}
             className="group w-full h-12 shrink-0 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
           >
-            <span className="font-sans font-medium text-base">
-              {!razorpayLoaded ? 'Loading...' : 'Collect fractal'}
-            </span>
+            <span className="font-sans font-medium text-base">{!razorpayLoaded ? 'Loading...' : 'Collect fractal'}</span>
             <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
           </button>
 
-          <p className={cn('text-center font-sans text-xs', summaryHintCls)}>
-            {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
-          </p>
+          <p className={cn('text-center font-sans text-xs', summaryHintCls)}>{ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}</p>
         </div>
       </motion.aside>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent
           className={cn(
             'sm:max-w-md gap-0 overflow-hidden border-border bg-card p-0 text-card-foreground shadow-2xl',
@@ -612,9 +623,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         >
           <div className="max-h-[90vh] overflow-y-auto p-6 pb-8">
             <DialogHeader className="space-y-3 pr-8 text-left">
-              <DialogTitle className="font-serif text-2xl font-normal tracking-tight text-foreground">
-                Collect from {collectContextLabel}
-              </DialogTitle>
+              <DialogTitle className="font-serif text-2xl font-normal tracking-tight text-foreground">Collect from {collectContextLabel}</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
                 Acquire fractals at the best available price. All amounts are in Indian Rupees (INR), including taxes as shown.
               </DialogDescription>
@@ -630,7 +639,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                     size="icon"
                     className="h-11 w-11 shrink-0 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 hover:text-accent-foreground"
                     onClick={() => bumpQuantity(-1)}
-                    disabled={effectiveQty <= 1}
+                    disabled={effectiveQty <= 1 || initiatedOrder != null}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -642,6 +651,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                     value={quantity === '' ? '' : String(quantity)}
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
+                    disabled={initiatedOrder != null}
                     className="h-11 min-w-0 flex-1 border-0 bg-transparent px-2 text-center font-mono text-lg text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                   <Button
@@ -650,14 +660,12 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                     size="icon"
                     className="h-11 w-11 shrink-0 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 hover:text-accent-foreground"
                     onClick={() => bumpQuantity(1)}
-                    disabled={effectiveQty >= maxQty}
+                    disabled={effectiveQty >= maxQty || initiatedOrder != null}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {maxQty.toLocaleString()} available
-                </p>
+                <p className="text-[11px] text-muted-foreground">{maxQty.toLocaleString()} available</p>
               </div>
 
               <div className="space-y-2">
@@ -667,19 +675,13 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 ) : quote?.fill_breakdown?.length ? (
                   <div className="space-y-2 rounded-xl bg-muted px-4 py-3 border border-border">
                     {quote.fill_breakdown.map((line, idx) => (
-                      <div
-                        key={`${line.source}-${idx}-${line.quantity}-${line.price_per_share}`}
-                        className="flex items-start justify-between gap-3 text-sm"
-                      >
+                      <div key={`${line.source}-${idx}-${line.quantity}-${line.price_per_share}`} className="flex items-start justify-between gap-3 text-sm">
                         <span className="text-foreground/80">
                           <span className="font-mono tabular-nums text-foreground">{line.quantity}</span>
-                          <span className="text-muted-foreground"> × </span>
-                          @ {'\u20B9'}
+                          <span className="text-muted-foreground"> × </span>@ {'\u20B9'}
                           {parseFloat(line.price_per_share).toFixed(2)}
                         </span>
-                        <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                          {fillSourceLabel(line.source)}
-                        </span>
+                        <span className="shrink-0 text-xs font-medium text-muted-foreground">{fillSourceLabel(line.source)}</span>
                       </div>
                     ))}
                   </div>
@@ -688,9 +690,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                     <span className="text-sm text-zinc-300">
                       {effectiveQty} × @ {'\u20B9'}
                       {currentPrice.toFixed(2)}
-                      <span className="ml-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-                        ±{bufferPercent.toFixed(2)}
-                      </span>
+                      <span className="ml-1 text-[10px] font-mono uppercase tracking-wider text-zinc-500">±{bufferPercent.toFixed(2)}</span>
                     </span>
                     <span className="text-xs font-medium text-zinc-400">—</span>
                   </div>
@@ -698,32 +698,29 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               </div>
 
               {inventoryShort ? (
-                <p className="text-xs text-amber-400/90">
-                  Only {quote!.total_available_shares!.toLocaleString()} fractal(s) available for this order.
-                  Lower the quantity or try again later.
-                </p>
+                <p className="text-xs text-amber-400/90">Only {quote!.total_available_shares!.toLocaleString()} fractal(s) available for this order. Lower the quantity or try again later.</p>
               ) : null}
 
               <div className="space-y-3 border-t border-border pt-4 font-sans">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal (pre-tax)</span>
                   <div className="flex items-center gap-2">
-                    {showDialogQuoteSkeleton ? <Skeleton className="h-5 w-20 bg-muted" /> : (
+                    {showDialogQuoteSkeleton ? (
+                      <Skeleton className="h-5 w-20 bg-muted" />
+                    ) : (
                       <span className="text-foreground inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(subTotalPreTax)}
                       </span>
                     )}
-                    {!showDialogQuoteSkeleton && (
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                        ±{bufferPercent.toFixed(2)}
-                      </span>
-                    )}
+                    {!showDialogQuoteSkeleton && <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">±{bufferPercent.toFixed(2)}</span>}
                   </div>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{hasFillPreview ? 'Taxes & fees' : 'G.S.T. (18%)'}</span>
-                  {showDialogQuoteSkeleton ? <Skeleton className="h-5 w-16 bg-muted" /> : (
+                  {showDialogQuoteSkeleton ? (
+                    <Skeleton className="h-5 w-16 bg-muted" />
+                  ) : (
                     <span className="text-foreground inline-flex items-baseline gap-px">
                       <span>{'\u20B9'}</span>
                       {formatCurrencyWithSmallDecimals(taxesAndFeesAmount)}
@@ -732,21 +729,32 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 </div>
                 <div className="h-px bg-border" />
                 <div className="flex justify-between text-base font-semibold">
-                  <span className="text-primary">Total payable</span>
+                  <span className="text-primary">Estimated total</span>
                   <div className="flex items-center gap-2">
-                    {showDialogQuoteSkeleton ? <Skeleton className="h-6 w-24 bg-muted" /> : (
+                    {showDialogQuoteSkeleton ? (
+                      <Skeleton className="h-6 w-24 bg-muted" />
+                    ) : (
                       <span className="text-primary inline-flex items-baseline gap-px">
                         <span>{'\u20B9'}</span>
                         {formatCurrencyWithSmallDecimals(totalPayableInr)}
                       </span>
                     )}
-                    {!showDialogQuoteSkeleton && (
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                        ±{bufferPercent.toFixed(2)}
-                      </span>
-                    )}
+                    {!showDialogQuoteSkeleton && <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">±{bufferPercent.toFixed(2)}</span>}
                   </div>
                 </div>
+                {initiatedOrder ? (
+                  <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                    <div className="flex justify-between gap-4 text-muted-foreground">
+                      <span>Current estimate</span>
+                      <span className="font-mono text-foreground">₹{parseFloat(initiatedOrder.estimated_cost).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between gap-4 font-medium text-foreground">
+                      <span>Maximum Razorpay charge</span>
+                      <span className="font-mono">₹{parseFloat(initiatedOrder.max_charge).toFixed(2)}</span>
+                    </div>
+                    <p className="leading-relaxed text-muted-foreground">{initiatedOrder.price_disclaimer}</p>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -755,7 +763,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                 type="button"
                 variant="secondary"
                 className="h-11 rounded-lg border border-border bg-accent text-accent-foreground hover:bg-accent/80"
-                onClick={() => setDialogOpen(false)}
+                onClick={() => handleDialogOpenChange(false)}
                 disabled={collecting}
               >
                 Cancel
@@ -763,22 +771,22 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               <Button
                 type="button"
                 className="h-11 rounded-lg bg-primary px-6 font-medium text-primary-foreground hover:bg-primary/90"
-                disabled={
-                  collecting ||
-                  !razorpayLoaded ||
-                  showDialogQuoteSkeleton ||
-                  effectiveQty < 1 ||
-                  quote?.sufficient_for_quantity === false
-                }
+                disabled={collecting || !razorpayLoaded || showDialogQuoteSkeleton || effectiveQty < 1 || quote?.sufficient_for_quantity === false}
                 onClick={handleCollectConfirm}
               >
-                {collecting ? 'Collecting…' : !razorpayLoaded ? 'Loading…' : 'Confirm collection'}
+                {collecting
+                  ? initiatedOrder
+                    ? 'Opening payment…'
+                    : 'Reserving order…'
+                  : !razorpayLoaded
+                    ? 'Loading…'
+                    : initiatedOrder
+                      ? `Pay up to ₹${parseFloat(initiatedOrder.max_charge).toFixed(2)}`
+                      : 'Review secure charge'}
               </Button>
             </DialogFooter>
 
-            <p className="mt-4 text-center text-[10px] text-muted-foreground">
-              {ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}
-            </p>
+            <p className="mt-4 text-center text-[10px] text-muted-foreground">{ENABLE_RAZORPAY ? 'Secure payment via Razorpay' : 'Payment processing (Demo mode)'}</p>
           </div>
         </DialogContent>
       </Dialog>

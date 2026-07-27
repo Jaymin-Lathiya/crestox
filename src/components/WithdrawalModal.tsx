@@ -118,14 +118,14 @@ export default function WithdrawalModal({ isOpen, onClose, onSuccess, source }: 
   const requestedAmount = parseFloat(amount) || 0;
   const platformFeeRate = parseFloat(withdrawalData?.withdrawal_platform_fee_rate ?? '0');
   const estimatedPlatformFee =
-    source === 'artist' && platformFeeRate > 0
+    platformFeeRate > 0
       ? (requestedAmount * platformFeeRate) / 100
       : 0;
   const estimatedNetPayout = requestedAmount - estimatedPlatformFee;
   const isValidAmount =
     requestedAmount >= 100 &&
     requestedAmount <= availableAmount &&
-    (source !== 'artist' || estimatedNetPayout >= 100);
+    estimatedNetPayout >= 100;
 
   const handleSendLink = async () => {
     setSendingLink(true);
@@ -387,7 +387,7 @@ export default function WithdrawalModal({ isOpen, onClose, onSuccess, source }: 
                         <p className="mt-1 text-xs text-destructive">
                           {requestedAmount < 100
                             ? 'Minimum withdrawal is ₹100'
-                            : source === 'artist' && estimatedNetPayout < 100 && requestedAmount >= 100
+                            : estimatedNetPayout < 100 && requestedAmount >= 100
                               ? `After ${platformFeeRate}% platform fee, net payout would be below ₹100`
                             : (() => {
                                 const pending = parseFloat(withdrawalData?.pending_withdrawal ?? '0');
@@ -399,7 +399,7 @@ export default function WithdrawalModal({ isOpen, onClose, onSuccess, source }: 
                               })()}
                         </p>
                       )}
-                      {source === 'artist' && platformFeeRate > 0 && requestedAmount > 0 && (
+                      {platformFeeRate > 0 && requestedAmount > 0 && (
                         <div className="mt-3 p-3 rounded-lg border border-border/50 bg-muted/20 text-xs space-y-1">
                           <div className="flex justify-between font-mono">
                             <span className="text-muted-foreground">Platform fee ({platformFeeRate}%)</span>

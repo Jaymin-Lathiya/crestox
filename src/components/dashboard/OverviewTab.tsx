@@ -6,13 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MetricCard } from "./MetricCard";
 import { AnimatedCounter } from "./AnimatedCounter";
-import { WithdrawModal } from "./WithdrawModal";
+import WithdrawalModal from "@/components/WithdrawalModal";
 import {
   getPortfolioDashboard,
   type PortfolioDashboard,
 } from "@/apis/my-portfolio/myPortfolioActions";
 import { getArtistOnboardingState } from "@/apis/artists/artistActions";
-import { getAvailableWithdrawalAmount } from "@/apis/withdrawal/withdrawalActions";
 import { useUserStore } from "@/store/useUserStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -75,12 +74,6 @@ export const OverviewTab = () => {
     },
     enabled: Boolean(user) && isApprovedArtist,
   });
-
-  const { data: withdrawalData } = useQuery({
-    queryKey: ["artist-withdrawal-amount"],
-    queryFn: () => getAvailableWithdrawalAmount('artist'),
-    enabled: Boolean(user) && isApprovedArtist,
-  });  
 
   useEffect(() => {
     if (!onboardingError || !onboardingErr) return;
@@ -205,11 +198,10 @@ export const OverviewTab = () => {
 
     return (
       <div className="space-y-8">
-        <WithdrawModal
-          open={withdrawOpen}
-          onOpenChange={setWithdrawOpen}
-          walletBalance={parseFloat(withdrawalData?.wallet_balance ?? '0')}
-          totalEarnings={d.total_earnings}
+        <WithdrawalModal
+          isOpen={withdrawOpen}
+          onClose={() => setWithdrawOpen(false)}
+          source="artist"
         />
 
         <motion.div

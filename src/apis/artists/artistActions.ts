@@ -1,5 +1,5 @@
-import instance from "@/utils/apiCalls";
-import { ARTIST_URLS } from "./artistUrls";
+import instance from '@/utils/apiCalls';
+import { ARTIST_URLS } from './artistUrls';
 
 // --- Basic details response ---
 export interface ArtistBasicDetails {
@@ -21,7 +21,11 @@ export interface ArtistAchievement {
     id: number;
     title: string;
     description: string | null;
-    media: { media_id: number; file_path: string; original_file_name: string } | null;
+    media: {
+        media_id: number;
+        file_path: string;
+        original_file_name: string;
+    } | null;
     display_order: number;
     created_at: string;
 }
@@ -31,7 +35,11 @@ export interface ArtistHistory {
     id: number;
     title: string;
     description: string | null;
-    media: { media_id: number; file_path: string; original_file_name: string } | null;
+    media: {
+        media_id: number;
+        file_path: string;
+        original_file_name: string;
+    } | null;
     display_order: number;
     created_at: string;
 }
@@ -52,7 +60,7 @@ export interface ArtistPriceHistory {
 /** GET /artists/:id/analytics — same metrics as artwork analytics; chart is fractal price over time */
 export interface ArtistAnalyticsPayload {
     artist_profile_id: number;
-    currency: "INR";
+    currency: 'INR';
     fractal_price_history: { label: string; price: number }[];
     grade_distribution: { grade: string; count: number }[];
     unique_collectors: number;
@@ -126,15 +134,19 @@ export const getHomepageArtists = () => async (): Promise<HomepageArtist[]> => {
     }
 };
 
-export const getAllArtists = (params: { page?: number; limit?: number; isApproved?: boolean } = {}) => async (): Promise<any> => {
-    try {
-        const response = await instance.get(ARTIST_URLS.GET_ALL_ARTISTS, { params });
-        return response.data?.data ?? [];
-    } catch (err: any) {
-        console.error({ err });
-        throw err;
-    }
-};
+export const getAllArtists =
+    (params: { page?: number; limit?: number; isApproved?: boolean } = {}) =>
+    async (): Promise<any> => {
+        try {
+            const response = await instance.get(ARTIST_URLS.GET_ALL_ARTISTS, {
+                params,
+            });
+            return response.data?.data ?? [];
+        } catch (err: any) {
+            console.error({ err });
+            throw err;
+        }
+    };
 
 export const applyAsArtist = (data: any) => async () => {
     try {
@@ -196,42 +208,42 @@ export const getArtistOnboardingState = () => async (): Promise<ArtistOnboarding
     const response = await instance.get<{ data?: ArtistOnboardingState }>(ARTIST_URLS.MY_ONBOARDING);
     const payload = response.data?.data as ArtistOnboardingState | undefined;
     if (!payload) {
-        throw new Error("Missing onboarding payload");
+        throw new Error('Missing onboarding payload');
     }
     return payload;
 };
 
-export const submitArtistOnboardingStep1 = (data: {
-    artist_name: string;
-    artist_bio: string;
-    collector_message?: string;
-    avatar_media_id?: number | null;
-}) => async () => {
+export const submitArtistOnboardingStep1 = (data: { artist_name: string; artist_bio: string; collector_message?: string; avatar_media_id?: number | null }) => async () => {
     return instance.post(ARTIST_URLS.ONBOARDING_STEP_1, data);
 };
 
-export const submitArtistOnboardingStep2 = (data: {
-    achievements?: Array<{ title: string; description?: string; media_id?: number }>;
-    history?: Array<{ title: string; description?: string; media_id?: number }>;
-    previously_sold_artworks?: Array<{
-        artwork_name: string;
-        artwork_image_media_id?: number;
-        proof_of_sale_media_id?: number;
-        sell_value?: number;
-    }>;
-}) => async () => {
-    return instance.patch(ARTIST_URLS.ONBOARDING_STEP_2, data);
-};
+export const submitArtistOnboardingStep2 =
+    (data: {
+        achievements?: Array<{
+            title: string;
+            description?: string;
+            media_id?: number;
+        }>;
+        history?: Array<{
+            title: string;
+            description?: string;
+            media_id?: number;
+        }>;
+        previously_sold_artworks?: Array<{
+            artwork_name: string;
+            artwork_image_media_id?: number;
+            proof_of_sale_media_id?: number;
+            sell_value?: number;
+        }>;
+    }) =>
+    async () => {
+        return instance.patch(ARTIST_URLS.ONBOARDING_STEP_2, data);
+    };
 
-export const submitArtistOnboardingStep3 = (data: {
-    social_links?: Array<{ platform: string; url: string }>;
-    location?: string;
-    university?: string;
-    website_portfolio_link?: string;
-    artist_style?: string;
-}) => async () => {
-    return instance.patch(ARTIST_URLS.ONBOARDING_STEP_3, data);
-};
+export const submitArtistOnboardingStep3 =
+    (data: { social_links?: Array<{ platform: string; url: string }>; location?: string; university?: string; website_portfolio_link?: string; artist_style?: string }) => async () => {
+        return instance.patch(ARTIST_URLS.ONBOARDING_STEP_3, data);
+    };
 
 export const getArtistBasicDetails = (id: number) => async (): Promise<ArtistBasicDetails | null> => {
     const response = await instance.get(ARTIST_URLS.BASIC_DETAILS(id));
@@ -331,8 +343,7 @@ export const getBufferPriceQuote = (artworkId: number, quantity?: number) => asy
         fill_breakdown,
         fill_subtotal_pre_tax: fillSub != null ? String(fillSub) : null,
         fill_total_buyer_pays: fillTotal != null ? String(fillTotal) : null,
-        total_available_shares:
-            totalAvail != null && Number.isFinite(Number(totalAvail)) ? Number(totalAvail) : null,
+        total_available_shares: totalAvail != null && Number.isFinite(Number(totalAvail)) ? Number(totalAvail) : null,
         sufficient_for_quantity: typeof sufficient === 'boolean' ? sufficient : null,
     };
 };
@@ -346,6 +357,11 @@ export interface InitiateBuyResponse {
     razorpay_order_id: string;
     razorpay_key_id: string;
     amount: string;
+    estimated_cost: string;
+    buffer_pct: string;
+    max_charge: string;
+    expires_at: string;
+    price_disclaimer: string;
     currency: string;
     receipt: string;
     artwork_id: number;
@@ -366,28 +382,55 @@ export const initiateBuyOrder = (data: { artwork_id: number; quantity: number; m
 };
 
 export interface CompleteBuyOrderResponse {
-    total_shares_purchased: number;
-    total_amount: string;
-    fractal_price_before: string;
-    fractal_price_after: string;
+    status?: 'COMPLETED' | 'ALREADY_COMPLETED' | 'PROCESSING';
+    message?: string;
+    total_shares_purchased?: number;
+    total_amount?: string;
+    fractal_price_before?: string;
+    fractal_price_after?: string;
     /** Portfolio-level count of fractals still available (primary + listed secondary). */
     available_shares_after?: number;
     /** Per-artwork available fractals (use on art detail page). */
     artwork_available_shares_after?: number;
-    razorpay_payment_id: string;
-    fills: unknown[];
+    amount_captured?: string;
+    refund_amount?: string;
+    razorpay_payment_id?: string;
+    fills?: unknown[];
 }
 
-export const completeBuyOrder = (data: {
+export const completeBuyOrder =
+    (data: {
+        artwork_id: number;
+        quantity: number;
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+        max_slippage_pct?: number;
+        quoted_price?: number;
+        payment_response?: Record<string, unknown>;
+    }) =>
+    async (): Promise<CompleteBuyOrderResponse> => {
+        const response = await instance.post(ARTIST_URLS.COMPLETE_BUY, data);
+        return response.data?.data;
+    };
+
+export interface BuyOrderStatusResponse {
+    razorpay_order_id: string;
     artwork_id: number;
     quantity: number;
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-    max_slippage_pct?: number;
-    quoted_price?: number;
-    payment_response?: Record<string, unknown>;
-}) => async (): Promise<CompleteBuyOrderResponse> => {
-    const response = await instance.post(ARTIST_URLS.COMPLETE_BUY, data);
+    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'FAILED_PRICE_MOVED' | 'EXPIRED';
+    terminal: boolean;
+    message: string;
+    amount: string;
+    amount_captured: string | null;
+    executed_cost: string | null;
+    refund_status: 'NONE' | 'PENDING' | 'COMPLETED' | 'FAILED';
+    refund_amount: string | null;
+    expires_at: string | null;
+    updated_at: string | null;
+}
+
+export const getBuyOrderStatus = (razorpayOrderId: string) => async (): Promise<BuyOrderStatusResponse> => {
+    const response = await instance.get(ARTIST_URLS.BUY_STATUS(razorpayOrderId));
     return response.data?.data;
 };

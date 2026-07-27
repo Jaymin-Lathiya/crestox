@@ -1,12 +1,12 @@
 export const ARTIST_URLS = {
-    CREATE_ARTIST: "/artists",
-    GET_ALL_ARTISTS: "/artists",
-    FEATURED_ARTISTS: "/artists/featured",
-    HOMEPAGE_ARTISTS: "/artists/homepage",
-    MY_ONBOARDING: "/artists/me/onboarding",
-    ONBOARDING_STEP_1: "/artists/me/onboarding/step-1",
-    ONBOARDING_STEP_2: "/artists/me/onboarding/step-2",
-    ONBOARDING_STEP_3: "/artists/me/onboarding/step-3",
+    CREATE_ARTIST: '/artists',
+    GET_ALL_ARTISTS: '/artists',
+    FEATURED_ARTISTS: '/artists/featured',
+    HOMEPAGE_ARTISTS: '/artists/homepage',
+    MY_ONBOARDING: '/artists/me/onboarding',
+    ONBOARDING_STEP_1: '/artists/me/onboarding/step-1',
+    ONBOARDING_STEP_2: '/artists/me/onboarding/step-2',
+    ONBOARDING_STEP_3: '/artists/me/onboarding/step-3',
     BASIC_DETAILS: (id: number) => `/artists/${id}/basic`,
     ACHIEVEMENTS: (id: number) => `/artists/${id}/achievements`,
     HISTORY: (id: number) => `/artists/${id}/history`,
@@ -15,9 +15,9 @@ export const ARTIST_URLS = {
     ANALYTICS: (id: number) => `/artists/${id}/analytics`,
     ARTWORKS: (id: number) => `/artwork/artist/${id}`,
     BUFFER_PRICE_OF_ARTWORK: (id: number) => `/trading/price-quote/${id}`,
-    BUFFER_PRICE_QUOTE: (id: number, qty?: number) =>
-        qty != null ? `/trading/price-quote/${id}?quantity=${qty}` : `/trading/price-quote/${id}`,
+    BUFFER_PRICE_QUOTE: (id: number, qty?: number) => (qty != null ? `/trading/price-quote/${id}?quantity=${qty}` : `/trading/price-quote/${id}`),
     COLLECT_FRACTALS: `/trading/buy`,
     INITIATE_BUY: `/trading/buy/initiate`,
     COMPLETE_BUY: `/trading/buy/complete`,
-}
+    BUY_STATUS: (razorpayOrderId: string) => `/trading/buy/status/${encodeURIComponent(razorpayOrderId)}`,
+};

@@ -9,7 +9,7 @@ interface ResaleModalProps {
   artistName: string;
   artistProfileId: number;
   maxQuantity: number;
-  onSubmit: (data: { price: number; quantity: number }) => void;
+  onSubmit: (data: { price: number; quantity: number }) => boolean | Promise<boolean>;
 }
 
 const formatCurrency = (val: number) =>
@@ -31,15 +31,43 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
   const [quantity, setQuantity] = useState<string>('1');
   const [feeRates, setFeeRates] = useState<ResaleFeePreview | null>(null);
   const [loadingFees, setLoadingFees] = useState(false);
+  const [feeError, setFeeError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const requestedGross = useMemo(() => {
+    const numPrice = parseFloat(price) || 0;
+    const numQty = Math.min(parseInt(quantity) || 0, maxQuantity);
+    return numPrice * numQty;
+  }, [price, quantity, maxQuantity]);
 
   useEffect(() => {
     if (!isOpen || !artistProfileId) return;
+    let active = true;
     setLoadingFees(true);
-    getResaleFeePreview(artistProfileId)
-      .then(setFeeRates)
-      .catch(() => setFeeRates(null))
-      .finally(() => setLoadingFees(false));
-  }, [isOpen, artistProfileId]);
+    setFeeError(false);
+    const timer = window.setTimeout(() => {
+      getResaleFeePreview(
+        artistProfileId,
+        requestedGross > 0 ? requestedGross : undefined,
+      )
+        .then((fees) => {
+          if (active) setFeeRates(fees);
+        })
+        .catch(() => {
+          if (active) {
+            setFeeRates(null);
+            setFeeError(true);
+          }
+        })
+        .finally(() => {
+          if (active) setLoadingFees(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [isOpen, artistProfileId, requestedGross]);
 
   const calculations = useMemo(() => {
     const numPrice = parseFloat(price) || 0;
@@ -51,10 +79,21 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
     const royaltyRate = feeRates?.royalty_enabled ? (feeRates?.royalty_percentage ?? 0) : 0;
     const totalFeeRate = crestoxRate + royaltyRate;
 
-    const platformFee = (gross * totalFeeRate) / 100;
-    const crestoxFee = (gross * crestoxRate) / 100;
-    const royalty = (gross * royaltyRate) / 100;
-    const net = gross - platformFee;
+    const serverGross = parseFloat(feeRates?.gross_amount ?? '');
+    const hasServerAmounts =
+      Number.isFinite(serverGross) && Math.abs(serverGross - gross) < 0.01;
+    const platformFee = hasServerAmounts
+      ? parseFloat(feeRates?.platform_fee_amount ?? '0')
+      : (gross * totalFeeRate) / 100;
+    const crestoxFee = hasServerAmounts
+      ? parseFloat(feeRates?.crestox_fee_amount ?? '0')
+      : (gross * crestoxRate) / 100;
+    const royalty = hasServerAmounts
+      ? parseFloat(feeRates?.royalty_amount ?? '0')
+      : (gross * royaltyRate) / 100;
+    const net = hasServerAmounts
+      ? parseFloat(feeRates?.net_payout ?? '0')
+      : gross - platformFee;
 
     return {
       gross,
@@ -69,10 +108,17 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
     };
   }, [price, quantity, maxQuantity, feeRates]);
 
-  const handleSubmit = () => {
-    if (calculations.net > 0) {
-      onSubmit({ price: parseFloat(price), quantity: calculations.safeQty });
-      onClose();
+  const handleSubmit = async () => {
+    if (submitting || loadingFees || feeError || !feeRates || calculations.net <= 0) return;
+    setSubmitting(true);
+    try {
+      const succeeded = await onSubmit({
+        price: parseFloat(price),
+        quantity: calculations.safeQty,
+      });
+      if (succeeded) onClose();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -164,6 +210,10 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
                       <Loader2 className="animate-spin" size={16} />
                       <span className="font-cyber text-xs">Loading fee rates…</span>
                     </div>
+                  ) : feeError || !feeRates ? (
+                    <p className="py-4 text-center font-cyber text-xs text-alert-crimson">
+                      Fee quote unavailable. Please try again.
+                    </p>
                   ) : (
                     <>
                       <div className="flex justify-between items-center font-cyber text-xs text-foreground/60">
@@ -213,12 +263,12 @@ const ResaleModal: React.FC<ResaleModalProps> = ({
               <div className="p-8 pt-0">
                 <button
                   onClick={handleSubmit}
-                  disabled={loadingFees || calculations.net <= 0 || isOverMax}
+                  disabled={loadingFees || feeError || !feeRates || submitting || calculations.net <= 0 || isOverMax}
                   className="w-full group relative px-6 py-4 rounded-lg bg-primary/50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="font-cyber text-primary-foreground font-bold tracking-widest uppercase">
-                      Confirm Listing
+                      {submitting ? 'Creating Listing…' : 'Confirm Listing'}
                     </span>
                     <ArrowRight
                       size={18}

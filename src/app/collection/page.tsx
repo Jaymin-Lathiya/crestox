@@ -794,8 +794,10 @@ export default function CollectionPage() {
               toast.success(`Listed ${data.quantity} fractals at ₹${data.price.toLocaleString()} each`);
               setResaleTarget(null);
               await fetchMyCollection();
+              return true;
             } catch (err: any) {
               toast.error(err?.response?.data?.message ?? 'Failed to list fractals');
+              return false;
             }
           }}
         />

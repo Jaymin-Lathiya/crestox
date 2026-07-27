@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { getMyListings } from "@/apis/my-collection/myCollectionActions";
+import { cancelListing, getMyListings } from "@/apis/my-collection/myCollectionActions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -24,6 +26,7 @@ interface ListedGridProps {}
 const ListedGrid: React.FC<ListedGridProps> = () => {
   const [myListings, setMyListings] = useState<MyListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -42,6 +45,24 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
     fetchListings();
   }, []);
 
+  const handleCancel = async (listingId: number) => {
+    if (cancellingId != null) return;
+    setCancellingId(listingId);
+    try {
+      await cancelListing(listingId);
+      setMyListings((items) =>
+        items.map((item) =>
+          item.listing_id === listingId ? { ...item, status: "CANCELLED" } : item,
+        ),
+      );
+      toast.success("Listing cancelled");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Failed to cancel listing");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const items = myListings;
 
   if (loading) {
@@ -49,15 +70,16 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="overflow-x-auto scrollbar-hide">
           <div className="border border-border/50 divide-y divide-border/30 min-w-[600px]">
-            <div className="grid grid-cols-5 gap-4 p-4 text-[10px] tracking-widest uppercase text-muted-foreground font-sans">
+            <div className="grid grid-cols-6 gap-4 p-4 text-[10px] tracking-widest uppercase text-muted-foreground font-sans">
               <span>Asset</span>
               <span>Listed Price</span>
               <span>Quantity</span>
               <span>Status</span>
               <span>Expires</span>
+              <span>Action</span>
             </div>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="grid grid-cols-5 gap-4 p-4 items-center">
+              <div key={i} className="grid grid-cols-6 gap-4 p-4 items-center">
                 <div className="flex items-center gap-3">
                   <Skeleton className="w-10 h-10 rounded-sm shrink-0" />
                   <Skeleton className="h-5 w-32" />
@@ -66,6 +88,7 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
                 <Skeleton className="h-5 w-8" />
                 <Skeleton className="h-5 w-20" />
                 <Skeleton className="h-5 w-14" />
+                <Skeleton className="h-5 w-16" />
               </div>
             ))}
           </div>
@@ -91,12 +114,13 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
     <div className="max-w-7xl mx-auto px-6">
       <div className="overflow-x-auto scrollbar-hide">
         <div className="border border-border/50 divide-y divide-border/30 min-w-[600px]">
-          <div className="grid grid-cols-5 gap-4 p-4 text-[10px] tracking-widest uppercase text-muted-foreground font-sans">
+          <div className="grid grid-cols-6 gap-4 p-4 text-[10px] tracking-widest uppercase text-muted-foreground font-sans">
             <span>Asset</span>
             <span>Listed Price</span>
             <span>Quantity</span>
             <span>Status</span>
             <span>Expires</span>
+            <span>Action</span>
           </div>
           {items.map((item, index) => (
             <motion.div
@@ -104,7 +128,7 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-card/50 transition-colors group"
+              className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-card/50 transition-colors group"
             >
               <div className="flex items-center gap-3">
                 <img
@@ -127,6 +151,23 @@ const ListedGrid: React.FC<ListedGridProps> = () => {
               </span>
               <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
                 —
+              </span>
+              <span>
+                {item.status.toUpperCase() === "ACTIVE" ? (
+                  <button
+                    type="button"
+                    onClick={() => handleCancel(item.listing_id)}
+                    disabled={cancellingId != null}
+                    className="inline-flex items-center gap-1 text-xs text-destructive hover:underline disabled:opacity-50"
+                  >
+                    {cancellingId === item.listing_id ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : null}
+                    Cancel
+                  </button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
               </span>
             </motion.div>
           ))}

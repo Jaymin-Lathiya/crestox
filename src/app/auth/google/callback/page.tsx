@@ -81,7 +81,7 @@ function GoogleCallbackContent() {
                     toast.success(intent === 'login' ? "Successfully logged in with Google!" : "Successfully signed up with Google!");
 
                     if (result.isNewArtist) {
-                        router.push("/artist/onboarding");
+                        router.push("/onboarding/artist");
                     } else if (result.isNewCollector) {
                         router.push("/explore");
                     } else {

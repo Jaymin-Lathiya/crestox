@@ -91,7 +91,7 @@ function SignupFormContent() {
                 void useUserStore.getState().initialize();
                 toast.success("Successfully signed up with Apple!");
                 if (result.isNewArtist && userType === UserType.ARTIST) {
-                    router.push("/artist/onboarding");
+                    router.push("/onboarding/artist");
                 } else if (result.isNewCollector) {
                     router.push("/explore");
                 } else {
