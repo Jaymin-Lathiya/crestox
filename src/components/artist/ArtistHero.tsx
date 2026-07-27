@@ -24,9 +24,10 @@ interface ArtistData {
 interface ArtistHeroProps {
   artist: ArtistData;
   onWatchlistClick?: () => void;
+  watchlistLoading?: boolean;
 }
 
-const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => {
+const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick, watchlistLoading = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleShare = async () => {
@@ -149,9 +150,12 @@ const ArtistHero: React.FC<ArtistHeroProps> = ({ artist, onWatchlistClick }) => 
               label="Watchlist"
               onClick={onWatchlistClick}
               iconActive={isWishlisted}
+              loading={watchlistLoading}
             />
             <ActionButton icon={Share2} label="Share" onClick={handleShare} />
-            <SocialButton links={social_media_links || []} />
+            {social_media_links && social_media_links.length > 0 && (
+              <SocialButton links={social_media_links} />
+            )}
           </motion.div>
         </div>
 
@@ -194,6 +198,7 @@ interface ActionButtonProps {
   onClick?: () => void;
   /** When true, icon is filled (e.g. watchlist heart) */
   iconActive?: boolean;
+  loading?: boolean;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -201,23 +206,29 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   label,
   onClick,
   iconActive = false,
+  loading = false,
 }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center space-x-2 md:space-x-3 px-4 md:px-5 py-2.5 md:py-3 border border-border rounded-full hover:border-primary/50 transition-all duration-300 bg-card/50 backdrop-blur-sm"
+    disabled={loading}
+    className="group flex items-center space-x-2 md:space-x-3 px-4 md:px-5 py-2.5 md:py-3 border border-border rounded-full hover:border-primary/50 transition-all duration-300 bg-card/50 backdrop-blur-sm disabled:opacity-75 disabled:cursor-not-allowed"
   >
-    <Icon
-      size={14}
-      className={cn(
-        'md:w-4 md:h-4 transition-colors duration-300',
-        iconActive
-          ? 'fill-primary text-primary'
-          : 'text-muted-foreground group-hover:text-primary',
-      )}
-    />
+    {loading ? (
+      <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+    ) : (
+      <Icon
+        size={14}
+        className={cn(
+          'md:w-4 md:h-4 transition-colors duration-300',
+          iconActive
+            ? 'fill-primary text-primary'
+            : 'text-muted-foreground group-hover:text-primary',
+        )}
+      />
+    )}
     <span className="font-mono text-xs text-foreground uppercase tracking-wide group-hover:text-primary transition-colors duration-300">
-      {label}
+      {loading ? 'Updating...' : label}
     </span>
   </button>
 );

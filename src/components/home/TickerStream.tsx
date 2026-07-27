@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import GradientButton from '../ui/gradiant-button';
@@ -108,7 +108,7 @@ const TickerItem = ({
   );
 };
 
-const HolographicCard = ({ piece, onViewFractals }: { piece: TickerArtPiece; onViewFractals: () => void }) => {
+const HolographicCard = ({ piece }: { piece: TickerArtPiece }) => {
   const isPositive = piece.change24h >= 0;
 
   return (
@@ -157,7 +157,9 @@ const HolographicCard = ({ piece, onViewFractals }: { piece: TickerArtPiece; onV
         </div>
       </div>
 
-      <GradientButton label="View Fractals" className="w-full mt-2" onClick={onViewFractals} />
+      <Link href={`/art/${piece.id}`} className="block w-full mt-2" prefetch>
+        <GradientButton label="View Fractals" className="w-full" />
+      </Link>
     </motion.div>
   );
 };
@@ -190,7 +192,6 @@ const TickerStream = () => {
   const [isAnimationPaused, setIsAnimationPaused] = useState(false);
   const hoverBridgeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interactionDepthRef = useRef(0);
-  const router = useRouter();
 
   const clearHoverBridge = useCallback(() => {
     if (hoverBridgeRef.current) {
@@ -308,9 +309,6 @@ const TickerStream = () => {
           >
             <HolographicCard
               piece={hoveredCard.piece}
-              onViewFractals={() => {
-                router.push(`/art/${hoveredCard.piece.id}`);
-              }}
             />
           </div>
         )}

@@ -60,7 +60,10 @@ const profileFormSchema = z.object({
         name: z.string().min(1, { message: "Award name is required." }),
         file: z.any().optional(),
         existing_media_id: z.number().optional(),
-      }),
+      }).refine((data) => !!data.file || !!data.existing_media_id, {
+        message: "Certificate / image is required.",
+        path: ["file"],
+      })
     )
     .optional(),
   exhibitions: z

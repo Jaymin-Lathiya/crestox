@@ -81,9 +81,17 @@ function ArtistPageSkeleton() {
 
 
 const PLACEHOLDER_AVATAR = '/assets/artist-portrait.jpg';
+const PLACEHOLDER_IMAGE = '/placeholder.svg';
+
+function buildAvatarUrl(filePath: string | null | undefined): string {
+  if (!filePath) return PLACEHOLDER_AVATAR;
+  if (filePath.startsWith('http')) return filePath;
+  const base = strings.base_url?.replace(/\/api\/?$/, '') ?? '';
+  return filePath.startsWith('/') ? `${base}${filePath}` : `${base}/${filePath}`;
+}
 
 function buildMediaUrl(filePath: string | null | undefined): string {
-  if (!filePath) return PLACEHOLDER_AVATAR;
+  if (!filePath) return PLACEHOLDER_IMAGE;
   if (filePath.startsWith('http')) return filePath;
   const base = strings.base_url?.replace(/\/api\/?$/, '') ?? '';
   return filePath.startsWith('/') ? `${base}${filePath}` : `${base}/${filePath}`;
@@ -93,6 +101,7 @@ const ArtistPage = () => {
   const params = useParams();
   const id = params?.id ? Number(params.id) : null;
 
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('artworks');
   const [basicDetails, setBasicDetails] = useState<ArtistBasicDetails | null>(null);
   const [achievements, setAchievements] = useState<ArtistAchievement[]>([]);
@@ -262,14 +271,14 @@ const ArtistPage = () => {
         name: basicDetails.artist_name,
         bio: basicDetails.bio ?? '',
         location: basicDetails.location ?? 'Unknown',
-        profileImage: basicDetails.avatar_url ?? PLACEHOLDER_AVATAR,
+        profileImage: buildAvatarUrl(basicDetails.avatar_url),
         isVerified: true,
         rank: 'Top 1% Global',
         isWishlisted: Boolean(basicDetails.is_in_watchlist),
         social_media_links: basicDetails.social_media_links ?? [],
       }
     : isLoading
-      ? { name: '—', bio: '', location: '—', profileImage: PLACEHOLDER_AVATAR, isVerified: false, rank: '—', social_media_links: [] }
+      ? { name: '—', bio: '', location: '—', profileImage: buildAvatarUrl(undefined), isVerified: false, rank: '—', social_media_links: [] }
       : null;
 
   const firstArtworkId = artworks.length > 0 ? Number(artworks[0].id) : null;
@@ -437,8 +446,10 @@ const ArtistPage = () => {
 
            <ArtistHero
         artist={artistData}
+        watchlistLoading={watchlistLoading}
         onWatchlistClick={() => {
           if (id == null || isNaN(id)) return;
+          setWatchlistLoading(true);
           toggleArtistWatchlist({ artist_profile_id: id })
             .then((data) => {
               setBasicDetails((prev) =>
@@ -451,7 +462,10 @@ const ArtistPage = () => {
             })
             .catch((err: any) =>
               toast.error(err?.response?.data?.message ?? 'Could not update watchlist'),
-            );
+            )
+            .finally(() => {
+              setWatchlistLoading(false);
+            });
         }}
       />
 

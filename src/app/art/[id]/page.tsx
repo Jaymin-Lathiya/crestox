@@ -117,7 +117,12 @@ function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; v
     { label: "Starting price", value: artwork.starting_price ? `₹${artwork.starting_price}` : null },
     { label: "Valuation", value: artwork.valuation ? `₹${artwork.valuation}` : null },
     { label: "Quality score", value: artwork.quality_score || null },
-    { label: "Approval status", value: artwork.approval_status || null },
+    {
+      label: "Approval status",
+      value: artwork.approval_status
+        ? artwork.approval_status.charAt(0).toUpperCase() + artwork.approval_status.slice(1).toLowerCase()
+        : null,
+    },
     {
       label: "Created",
       value: artwork.created_at
@@ -298,7 +303,9 @@ const Index = () => {
 
   const artworkImageUrl = artwork?.artwork_media?.[0]?.media?.file_path ?? "";
   const metadata = buildDetailsMetadata(artwork);
-  const reelArtworks = artworkByArtist.map(mapArtworkToReelItem).filter((a) => a.imageUrl);
+  const reelArtworks = artworkByArtist
+    .map(mapArtworkToReelItem)
+    .filter((a) => a.imageUrl && String(a.id) !== String(id));
   const artistName = artwork?.artist_profile?.artist_name ?? "";
   const pricePerFractal = (() => {
     const fromPortfolio = artwork?.current_fractal_price;
