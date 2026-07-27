@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getCookie } from '@/utils/cookieUtils';
 import { cn } from '@/lib/utils';
+import { markPurchasePending, clearPurchasePending, isPurchasePending } from '@/utils/pendingPurchase';
 
 const NOT_LOGGED_IN_BUY_MESSAGE =
   'You are not logged in. Log in to buy the fractal.';
@@ -54,6 +55,13 @@ interface CollectModuleProps {
   collectContextLabel?: string;
   layout?: CollectModuleLayout;
   className?: string;
+  /**
+   * Set by the parent page while it's re-fetching artwork/artist data after the
+   * user returns from a Razorpay redirect — the "available fractals" number is
+   * sourced from the parent's props, not this component's own quote, so it can't
+   * detect staleness on its own.
+   */
+  forceLoading?: boolean;
 }
 
 const CollectModule: React.FC<CollectModuleProps> = ({
@@ -68,6 +76,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   collectContextLabel = 'Artist',
   layout = 'sidebar',
   className,
+  forceLoading = false,
 }) => {
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [quote, setQuote] = useState<BufferPriceQuote | null>(null);
@@ -76,12 +85,19 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [collecting, setCollecting] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  // True while a Razorpay payment is in flight (checkout opened, outcome not yet known).
+  // Lets us tell a genuine "still fetching the first quote" skeleton apart from a
+  // "just returned from the payment app, force-refreshing stale numbers" skeleton.
+  const [forceRefreshSkeleton, setForceRefreshSkeleton] = useState(false);
+  const paymentPendingRef = useRef(false);
   const prevArtworkIdRef = useRef<number | null>(null);
   const prevDialogOpenRef = useRef(false);
   const quoteRequestRef = useRef(0);
+  const quantityRef = useRef(quantity);
+  quantityRef.current = quantity;
 
   const total = total_fractals || totalSupply;
-  const showMarketSkeleton = marketLoading && quote == null;
+  const showMarketSkeleton = forceLoading || forceRefreshSkeleton || (marketLoading && quote == null);
   const showDialogQuoteSkeleton = dialogQuoteLoading || showMarketSkeleton;
 
   // Artwork pages pass per-artwork availability; artist pages pass portfolio-wide totals.
@@ -100,7 +116,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         : 0;
 
   const showAvailabilitySkeleton =
-    displayAvailable == null && showMarketSkeleton && firstArtworkId != null;
+    firstArtworkId != null &&
+    (forceLoading || forceRefreshSkeleton || (displayAvailable == null && showMarketSkeleton));
   const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
 
   useEffect(() => {
@@ -139,8 +156,52 @@ const CollectModule: React.FC<CollectModuleProps> = ({
       if (requestId !== quoteRequestRef.current) return;
       if (mode === 'initial') setMarketLoading(false);
       if (mode === 'dialog') setDialogQuoteLoading(false);
+      setForceRefreshSkeleton(false);
     }
   }, []);
+
+  // On mobile, UPI/app-based Razorpay payment methods hand off to a separate app
+  // (or a full top-level redirect to a bank/netbanking page). Either way our tab
+  // can come back in one of two shapes: (a) merely backgrounded, same JS heap,
+  // same React state — a plain in-memory ref is enough; or (b) fully unloaded and
+  // reloaded — any in-memory ref/state is wiped, so we also consult a
+  // sessionStorage flag (isPurchasePending) that survives the reload. Without
+  // checking that on mount too, a fresh reload landing back on this page would
+  // never re-arm the "just came back mid-payment" detection at all.
+  const triggerReturnRefresh = useCallback(() => {
+    const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
+    if (artworkId == null) return;
+    if (!paymentPendingRef.current && !isPurchasePending(artworkId)) return;
+    setForceRefreshSkeleton(true);
+    const q = quantityRef.current === '' ? 1 : quantityRef.current;
+    void fetchQuote(artworkId, q, 'initial');
+  }, [firstArtworkId, fetchQuote]);
+
+  // Re-check as soon as we mount/know the artwork id — covers the full-reload case,
+  // where visibilitychange/pageshow may fire before or without React ever wiring up
+  // these listeners in time, but the sessionStorage flag is already there to read.
+  useEffect(() => {
+    if (document.visibilityState === 'visible') {
+      triggerReturnRefresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstArtworkId]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') triggerReturnRefresh();
+    };
+    const onPageShow = () => triggerReturnRefresh();
+    const onFocus = () => triggerReturnRefresh();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [triggerReturnRefresh]);
 
   useEffect(() => {
     const id = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
@@ -366,10 +427,16 @@ const CollectModule: React.FC<CollectModuleProps> = ({
                   : err?.response?.data?.message ?? 'Failed to complete purchase',
               );
               setCollecting(false);
+            } finally {
+              paymentPendingRef.current = false;
+              clearPurchasePending();
             }
           },
           modal: {
             ondismiss: function () {
+              paymentPendingRef.current = false;
+              clearPurchasePending();
+              setForceRefreshSkeleton(false);
               setCollecting(false);
               toast.info('Payment cancelled');
             },
@@ -381,6 +448,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
         setDialogOpen(false);
 
+        paymentPendingRef.current = true;
+        markPurchasePending(artworkId);
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       } else {

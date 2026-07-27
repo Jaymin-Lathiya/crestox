@@ -66,13 +66,14 @@ export interface ArtistArtwork {
 }
 
 export interface FeaturedArtist {
-    artist_profile_id: number;
+    artist_profile_id: number | null;
     artist_id: number;
     artist_name: string;
     artist_bio: string | null;
     avatar_url: string | null;
     total_fractals: number;
     available_fractals: number;
+    type?: 'artist' | 'curator' | 'owner';
 }
 
 /** Single artwork entry on GET /artists/homepage */

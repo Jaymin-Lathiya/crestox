@@ -22,6 +22,7 @@ import type { CompleteBuyOrderResponse } from "@/apis/artists/artistActions";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ImageOrientation } from "@/components/ScrollImagesReveal";
+import { isPurchasePending } from "@/utils/pendingPurchase";
 
 /** API artwork media item */
 interface ArtworkMediaItem {
@@ -200,6 +201,32 @@ const Index = () => {
     fetchArtworkById();
   }, [fetchArtworkById]);
 
+  // If the user returns to this tab (backgrounded-and-back, bfcache restore, or a
+  // full reload after a Razorpay redirect) while a purchase on this artwork was
+  // in flight, force a silent refetch so the price/availability shown don't sit
+  // stale — `returnRefreshing` also tells CollectModule to show its skeleton
+  // for the duration, since its "available fractals" number comes from these props.
+  const [returnRefreshing, setReturnRefreshing] = useState(false);
+
+  useEffect(() => {
+    const artworkIdNum = artwork?.id ?? (typeof id === "string" ? Number(id) : null);
+    const handleReturn = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!isPurchasePending(artworkIdNum)) return;
+      setReturnRefreshing(true);
+      void fetchArtworkById({ silent: true }).finally(() => setReturnRefreshing(false));
+    };
+    handleReturn();
+    document.addEventListener("visibilitychange", handleReturn);
+    window.addEventListener("pageshow", handleReturn);
+    window.addEventListener("focus", handleReturn);
+    return () => {
+      document.removeEventListener("visibilitychange", handleReturn);
+      window.removeEventListener("pageshow", handleReturn);
+      window.removeEventListener("focus", handleReturn);
+    };
+  }, [artwork?.id, id, fetchArtworkById]);
+
   useEffect(() => {
     if (!id || typeof id !== "string") {
       setAnalyticsLoading(false);
@@ -355,6 +382,7 @@ const Index = () => {
           isAtwork
           collectContextLabel={artistName || artwork.artist_profile?.artist_name || "Artist"}
           onCollectSuccess={handleCollectSuccess}
+          forceLoading={returnRefreshing}
         />
       ) : null}
 

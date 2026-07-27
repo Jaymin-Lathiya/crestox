@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronUp, User, Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getFeaturedArtists, getAllArtists, type FeaturedArtist } from '@/apis/artists/artistActions';
+import { getFeaturedArtists, getAllArtists } from '@/apis/artists/artistActions';
 import { createPortal } from 'react-dom';
 
 const PLACEHOLDER_AVATAR = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop';
@@ -15,6 +15,7 @@ type CreatorItem = {
     id?: number;
     name: string;
     role?: string;
+    type: 'artist' | 'curator' | 'owner';
     image: string;
     bio: string;
     stats: { label: string; value: number; max: number };
@@ -26,53 +27,10 @@ const CREATOR_TABS = [
     { id: 'owners', label: 'Featured Owners', icon: ShieldCheck },
 ];
 
-const MOCK_CREATORS = {
-    artists: [
-        {
-            name: 'Priya Patel',
-            role: 'Digital Surrealist',
-            image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop',
-            bio: 'An esteemed artist from Gujarat, known for a unique and captivating style that blends traditional motifs with modern digital...',
-            stats: { label: 'Fractals Available', value: 795, max: 795 }
-        },
-        {
-            name: 'Rohan Mehta',
-            role: 'Abstract Painter',
-            image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop',
-            bio: 'Master of texture and light, creating immersive abstract landscapes that challenge perception and reality.',
-            stats: { label: 'Fractals Available', value: 490, max: 490 }
-        },
-        {
-            name: 'Aarav Shah',
-            role: 'NFT Pioneer',
-            image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
-            bio: 'Bridging the gap between physical and digital ownership through innovative smart contract art.',
-            stats: { label: 'Fractals Available', value: 365, max: 365 }
-        },
-        {
-            name: 'Isha Joshi',
-            role: 'Geometric Artist',
-            image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=300&fit=crop',
-            bio: 'Exploring the mathematical beauty of sacred geometry in the digital age.',
-            stats: { label: 'Fractals Available', value: 405, max: 405 }
-        },
-        {
-            name: 'David L.',
-            role: 'Glitch Artist',
-            image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=300&fit=crop',
-            bio: 'Deconstructing digital signals to create visual noise that speaks volumes.',
-            stats: { label: 'Fractals Available', value: 200, max: 500 }
-        },
-        {
-            name: 'Maria G.',
-            role: 'Traditional Fine Art',
-            image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
-            bio: 'Classical techniques applied to contemporary subjects, preserving heritage in the blockchain.',
-            stats: { label: 'Fractals Available', value: 150, max: 300 }
-        },
-    ],
-    curators: [],
-    owners: []
+const TAB_TYPE_MAP: Record<string, 'artist' | 'curator' | 'owner'> = {
+    artists: 'artist',
+    curators: 'curator',
+    owners: 'owner',
 };
 
 function CreatorCardSkeleton() {
@@ -96,20 +54,31 @@ function CreatorCardSkeleton() {
 }
 
 function mapFeaturedArtistToCreator(artist: any): CreatorItem {
-    const total = artist.total_fractals ?? 100;
-    const available = artist.available_fractals ?? 50;
-    const max = total;
+    const total = artist.total_fractals ?? 0;
+    const available = artist.available_fractals ?? 0;
+    const type = artist.type ?? 'artist';
+    const roleLabels: Record<string, string> = {
+        artist: 'Artist',
+        curator: 'Curator',
+        owner: 'Owner',
+    };
+    const defaultBios: Record<string, string> = {
+        artist: 'Featured artist on Crestox.',
+        curator: 'Featured curator on Crestox.',
+        owner: 'Featured owner on Crestox.',
+    };
 
     return {
-        id: artist.artist_profile_id || artist.id,
-        name: artist.artist_name || artist.user?.name || 'Unknown Artist',
-        role: 'Artist',
+        id: artist.artist_profile_id ?? artist.artist_id ?? artist.id,
+        name: artist.artist_name || artist.user?.name || 'Unknown',
+        type,
+        role: roleLabels[type] ?? 'Artist',
         image: artist.avatar_url || artist.avatar_media?.file_path || PLACEHOLDER_AVATAR,
-        bio: artist.artist_bio || 'Featured artist on Crestox.',
+        bio: artist.artist_bio || defaultBios[type] || defaultBios.artist,
         stats: {
             label: 'Fractals Available',
             value: available,
-            max,
+            max: total,
         },
     };
 }
@@ -264,14 +233,22 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
 export function FeaturedCreators() {
     const [activeTab, setActiveTab] = useState('artists');
     const [isExpanded, setIsExpanded] = useState(false);
-    const [displayedCreators, setDisplayedCreators] = useState<CreatorItem[]>([]);
-    const [isLoadingArtists, setIsLoadingArtists] = useState(false);
+    const [featuredCreators, setFeaturedCreators] = useState<CreatorItem[]>([]);
+    const [expandedCreators, setExpandedCreators] = useState<CreatorItem[]>([]);
+    const [isLoadingArtists, setIsLoadingArtists] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [selectedBio, setSelectedBio] = useState<{ bio: string; name: string } | null>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const featuredForTab = featuredCreators.filter(
+        (creator) => creator.type === TAB_TYPE_MAP[activeTab]
+    );
+    const displayedCreators = isExpanded && activeTab === 'artists'
+        ? [...featuredForTab, ...expandedCreators]
+        : featuredForTab;
 
     // When artists grid height changes (browse all / collapse), scroll-linked sections below must remeasure.
     useEffect(() => {
@@ -293,24 +270,18 @@ export function FeaturedCreators() {
         setIsLoadingArtists(true);
         try {
             const artists = await getFeaturedArtists()();
-            setDisplayedCreators(artists.map(mapFeaturedArtistToCreator));
+            setFeaturedCreators(artists.map(mapFeaturedArtistToCreator));
         } catch (error) {
             console.error("Failed to load featured artists:", error);
-            setDisplayedCreators([]);
+            setFeaturedCreators([]);
         } finally {
             setIsLoadingArtists(false);
         }
     };
 
     useEffect(() => {
-        if (activeTab === 'artists') {
-            loadFeaturedArtists();
-        } else {
-            const creators = MOCK_CREATORS[activeTab as keyof typeof MOCK_CREATORS];
-            const shuffled = [...creators].sort(() => 0.5 - Math.random());
-            setDisplayedCreators(shuffled);
-        }
-    }, [activeTab]);
+        loadFeaturedArtists();
+    }, []);
 
     const loadAllArtists = async () => {
         setIsLoadingArtists(true);
@@ -328,12 +299,9 @@ export function FeaturedCreators() {
 
             // Map the new artists and filter out any that are already displayed as featured
             const loadedCreators = artistsData.map(mapFeaturedArtistToCreator);
-
-            setDisplayedCreators(prev => {
-                const existingIds = new Set(prev.map(c => c.id));
-                const newCreators = loadedCreators.filter(c => !existingIds.has(c.id));
-                return [...prev, ...newCreators];
-            });
+            const featuredIds = new Set(featuredForTab.map((c) => c.id));
+            const newCreators = loadedCreators.filter((c) => !featuredIds.has(c.id));
+            setExpandedCreators(newCreators);
             setIsExpanded(true);
         } catch (error) {
             console.error("Failed to load all artists:", error);
@@ -347,16 +315,13 @@ export function FeaturedCreators() {
             if (!isExpanded) {
                 loadAllArtists();
             } else {
-                // Collapse back to original featured artists list by re-fetching featured artists API
                 setIsExpanded(false);
-                loadFeaturedArtists();
+                setExpandedCreators([]);
             }
-        } else {
-            setIsExpanded(!isExpanded);
         }
     };
 
-    const visibleCreators = (!isExpanded && activeTab === 'artists') ? displayedCreators.slice(0, 4) : displayedCreators;
+    const visibleCreators = displayedCreators;
     const showStickyCollapse = mounted && isExpanded && activeTab === "artists";
 
     const collapseButton = (
@@ -386,7 +351,11 @@ export function FeaturedCreators() {
                 {CREATOR_TABS.map((tab) => (
                     <button
                         key={tab.id}
-                        onClick={() => { setActiveTab(tab.id); setIsExpanded(false); }}
+                        onClick={() => {
+                            setActiveTab(tab.id);
+                            setIsExpanded(false);
+                            setExpandedCreators([]);
+                        }}
                         className={cn(
                             "flex items-center gap-2 whitespace-nowrap text-sm tracking-[0.1em] uppercase transition-all duration-300 pb-2 relative",
                             activeTab === tab.id
@@ -404,8 +373,8 @@ export function FeaturedCreators() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {isLoadingArtists && activeTab === 'artists' && !isExpanded ? (
-                    // Initial load or tab switch: full skeletons
+                {isLoadingArtists && !isExpanded ? (
+                    // Initial load: full skeletons
                     Array.from({ length: 6 }).map((_, i) => <CreatorCardSkeleton key={i} />)
                 ) : (
                     <>
@@ -459,7 +428,7 @@ export function FeaturedCreators() {
                 </div>
             )}
 
-            {!showStickyCollapse && (
+            {activeTab === 'artists' && !showStickyCollapse && (
                 <div className="mt-10 flex justify-center">
                     {collapseButton}
                 </div>

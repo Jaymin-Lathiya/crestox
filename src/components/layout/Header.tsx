@@ -85,7 +85,7 @@ export function Header() {
       icon: (
         <WandSparkles className="h-full w-full text-foreground/80" />
       ),
-      href: "/product",
+      href: "/crea-ai",
     },
     {
       title: "About Us",

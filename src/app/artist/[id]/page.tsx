@@ -29,6 +29,7 @@ import { strings } from '@/utils/strings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toggleArtistWatchlist } from '@/apis/my-collection/myCollectionActions';
 import { toast } from 'sonner';
+import { isPurchasePending } from '@/utils/pendingPurchase';
 
 type TabType = 'artworks' | 'analytics' | 'achievements' | 'history' | 'collectors';
 
@@ -294,6 +295,42 @@ const ArtistPage = () => {
         collectContextLabel: 'Artist',
       };
 
+  // If the user returns to this tab (backgrounded-and-back, bfcache restore, or a
+  // full reload after a Razorpay redirect) while a purchase for this artist's
+  // artwork was in flight, force a silent refetch of the price/availability shown
+  // in CollectModule so stale numbers don't sit there — `returnRefreshing` also
+  // tells CollectModule to show its skeleton for the duration.
+  const [returnRefreshing, setReturnRefreshing] = useState(false);
+
+  const refreshBasicDetailsSilently = useCallback(async () => {
+    if (id == null || isNaN(id)) return;
+    try {
+      const basic = await getArtistBasicDetails(id)();
+      setBasicDetails(basic ?? null);
+    } catch {
+      // keep showing last known details if refresh fails
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const handleReturn = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!isPurchasePending(firstArtworkId)) return;
+      setReturnRefreshing(true);
+      void refreshBasicDetailsSilently().finally(() => setReturnRefreshing(false));
+      refetchAfterCollect();
+    };
+    handleReturn();
+    document.addEventListener('visibilitychange', handleReturn);
+    window.addEventListener('pageshow', handleReturn);
+    window.addEventListener('focus', handleReturn);
+    return () => {
+      document.removeEventListener('visibilitychange', handleReturn);
+      window.removeEventListener('pageshow', handleReturn);
+      window.removeEventListener('focus', handleReturn);
+    };
+  }, [firstArtworkId, refreshBasicDetailsSilently, refetchAfterCollect]);
+
   const achievementsForTab = Array.isArray(achievements)
     ? achievements.map((a) => ({
         id: String(a.id),
@@ -441,7 +478,7 @@ const ArtistPage = () => {
 
           <div className="lg:col-span-4 lg:order-last">
             <div className="sticky top-6">
-              <CollectModule {...collectModuleProps} isAtwork={artworks.length > 0} />
+              <CollectModule {...collectModuleProps} isAtwork={artworks.length > 0} forceLoading={returnRefreshing} />
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useUserStore } from '@/store/useUserStore';
 import { toast } from 'sonner';
 import { redirectUnknownUserToSignup } from '@/utils/authRedirect';
+import { UserType } from '@/enums/userType';
 import { LoaderCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -40,13 +41,16 @@ function GoogleCallbackContent() {
         }
 
         let intent: 'login' | 'signup' = 'signup';
-        let userType: string | undefined;
+        let userType: UserType | undefined;
 
         if (stateParam) {
             try {
                 const state = JSON.parse(atob(stateParam));
                 intent = state.intent || 'signup';
-                userType = state.userType || undefined;
+                const rawUserType = state.userType;
+                userType = Object.values(UserType).includes(rawUserType as UserType)
+                    ? (rawUserType as UserType)
+                    : undefined;
             } catch {
                 // ignore invalid state
             }

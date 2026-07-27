@@ -21,20 +21,24 @@ export async function generateMetadata({
     ]);
 
     // Parse artwork entity
-    let artwork: Record<string, string | number | null> = {};
+    let artwork: Record<string, unknown> = {};
     if (artworkRes.status === "fulfilled" && artworkRes.value.ok) {
         const json = await artworkRes.value.json();
         artwork = json?.data ?? json ?? {};
     }
 
+    const artistProfile = artwork.artist_profile;
+    const artistNameFromProfile =
+        artistProfile &&
+        typeof artistProfile === "object" &&
+        "artist_name" in artistProfile
+            ? artistProfile.artist_name
+            : null;
+
     const artworkName = String(artwork?.artwork_name ?? "Artwork");
     const description = artwork?.description ? String(artwork.description) : null;
     const image = artwork?.primary_image_url ? String(artwork.primary_image_url) : null;
-    const artistName = String(
-        (artwork?.artist_profile as Record<string, string> | null)?.artist_name ??
-        artwork?.artist_name ??
-        "Crestox"
-    );
+    const artistName = String(artistNameFromProfile ?? artwork?.artist_name ?? "Crestox");
 
     // Build variable map for template interpolation
     const vars: Record<string, string> = {
@@ -52,7 +56,8 @@ export async function generateMetadata({
     let ogImageAlt: string | null = null;
 
     if (templateRes.status === "fulfilled" && templateRes.value.ok) {
-        const tmpl = await templateRes.value.json();
+        const json = await templateRes.value.json();
+        const tmpl = json?.data ?? json;
         if (tmpl?.title) title = interpolateTemplate(tmpl.title, vars);
         if (tmpl?.description) metaDescription = interpolateTemplate(tmpl.description, vars);
         if (tmpl?.og_image_alt) ogImageAlt = interpolateTemplate(tmpl.og_image_alt, vars);

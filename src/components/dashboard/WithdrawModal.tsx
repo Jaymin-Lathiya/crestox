@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -20,9 +20,12 @@ import {
   createWithdrawalRequest,
   getMyWithdrawalRequests,
   cancelWithdrawalRequest,
+  getBankDetailsStatus,
+  sendBankDetailsLink,
+  getAvailableWithdrawalAmount,
   type WithdrawalRequest,
 } from "@/apis/withdrawal/withdrawalActions";
-import { AlertCircle, CheckCircle2, Clock, XCircle, Loader2, Banknote, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, XCircle, Loader2, Banknote, X, Landmark, Mail } from "lucide-react";
 
 interface WithdrawModalProps {
   open: boolean;
@@ -62,7 +65,21 @@ export function WithdrawModal({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [tab, setTab] = useState<"new" | "history">("new");
+  const [sendingLink, setSendingLink] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const queryClient = useQueryClient();
+
+  const { data: bankStatus, isLoading: bankStatusLoading } = useQuery({
+    queryKey: ["bank-details-status"],
+    queryFn: getBankDetailsStatus,
+    enabled: open,
+  });
+
+  const { data: availableData } = useQuery({
+    queryKey: ["withdrawal-available-amount"],
+    queryFn: () => getAvailableWithdrawalAmount(),
+    enabled: open,
+  });
 
   const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: ["withdrawal-requests"],
@@ -71,6 +88,25 @@ export function WithdrawModal({
     },
     enabled: open && tab === "history",
   });
+
+  useEffect(() => {
+    if (!open) {
+      setLinkSent(false);
+    }
+  }, [open]);
+
+  const handleSendLink = async () => {
+    setSendingLink(true);
+    try {
+      const result = await sendBankDetailsLink();
+      setLinkSent(true);
+      toast.success(result.message ?? "We've emailed you a secure link to add your bank details.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Failed to send the email. Please try again.");
+    } finally {
+      setSendingLink(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -91,6 +127,7 @@ export function WithdrawModal({
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
       queryClient.invalidateQueries({ queryKey: ["portfolio-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["artist-withdrawal-amount"] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-available-amount"] });
       setTab("history");
     },
     onError: (err: any) => {
@@ -109,6 +146,7 @@ export function WithdrawModal({
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
       queryClient.invalidateQueries({ queryKey: ["portfolio-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["artist-withdrawal-amount"] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-available-amount"] });
     },
     onError: (err: any) => {
       const msg =
@@ -118,7 +156,9 @@ export function WithdrawModal({
   });
 
   const parsedAmount = parseFloat(amount);
-  const isValidAmount = !isNaN(parsedAmount) && parsedAmount >= 100 && parsedAmount <= walletBalance;
+  const currentAvailable = parseFloat(availableData?.available_to_withdraw ?? String(walletBalance));
+  const pendingWithdrawal = parseFloat(availableData?.pending_withdrawal ?? '0');
+  const isValidAmount = !isNaN(parsedAmount) && parsedAmount >= 100 && parsedAmount <= currentAvailable;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,6 +198,71 @@ export function WithdrawModal({
         </div>
 
         {tab === "new" ? (
+          bankStatusLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 size={20} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : !bankStatus?.has_fund_account ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                <AlertCircle size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-300/80 leading-relaxed">
+                  No bank/UPI details on file. Add them first to enable withdrawals — we'll email you a secure link.
+                </p>
+              </div>
+
+              {linkSent ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+                    <Mail size={24} className="text-accent" />
+                  </div>
+                  <p className="text-sm text-foreground font-medium">Check your email</p>
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    We've sent a secure link to add your bank/UPI details. Once saved, come back here to withdraw.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSendLink}
+                    disabled={sendingLink}
+                    className="text-xs text-accent hover:text-accent"
+                  >
+                    Didn't get it? Resend
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleSendLink}
+                  disabled={sendingLink}
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  {sendingLink ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin mr-1.5" />
+                      Sending…
+                    </>
+                  ) : (
+                    <>
+                      <Landmark size={14} className="mr-1.5" />
+                      Send Me the Link to Add Bank Details
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="text-muted-foreground"
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
           <div className="space-y-4">
             {/* Balance display */}
             <div className="p-3 bg-muted/20 rounded-lg border border-border space-y-1">
@@ -165,9 +270,15 @@ export function WithdrawModal({
                 <span className="text-muted-foreground">Wallet Balance</span>
                 <span className="font-mono text-foreground">₹{walletBalance.toFixed(2)}</span>
               </div>
+              {pendingWithdrawal > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Pending Withdrawals</span>
+                  <span className="font-mono text-yellow-500">₹{pendingWithdrawal.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Total Earnings</span>
-                <span className="font-mono text-accent">₹{totalEarnings.toFixed(2)}</span>
+                <span className="text-muted-foreground">Available to Withdraw</span>
+                <span className="font-mono text-accent">₹{currentAvailable.toFixed(2)}</span>
               </div>
             </div>
 
@@ -182,7 +293,7 @@ export function WithdrawModal({
                   type="number"
                   placeholder="0.00"
                   min={100}
-                  max={walletBalance}
+                  max={currentAvailable}
                   step={0.01}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
@@ -193,14 +304,16 @@ export function WithdrawModal({
                 <p className={`text-xs ${
                   parsedAmount < 100
                     ? "text-destructive"
-                    : parsedAmount > walletBalance
+                    : parsedAmount > currentAvailable
                     ? "text-destructive"
                     : "text-muted-foreground"
                 }`}>
                   {parsedAmount < 100
                     ? "Minimum withdrawal is ₹100"
-                    : parsedAmount > walletBalance
-                    ? "Exceeds available balance"
+                    : parsedAmount > currentAvailable
+                    ? pendingWithdrawal > 0
+                      ? `Your pending requests (₹${pendingWithdrawal.toFixed(2)}) + new request (₹${parsedAmount.toFixed(2)}) = ₹${(pendingWithdrawal + parsedAmount).toFixed(2)}, which exceeds your total. You can withdraw up to ₹${currentAvailable.toFixed(2)} more.`
+                      : `Exceeds available balance of ₹${currentAvailable.toFixed(2)}`
                     : `₹${parsedAmount.toFixed(2)} will be held pending admin approval`}
                 </p>
               )}
@@ -221,13 +334,6 @@ export function WithdrawModal({
               />
             </div>
 
-            <div className="flex items-start gap-2 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
-              <AlertCircle size={14} className="text-yellow-400 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-yellow-300/80 leading-relaxed">
-                Make sure your bank account is registered in your profile. If no account is set up, admin will contact you before processing.
-              </p>
-            </div>
-
             <DialogFooter>
               <Button
                 variant="outline"
@@ -240,7 +346,7 @@ export function WithdrawModal({
               <Button
                 size="sm"
                 onClick={() => createMutation.mutate()}
-                disabled={!isValidAmount || createMutation.isPending}
+                disabled={!isValidAmount || createMutation.isPending || currentAvailable < 100}
                 className="bg-accent text-accent-foreground hover:bg-accent/90"
               >
                 {createMutation.isPending ? (
@@ -254,6 +360,7 @@ export function WithdrawModal({
               </Button>
             </DialogFooter>
           </div>
+          )
         ) : (
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
             {historyLoading ? (

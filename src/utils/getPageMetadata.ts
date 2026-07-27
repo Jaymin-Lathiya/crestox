@@ -22,7 +22,8 @@ export async function getPageMetadata(path: string): Promise<Metadata> {
 
         if (!res.ok) return DEFAULT_METADATA;
 
-        const data = await res.json();
+        const json = await res.json();
+        const data = json?.data ?? json;
 
         const metadata: Metadata = {
             title: data.title || DEFAULT_METADATA.title,

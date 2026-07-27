@@ -68,6 +68,11 @@ export const submitBankDetails = async (data: SubmitBankDetailsDto) => {
   return response.data?.data ?? response.data;
 };
 
+export const sendBankDetailsLink = async (): Promise<{ message: string }> => {
+  const response = await instance.post(WITHDRAWAL_URLS.SEND_BANK_DETAILS_LINK);
+  return response.data?.data ?? response.data;
+};
+
 export const createWithdrawalRequest = async (data: CreateWithdrawalDto) => {
   const response = await instance.post(WITHDRAWAL_URLS.CREATE_REQUEST, data);
   return response.data?.data ?? response.data;

@@ -48,7 +48,8 @@ export async function generateMetadata({
     let ogImageAlt: string | null = null;
 
     if (templateRes.status === "fulfilled" && templateRes.value.ok) {
-        const tmpl = await templateRes.value.json();
+        const json = await templateRes.value.json();
+        const tmpl = json?.data ?? json;
         if (tmpl?.title) title = interpolateTemplate(tmpl.title, vars);
         if (tmpl?.description) description = interpolateTemplate(tmpl.description, vars);
         if (tmpl?.og_image_alt) ogImageAlt = interpolateTemplate(tmpl.og_image_alt, vars);

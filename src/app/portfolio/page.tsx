@@ -43,7 +43,7 @@ export default function CollectionPage() {
       {renderContent()}
     </DashboardShell>
                     <section className="py-10">
-                    <FeatureCarousel
+                    {/* <FeatureCarousel
                         title="How Crestox Works"
                         description="A simple, secure certificate workflow"
                         image={{
@@ -55,10 +55,10 @@ export default function CollectionPage() {
                             step4light: "/assets/artwork-6.jpg",
                             alt: "Feature carousel demo"
                         }}
-                    />
+                    /> */}
                 </section>
 
-                <SidePanel
+                {/* <SidePanel
                     panelOpen={open}
                     handlePanelOpen={() => setOpen(!open)}
                     renderButton={(toggle) => (
@@ -79,7 +79,7 @@ export default function CollectionPage() {
                             Your browser does not support the video tag.
                         </video>
                     </section>
-                </SidePanel>
+                </SidePanel> */}
             </div>
         </div>
     );
