@@ -67,10 +67,19 @@ function ArtistPageSkeleton() {
             <ArtworksGridSkeleton />
           </div>
           <div className="lg:col-span-4">
-            <div className="sticky top-6 space-y-4">
-              <Skeleton className="h-32 w-full rounded-lg" />
-              <Skeleton className="h-48 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-sm" />
+            <div className="sticky top-6">
+              <CollectModule
+                forceLoading={true}
+                layout="sidebar"
+                pricePerFractal={240.5}
+                totalSupply={1000}
+                available={142}
+                available_fractals={142}
+                total_fractals={1000}
+                firstArtworkId={null}
+                isAtwork={false}
+                collectContextLabel="Artist"
+              />
             </div>
           </div>
         </div>
@@ -226,6 +235,7 @@ const ArtistPage = () => {
     }
     if (id == null || isNaN(id)) return;
 
+    setReturnRefreshing(true);
     void (async () => {
       try {
         const [basic, collectorsData, artworksResponse, analyticsRes] = await Promise.all([
@@ -262,6 +272,8 @@ const ArtistPage = () => {
         setArtworks(mapped);
       } catch (_err) {
         // Background sync failed; optimistic UI already updated
+      } finally {
+        setReturnRefreshing(false);
       }
     })();
   }, [id]);

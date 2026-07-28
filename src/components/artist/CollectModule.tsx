@@ -84,6 +84,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   // Lets us tell a genuine "still fetching the first quote" skeleton apart from a
   // "just returned from the payment app, force-refreshing stale numbers" skeleton.
   const [forceRefreshSkeleton, setForceRefreshSkeleton] = useState(false);
+  const [isCompletingOrPending, setIsCompletingOrPending] = useState(false);
   const paymentPendingRef = useRef(false);
   const collectInFlightRef = useRef(false);
   const prevArtworkIdRef = useRef<number | null>(null);
@@ -93,8 +94,8 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   quantityRef.current = quantity;
 
   const total = total_fractals || totalSupply;
-  const showMarketSkeleton = forceLoading || forceRefreshSkeleton || (marketLoading && quote == null);
-  const showDialogQuoteSkeleton = dialogQuoteLoading || showMarketSkeleton;
+  const showMarketSkeleton = forceLoading || forceRefreshSkeleton || isCompletingOrPending || (marketLoading && quote == null);
+  const showDialogQuoteSkeleton = dialogQuoteLoading || (marketLoading && quote == null);
 
   // Artwork pages pass per-artwork availability; artist pages pass portfolio-wide totals.
   const displayAvailable =
@@ -102,7 +103,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
   const availShow = displayAvailable != null ? displayAvailable : quote?.total_available_shares != null && Number.isFinite(quote.total_available_shares) ? quote.total_available_shares : 0;
 
-  const showAvailabilitySkeleton = firstArtworkId != null && (forceLoading || forceRefreshSkeleton || (displayAvailable == null && showMarketSkeleton));
+  const showAvailabilitySkeleton = forceLoading || forceRefreshSkeleton || isCompletingOrPending || (firstArtworkId != null && (displayAvailable == null && showMarketSkeleton));
   const availableBarPercent = total > 0 ? (availShow / total) * 100 : 0;
 
   useEffect(() => {
@@ -325,8 +326,12 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   useEffect(() => {
     const artworkId = firstArtworkId != null && !isNaN(firstArtworkId) ? firstArtworkId : null;
     const pending = getPendingPurchase(artworkId);
-    if (artworkId == null || !pending) return;
+    if (artworkId == null || !pending) {
+      setIsCompletingOrPending(false);
+      return;
+    }
 
+    setIsCompletingOrPending(true);
     let cancelled = false;
     let timer: number | undefined;
     const poll = async () => {
@@ -344,6 +349,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         setInitiatedOrder(null);
         setCollecting(false);
         setForceRefreshSkeleton(false);
+        setIsCompletingOrPending(false);
 
         if (order.status === 'COMPLETED') {
           const refund = parseFloat(order.refund_amount ?? '0');
@@ -466,6 +472,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           handler: async function (response: any) {
             let terminalConfirmed = false;
             try {
+              setIsCompletingOrPending(true);
               const completed = await completeBuyOrder({
                 artwork_id: artworkId,
                 quantity: effectiveQty,
@@ -482,9 +489,15 @@ const CollectModule: React.FC<CollectModuleProps> = ({
               const s = err?.response?.status;
               toast.info(s === 401 || s === 403 ? NOT_LOGGED_IN_BUY_MESSAGE : 'Payment received. We are confirming the order status.');
               setCollecting(false);
+              if (s === 401 || s === 403) {
+                terminalConfirmed = true;
+              }
             } finally {
               paymentPendingRef.current = !terminalConfirmed;
-              if (terminalConfirmed) clearPurchasePending();
+              if (terminalConfirmed) {
+                clearPurchasePending();
+                setIsCompletingOrPending(false);
+              }
             }
           },
           modal: {
@@ -512,18 +525,23 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         const mockPaymentId = `pay_mock_${Date.now()}`;
         const mockSignature = `mock_signature_${Date.now()}`;
 
-        const completed = await completeBuyOrder({
-          artwork_id: artworkId,
-          quantity: effectiveQty,
-          razorpay_order_id: orderData.razorpay_order_id,
-          razorpay_payment_id: mockPaymentId,
-          razorpay_signature: mockSignature,
-          max_slippage_pct: 5,
-          quoted_price: quotedFractalPrice,
-        })();
+        try {
+          setIsCompletingOrPending(true);
+          const completed = await completeBuyOrder({
+            artwork_id: artworkId,
+            quantity: effectiveQty,
+            razorpay_order_id: orderData.razorpay_order_id,
+            razorpay_payment_id: mockPaymentId,
+            razorpay_signature: mockSignature,
+            max_slippage_pct: 5,
+            quoted_price: quotedFractalPrice,
+          })();
 
-        await handleCompletedOrder(completed);
-        clearPurchasePending();
+          await handleCompletedOrder(completed);
+        } finally {
+          clearPurchasePending();
+          setIsCompletingOrPending(false);
+        }
       }
     } catch (err: any) {
       const s = err?.response?.status;
@@ -552,12 +570,12 @@ const CollectModule: React.FC<CollectModuleProps> = ({
         transition={{ delay: layout === 'floating' ? 0.5 : 0.4, duration: 0.8 }}
         className={cn(asideClass, className)}
       >
-        <div className={cn('relative overflow-hidden rounded-2xl p-6 flex flex-col gap-6 shadow-2xl w-full text-left', innerSurface, !canInteract || !razorpayLoaded ? 'opacity-60' : '')}>
+        <div className={cn('relative overflow-hidden rounded-2xl p-6 flex flex-col gap-6 shadow-2xl w-full text-left', innerSurface, (!canInteract && !forceLoading && !isCompletingOrPending) || !razorpayLoaded ? 'opacity-60' : '')}>
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
               <h3 className={cn('font-sans text-sm font-medium tracking-wide uppercase', summaryHeadingCls)}>Current Valuation</h3>
               <div className="flex items-baseline space-x-1 min-h-[2.5rem]">
-                {showMarketSkeleton && firstArtworkId != null ? (
+                {showMarketSkeleton ? (
                   <Skeleton className={cn('h-10 w-40 rounded-lg', layout === 'floating' ? 'bg-white/15' : 'bg-slate-200 dark:bg-zinc-700')} />
                 ) : (
                   <span className={cn('font-sans text-4xl font-bold tracking-tight', summaryPriceCls)}>
@@ -602,10 +620,10 @@ const CollectModule: React.FC<CollectModuleProps> = ({
           <button
             type="button"
             onClick={openDialog}
-            disabled={!canInteract || !razorpayLoaded}
+            disabled={!canInteract || !razorpayLoaded || forceLoading || isCompletingOrPending}
             className="group w-full h-12 shrink-0 bg-blue-500 dark:bg-[#3B82F6] hover:bg-blue-600 dark:hover:bg-[#2563EB] text-white rounded-xl shadow-lg transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
           >
-            <span className="font-sans font-medium text-base">{!razorpayLoaded ? 'Loading...' : 'Collect fractal'}</span>
+            <span className="font-sans font-medium text-base">{!razorpayLoaded || forceLoading || isCompletingOrPending ? 'Loading...' : 'Collect fractal'}</span>
             <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
           </button>
 

@@ -89,6 +89,18 @@ function ArtDetailSkeleton() {
       <div className="w-full h-[90vh] relative z-20 flex items-center justify-center bg-background/5">
         <Skeleton className="w-full h-full rounded-none" />
       </div>
+      <CollectModule
+        layout="floating"
+        pricePerFractal={240.5}
+        totalSupply={1000}
+        available={142}
+        available_fractals={142}
+        total_fractals={1000}
+        firstArtworkId={null}
+        isAtwork={false}
+        collectContextLabel="Artist"
+        forceLoading={true}
+      />
       <div className="relative z-10 px-8 md:px-16 py-10 space-y-8">
         <div className="flex gap-4">
           <Skeleton className="h-10 w-28" />
@@ -295,8 +307,13 @@ const Index = () => {
           };
         });
       }
-      void fetchArtworkById({ silent: true });
-      void refetchAnalyticsAfterCollect();
+      setReturnRefreshing(true);
+      void Promise.all([
+        fetchArtworkById({ silent: true }),
+        refetchAnalyticsAfterCollect(),
+      ]).finally(() => {
+        setReturnRefreshing(false);
+      });
     },
     [fetchArtworkById, refetchAnalyticsAfterCollect],
   );
