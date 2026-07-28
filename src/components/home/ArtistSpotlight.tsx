@@ -329,7 +329,10 @@ const ArtistSpotlight = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <GradientButton variant="primary" label='Explore All Artists' className='flex justify-center items-center'>
+            <GradientButton variant="primary" label='' className='flex justify-center items-center'>
+              <Link href="/explore" prefetch>
+                Explore All Artists
+              </Link>
             </GradientButton>
 
           </motion.div>

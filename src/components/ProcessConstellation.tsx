@@ -167,6 +167,7 @@ export default function ProcessConstellation() {
                     title={item.title}
                     description={item.description}
                     animation={STEP_ANIMATIONS[item.number]}
+                    href={item.href}
                   />
                 </motion.div>
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import {
   BarChart3,
   Palette,
@@ -205,14 +206,15 @@ function CrestoxTab() {
         </div>
         <div className="grid sm:grid-cols-2 gap-6">
           {PROCESS_STEPS.map((step) => (
-            <div
+            <Link
               key={step.number}
-              className="rounded-lg border border-border/60 bg-background/30 p-6 relative overflow-hidden"
+              href={step.href}
+              className="rounded-lg border border-border/60 bg-background/30 p-6 relative overflow-hidden transition-colors hover:border-primary/40 hover:bg-background/50"
             >
               <span className="font-mono text-[10px] text-primary tracking-widest">STEP {step.number}</span>
               <h3 className="font-serif text-lg text-foreground mt-2 mb-2">{step.title}</h3>
               <p className="text-muted-foreground text-xs font-sans leading-relaxed">{step.description}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </SectionShell>

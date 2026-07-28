@@ -145,23 +145,27 @@ export const PROCESS_STEPS = [
     title: 'Discover & Verify',
     description:
       'Browse curated masterpieces verified through our AI authentication protocol. Each piece undergoes rigorous provenance analysis.',
+    href: '/explore',
   },
   {
     number: '02',
     title: 'Acquire Fractions',
     description:
       'Purchase fractional ownership tokens representing real shares of authenticated artworks. Start with as little as 0.1 ETH.',
+    href: '/app',
   },
   {
     number: '03',
     title: 'Trade Anytime',
     description:
       "Trade your fractions on secondary markets or participate in governance decisions about the physical artwork's future.",
+    href: '/collection',
   },
   {
     number: '04',
     title: 'Track Performance',
     description:
       'Earn from appreciation, exhibition royalties, and eventual sale proceeds distributed proportionally to token holders.',
+    href: '/portfolio',
   },
 ] as const;

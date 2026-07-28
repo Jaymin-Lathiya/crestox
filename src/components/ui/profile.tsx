@@ -147,7 +147,7 @@ export default function ProfileDropdown({
                         </DropdownMenuItem>
 
                         <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                            <Link href="/terms" prefetch>
+                            <Link href="/terms-of-use" prefetch>
                                 <Shield className="mr-2 h-4 w-4" />
                                 <span>Terms & Policies</span>
                             </Link>

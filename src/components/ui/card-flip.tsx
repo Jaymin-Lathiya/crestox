@@ -11,6 +11,7 @@
  */
 
 import { ArrowRight, Repeat2 } from "lucide-react";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,8 @@ export interface CardFlipProps {
     features?: string[];
     step?: string;
     animation?: ReactNode;
+    /** Destination for the "Start today" CTA on the card back */
+    href?: string;
 }
 
 export default function CardFlip({
@@ -30,6 +33,7 @@ export default function CardFlip({
     // features = ["UI/UX", "Modern Design", "Tailwind CSS", "Kokonut UI"],
     step = "1",
     animation,
+    href,
 }: CardFlipProps) {
     const [isFlipped, setIsFlipped] = useState(false);
 
@@ -167,31 +171,61 @@ export default function CardFlip({
                     </div>
 
                     <div className="mt-6 border-border border-t pt-6">
-                        <div
-                            className={cn(
-                                "group/start relative",
-                                "flex items-center justify-between",
-                                "-m-3 rounded-xl p-3",
-                                "transition-all duration-300",
-                                "bg-gradient-to-r from-transparent via-transparent to-transparent",
-                                "hover:from-primary/20 hover:via-primary/10 hover:to-transparent",
-                                "hover:scale-[1.02] hover:cursor-pointer"
-                            )}
-                        >
-                            <span className="font-mono text-sm text-foreground transition-colors duration-300 group-hover/start:text-primary">
-                                Start today
-                            </span>
-                            <div className="group/icon relative">
-                                <div
-                                    className={cn(
-                                        "absolute inset-[-6px] rounded-lg transition-all duration-300",
-                                        "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent",
-                                        "scale-90 opacity-0 group-hover/start:scale-100 group-hover/start:opacity-100"
-                                    )}
-                                />
-                                <ArrowRight className="relative z-10 h-4 w-4 text-primary transition-all duration-300 group-hover/start:translate-x-0.5 group-hover/start:scale-110" />
+                        {href ? (
+                            <Link
+                                href={href}
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                    "group/start relative",
+                                    "flex items-center justify-between",
+                                    "-m-3 rounded-xl p-3",
+                                    "transition-all duration-300",
+                                    "bg-gradient-to-r from-transparent via-transparent to-transparent",
+                                    "hover:from-primary/20 hover:via-primary/10 hover:to-transparent",
+                                    "hover:scale-[1.02] hover:cursor-pointer"
+                                )}
+                            >
+                                <span className="font-mono text-sm text-foreground transition-colors duration-300 group-hover/start:text-primary">
+                                    Start today
+                                </span>
+                                <div className="group/icon relative">
+                                    <div
+                                        className={cn(
+                                            "absolute inset-[-6px] rounded-lg transition-all duration-300",
+                                            "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent",
+                                            "scale-90 opacity-0 group-hover/start:scale-100 group-hover/start:opacity-100"
+                                        )}
+                                    />
+                                    <ArrowRight className="relative z-10 h-4 w-4 text-primary transition-all duration-300 group-hover/start:translate-x-0.5 group-hover/start:scale-110" />
+                                </div>
+                            </Link>
+                        ) : (
+                            <div
+                                className={cn(
+                                    "group/start relative",
+                                    "flex items-center justify-between",
+                                    "-m-3 rounded-xl p-3",
+                                    "transition-all duration-300",
+                                    "bg-gradient-to-r from-transparent via-transparent to-transparent",
+                                    "hover:from-primary/20 hover:via-primary/10 hover:to-transparent",
+                                    "hover:scale-[1.02] hover:cursor-pointer"
+                                )}
+                            >
+                                <span className="font-mono text-sm text-foreground transition-colors duration-300 group-hover/start:text-primary">
+                                    Start today
+                                </span>
+                                <div className="group/icon relative">
+                                    <div
+                                        className={cn(
+                                            "absolute inset-[-6px] rounded-lg transition-all duration-300",
+                                            "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent",
+                                            "scale-90 opacity-0 group-hover/start:scale-100 group-hover/start:opacity-100"
+                                        )}
+                                    />
+                                    <ArrowRight className="relative z-10 h-4 w-4 text-primary transition-all duration-300 group-hover/start:translate-x-0.5 group-hover/start:scale-110" />
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
