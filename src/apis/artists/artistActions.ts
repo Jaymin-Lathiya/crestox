@@ -113,15 +113,19 @@ interface FeaturedArtistsResponse {
     message?: string;
 }
 
-export const getFeaturedArtists = () => async (): Promise<FeaturedArtist[]> => {
-    try {
-        const response = await instance.get<FeaturedArtistsResponse>(ARTIST_URLS.FEATURED_ARTISTS);
-        return response.data?.data ?? [];
-    } catch (err: any) {
-        console.error({ err });
-        throw err;
-    }
-};
+export const getFeaturedArtists =
+    (keyword?: string) =>
+    async (): Promise<FeaturedArtist[]> => {
+        try {
+            const response = await instance.get<FeaturedArtistsResponse>(ARTIST_URLS.FEATURED_ARTISTS, {
+                params: keyword?.trim() ? { keyword: keyword.trim() } : undefined,
+            });
+            return response.data?.data ?? [];
+        } catch (err: any) {
+            console.error({ err });
+            throw err;
+        }
+    };
 
 export const getHomepageArtists = () => async (): Promise<HomepageArtist[]> => {
     try {

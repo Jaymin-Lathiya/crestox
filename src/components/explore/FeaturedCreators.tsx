@@ -230,7 +230,7 @@ function CreatorCard({ creator, onShowMore }: CreatorCardProps) {
     );
 }
 
-export function FeaturedCreators() {
+export function FeaturedCreators({ searchKeyword = '' }: { searchKeyword?: string }) {
     const [activeTab, setActiveTab] = useState('artists');
     const [isExpanded, setIsExpanded] = useState(false);
     const [featuredCreators, setFeaturedCreators] = useState<CreatorItem[]>([]);
@@ -266,10 +266,10 @@ export function FeaturedCreators() {
         };
     }, [isExpanded, isLoadingArtists, activeTab, displayedCreators.length]);
 
-    const loadFeaturedArtists = async () => {
+    const loadFeaturedArtists = async (keyword?: string) => {
         setIsLoadingArtists(true);
         try {
-            const artists = await getFeaturedArtists()();
+            const artists = await getFeaturedArtists(keyword)();
             setFeaturedCreators(artists.map(mapFeaturedArtistToCreator));
         } catch (error) {
             console.error("Failed to load featured artists:", error);
@@ -280,8 +280,11 @@ export function FeaturedCreators() {
     };
 
     useEffect(() => {
-        loadFeaturedArtists();
-    }, []);
+        // Collapse browse-all when searching — keyword applies to featured list only.
+        setIsExpanded(false);
+        setExpandedCreators([]);
+        loadFeaturedArtists(searchKeyword);
+    }, [searchKeyword]);
 
     const loadAllArtists = async () => {
         setIsLoadingArtists(true);
@@ -323,6 +326,7 @@ export function FeaturedCreators() {
 
     const visibleCreators = displayedCreators;
     const showStickyCollapse = mounted && isExpanded && activeTab === "artists";
+    const showBrowseAll = activeTab === 'artists' && !searchKeyword.trim();
 
     const collapseButton = (
         <button
@@ -341,7 +345,7 @@ export function FeaturedCreators() {
     );
 
     return (
-        <section className="mb-16 animate-fade-in-up delay-100">
+        <section className="mb-6 animate-fade-in-up delay-100">
             <div
                 className={cn(
                     "flex items-center justify-start md:justify-center gap-4 md:gap-8 mb-12 border-b border-border/40 pb-4 overflow-x-auto no-scrollbar",
@@ -381,7 +385,9 @@ export function FeaturedCreators() {
                         {visibleCreators.length === 0 ? (
                             <div className="col-span-full py-16 flex justify-center">
                                 <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
-                                    No {activeTab} available
+                                    {searchKeyword.trim()
+                                        ? `No ${activeTab} matching “${searchKeyword.trim()}”`
+                                        : `No ${activeTab} available`}
                                 </p>
                             </div>
                         ) : visibleCreators.map((creator, idx) => (
@@ -428,12 +434,12 @@ export function FeaturedCreators() {
                 </div>
             )}
 
-            {activeTab === 'artists' && !showStickyCollapse && (
+            {showBrowseAll && !showStickyCollapse && (
                 <div className="mt-10 flex justify-center">
                     {collapseButton}
                 </div>
             )}
-            {showStickyCollapse && createPortal(
+            {showBrowseAll && showStickyCollapse && createPortal(
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60]">
                     {collapseButton}
                 </div>,

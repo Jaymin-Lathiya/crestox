@@ -88,3 +88,43 @@ export const getArtworkAnalytics = (artworkId: string) => async () => {
         throw err;
     }
 };
+
+export type VerifiedArtworkSort = 'relevance' | 'price_asc' | 'price_desc' | 'performance';
+
+export interface VerifiedArtwork {
+    artwork_id: number;
+    artwork_name: string;
+    primary_image_url: string | null;
+    primary_image_orientation: string | null;
+    artist_name?: string | null;
+    valuation?: string | number | null;
+}
+
+export interface VerifiedArtworksPage {
+    list: VerifiedArtwork[];
+    next_cursor: number | null;
+    sort?: VerifiedArtworkSort;
+}
+
+export const getVerifiedArtworks =
+    (params: { take?: number; cursor?: number | null; sort?: VerifiedArtworkSort } = {}) =>
+    async (): Promise<VerifiedArtworksPage> => {
+        try {
+            const response = await instance.get(ARTWORK_URLS.GET_VERIFIED_ARTWORKS, {
+                params: {
+                    take: params.take ?? 20,
+                    ...(params.cursor != null ? { cursor: params.cursor } : {}),
+                    ...(params.sort ? { sort: params.sort } : {}),
+                },
+            });
+            const data = response.data?.data ?? response.data;
+            return {
+                list: Array.isArray(data?.list) ? data.list : [],
+                next_cursor: data?.next_cursor ?? null,
+                sort: data?.sort,
+            };
+        } catch (err: any) {
+            console.log({ err });
+            throw err;
+        }
+    };
