@@ -151,8 +151,8 @@ export const PROCESS_STEPS = [
     number: '02',
     title: 'Acquire Fractions',
     description:
-      'Purchase fractional ownership tokens representing real shares of authenticated artworks. Start with as little as 0.1 ETH.',
-    href: '/app',
+      'Purchase fractional ownership tokens representing real shares of authenticated artworks. Start with as little as ₹1,000.',
+    href: '/explore',
   },
   {
     number: '03',

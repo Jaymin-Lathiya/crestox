@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Landmark,
@@ -19,7 +20,10 @@ import {
 
 type PaymentMethod = 'bank' | 'upi';
 
-export default function BankDetailsPage() {
+function BankDetailsContent() {
+  const searchParams = useSearchParams();
+  const isAddMode = searchParams.get('add') === '1';
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -38,7 +42,8 @@ export default function BankDetailsPage() {
       try {
         const data = await getBankDetailsStatus();
         setExistingDetails(data);
-        if (data.has_fund_account) {
+        // In add mode, always show the form so users can add another method.
+        if (data.has_fund_account && !isAddMode) {
           setSuccess(true);
         }
       } catch {
@@ -48,7 +53,7 @@ export default function BankDetailsPage() {
       }
     };
     load();
-  }, []);
+  }, [isAddMode]);
 
   const bankValid =
     accountName.length >= 2 &&
@@ -120,10 +125,12 @@ export default function BankDetailsPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-serif font-medium text-foreground">
-                    Bank Details
+                    {isAddMode ? 'Add Payment Method' : 'Bank Details'}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Required to process your withdrawal
+                    {isAddMode
+                      ? 'Add a bank account or UPI for withdrawals'
+                      : 'Required to process your withdrawal'}
                   </p>
                 </div>
               </div>
@@ -334,3 +341,18 @@ export default function BankDetailsPage() {
     </div>
   );
 }
+
+export default function BankDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 size={28} className="animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <BankDetailsContent />
+    </Suspense>
+  );
+}
+

@@ -5,5 +5,6 @@ export const WITHDRAWAL_URLS = {
   GET_BANK_DETAILS: '/withdrawals/bank-details',
   SUBMIT_BANK_DETAILS: '/withdrawals/bank-details',
   SEND_BANK_DETAILS_LINK: '/withdrawals/bank-details/send-link',
+  SET_DEFAULT_PAYMENT_METHOD: (id: number) => `/withdrawals/bank-details/${id}/default`,
   CANCEL_REQUEST: (id: number) => `/withdrawals/${id}`,
 };

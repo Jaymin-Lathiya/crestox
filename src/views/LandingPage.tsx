@@ -353,10 +353,6 @@ export default function LandingPage() {
                 label="Create Account"
               />
             )}
-            {/* <Button variant="outline" size="lg" onClick={() => router.push('/app')}>
-              Explore Marketplace
-            </Button> */}
-
             <GradientButton
               variant="secondary"
               onClick={() => router.push('/explore')}

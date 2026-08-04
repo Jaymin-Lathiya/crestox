@@ -12,13 +12,26 @@ export interface AvailableWithdrawalResponse {
   estimated_net_on_full_balance?: string;
 }
 
-export interface BankDetailsStatus {
-  has_fund_account: boolean;
-  fund_account_id: string | null;
+export interface PaymentMethod {
+  id: number;
+  account_type: string | null;
   bank_account_name: string | null;
   bank_account_number: string | null;
   bank_ifsc: string | null;
   upi_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BankDetailsStatus {
+  has_fund_account: boolean;
+  fund_account_id: string | null;
+  account_type?: string | null;
+  bank_account_name: string | null;
+  bank_account_number: string | null;
+  bank_ifsc: string | null;
+  upi_id: string | null;
+  methods?: PaymentMethod[];
 }
 
 export interface SubmitBankDetailsDto {
@@ -68,8 +81,20 @@ export const submitBankDetails = async (data: SubmitBankDetailsDto) => {
   return response.data?.data ?? response.data;
 };
 
-export const sendBankDetailsLink = async (): Promise<{ message: string }> => {
-  const response = await instance.post(WITHDRAWAL_URLS.SEND_BANK_DETAILS_LINK);
+export const sendBankDetailsLink = async (
+  options?: { add_method?: boolean },
+): Promise<{ message: string }> => {
+  const response = await instance.post(
+    WITHDRAWAL_URLS.SEND_BANK_DETAILS_LINK,
+    options?.add_method ? { add_method: true } : undefined,
+  );
+  return response.data?.data ?? response.data;
+};
+
+export const setDefaultPaymentMethod = async (
+  id: number,
+): Promise<{ message: string }> => {
+  const response = await instance.patch(WITHDRAWAL_URLS.SET_DEFAULT_PAYMENT_METHOD(id));
   return response.data?.data ?? response.data;
 };
 

@@ -1,55 +1,197 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Shield, CreditCard, Moon, Monitor, Smartphone, Key, LoaderCircle } from "lucide-react";
+import {
+  Bell,
+  Shield,
+  CreditCard,
+  Moon,
+  Monitor,
+  Sun,
+  Key,
+  LoaderCircle,
+  Landmark,
+  Smartphone,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { toast } from "sonner";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+  type NotificationPreferences,
+} from "@/apis/user/userActions";
+import {
+  getBankDetailsStatus,
+  sendBankDetailsLink,
+  setDefaultPaymentMethod,
+  type PaymentMethod,
+} from "@/apis/withdrawal/withdrawalActions";
 
 interface SettingToggleProps {
   label: string;
   description: string;
   enabled: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }
 
-const SettingToggle = ({ label, description, enabled, onChange }: SettingToggleProps) => (
-  <div className="flex items-center justify-between py-4 border-b border-border">
-    <div>
+const SettingToggle = ({
+  label,
+  description,
+  enabled,
+  onChange,
+  disabled,
+}: SettingToggleProps) => (
+  <div className="flex items-center justify-between gap-4 py-4 border-b border-border">
+    <div className="min-w-0">
       <p className="text-sm text-foreground">{label}</p>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
     <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={label}
       onClick={onChange}
+      disabled={disabled}
       className={cn(
-        "w-12 h-6 rounded-full transition-colors relative",
-        enabled ? "bg-accent" : "bg-muted"
+        "relative h-7 w-12 shrink-0 rounded-full border transition-all duration-200",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "disabled:cursor-not-allowed disabled:opacity-40",
+        enabled
+          ? "border-primary bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.18)]"
+          : "border-border bg-muted/80 dark:bg-muted/40"
       )}
     >
-      <div
+      <span
+        aria-hidden
         className={cn(
-          "w-4 h-4 rounded-full bg-foreground absolute top-1 transition-transform",
-          enabled ? "translate-x-7" : "translate-x-1"
+          "absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full shadow-sm transition-all duration-200",
+          enabled
+            ? "left-[calc(100%-1.375rem)] bg-primary-foreground"
+            : "left-0.5 bg-muted-foreground/70 dark:bg-muted-foreground/50"
         )}
       />
     </button>
   </div>
 );
 
+const DEFAULT_PREFS: NotificationPreferences = {
+  sale_notifications: true,
+  price_alerts: true,
+  curator_updates: true,
+  login_alerts: true,
+};
+
 export const SettingsTab = () => {
   const { registerPasskey, isLoading: passkeyLoading } = usePasskeyAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [passkeyRegistered, setPasskeyRegistered] = useState(false);
+
+  const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_PREFS);
+  const [prefsLoading, setPrefsLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [preferences, bankStatus] = await Promise.all([
+          getNotificationPreferences(),
+          getBankDetailsStatus(),
+        ]);
+        setPrefs({ ...DEFAULT_PREFS, ...preferences });
+        setPaymentMethods(bankStatus.methods ?? []);
+      } catch (err: any) {
+        toast.error(
+          err?.response?.data?.message ?? "Failed to load settings"
+        );
+      } finally {
+        setPrefsLoading(false);
+        setPaymentsLoading(false);
+      }
+    };
+    void load();
+  }, []);
 
   const handleRegisterPasskey = async () => {
     const success = await registerPasskey();
     if (success) {
       setPasskeyRegistered(true);
-      toast.success("Passkey registered successfully! You can now use it to log in.");
+      toast.success(
+        "Passkey registered successfully! You can now use it to log in."
+      );
     }
   };
 
+  const togglePref = async (key: keyof NotificationPreferences) => {
+    const next = !prefs[key];
+    const previous = prefs;
+    setPrefs((p) => ({ ...p, [key]: next }));
+    setSavingKey(key);
+    try {
+      const updated = await updateNotificationPreferences({ [key]: next });
+      setPrefs({ ...DEFAULT_PREFS, ...updated });
+    } catch (err: any) {
+      setPrefs(previous);
+      toast.error(
+        err?.response?.data?.message ?? "Failed to update preference"
+      );
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  const handleAddPaymentMethod = async () => {
+    setSendingLink(true);
+    try {
+      const result = await sendBankDetailsLink({ add_method: true });
+      toast.success(
+        result?.message ??
+          "We've emailed you a secure link to add a payment method."
+      );
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ?? "Failed to send payment method link"
+      );
+    } finally {
+      setSendingLink(false);
+    }
+  };
+
+  const handleSetDefault = async (id: number) => {
+    setSettingDefaultId(id);
+    try {
+      await setDefaultPaymentMethod(id);
+      setPaymentMethods((methods) =>
+        methods.map((m) => ({ ...m, is_active: m.id === id }))
+      );
+      toast.success("Default payment method updated");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ?? "Failed to update default method"
+      );
+    } finally {
+      setSettingDefaultId(null);
+    }
+  };
+
+  const activeTheme = mounted ? theme ?? "system" : "system";
+
   return (
     <div className="max-w-8xl mx-auto space-y-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -63,7 +205,7 @@ export const SettingsTab = () => {
         </p>
       </motion.div>
 
-      {/* Notifications Section */}
+      {/* Notifications */}
       <motion.div
         className="glass-capsule p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -78,25 +220,28 @@ export const SettingsTab = () => {
           <SettingToggle
             label="Sale Notifications"
             description="Get notified when someone buys your fractals"
-            enabled={true}
-            onChange={() => {}}
+            enabled={prefs.sale_notifications}
+            disabled={prefsLoading || savingKey === "sale_notifications"}
+            onChange={() => void togglePref("sale_notifications")}
           />
           <SettingToggle
             label="Price Alerts"
             description="Receive alerts for significant market movements"
-            enabled={true}
+            enabled={prefs.price_alerts}
+            disabled
             onChange={() => {}}
           />
           <SettingToggle
             label="Curator Updates"
             description="Updates on artwork review status"
-            enabled={false}
-            onChange={() => {}}
+            enabled={prefs.curator_updates}
+            disabled={prefsLoading || savingKey === "curator_updates"}
+            onChange={() => void togglePref("curator_updates")}
           />
         </div>
       </motion.div>
 
-      {/* Security Section */}
+      {/* Security */}
       <motion.div
         className="glass-capsule p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -117,22 +262,20 @@ export const SettingsTab = () => {
           <SettingToggle
             label="Login Alerts"
             description="Get notified of new login attempts"
-            enabled={true}
-            onChange={() => {}}
+            enabled={prefs.login_alerts}
+            disabled={prefsLoading || savingKey === "login_alerts"}
+            onChange={() => void togglePref("login_alerts")}
           />
         </div>
-        <button className="mt-4 text-sm text-primary hover:underline">
-          Change Password
-        </button>
 
-        {/* Passkey Registration */}
         <div className="mt-6 pt-4 border-t border-border">
           <div className="flex items-center gap-3 mb-2">
             <Key className="w-4 h-4 text-muted-foreground" />
             <h4 className="text-sm font-medium text-foreground">Passkey</h4>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            Register a passkey to sign in with your fingerprint, face, or device PIN instead of email.
+            Register a passkey to sign in with your fingerprint, face, or device
+            PIN instead of email.
           </p>
           <button
             onClick={handleRegisterPasskey}
@@ -158,7 +301,7 @@ export const SettingsTab = () => {
         </div>
       </motion.div>
 
-      {/* Payment Section */}
+      {/* Payment Methods */}
       <motion.div
         className="glass-capsule p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -170,20 +313,82 @@ export const SettingsTab = () => {
           <h3 className="text-label">Payment Methods</h3>
         </div>
         <div className="space-y-3">
-          <div className="flex items-center justify-between py-3 border border-border px-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-5 bg-gradient-to-r from-blue-600 to-blue-800 rounded" />
-              <span className="text-sm text-foreground">•••• 4242</span>
+          {paymentsLoading ? (
+            <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+              <LoaderCircle className="w-4 h-4 animate-spin" />
+              Loading payment methods...
             </div>
-            <span className="text-xs text-muted-foreground">Default</span>
-          </div>
-          <button className="w-full py-3 border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
-            + Add Payment Method
+          ) : paymentMethods.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              No payment methods yet. Add a bank account or UPI to withdraw
+              funds.
+            </p>
+          ) : (
+            paymentMethods.map((method) => (
+              <div
+                key={method.id}
+                className="flex items-center justify-between py-3 border border-border px-4"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {method.account_type === "UPI" ? (
+                    <Smartphone className="w-4 h-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <Landmark className="w-4 h-4 text-muted-foreground shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground truncate">
+                      {method.account_type === "UPI"
+                        ? method.upi_id ?? "UPI"
+                        : method.bank_account_number ?? "Bank account"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {method.account_type === "UPI"
+                        ? method.bank_account_name ?? "UPI"
+                        : [method.bank_account_name, method.bank_ifsc]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </p>
+                  </div>
+                </div>
+                {method.is_active ? (
+                  <span className="text-xs text-muted-foreground shrink-0 ml-3">
+                    Default
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => void handleSetDefault(method.id)}
+                    disabled={settingDefaultId === method.id}
+                    className="text-xs text-primary hover:underline shrink-0 ml-3 disabled:opacity-50"
+                  >
+                    {settingDefaultId === method.id
+                      ? "Updating..."
+                      : "Set default"}
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+          <button
+            onClick={() => void handleAddPaymentMethod()}
+            disabled={sendingLink}
+            className="w-full py-3 border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {sendingLink ? (
+              <>
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+                Sending link...
+              </>
+            ) : (
+              "+ Add Payment Method"
+            )}
           </button>
+          <p className="text-xs text-muted-foreground">
+            We&apos;ll email you a secure link to add bank or UPI details.
+          </p>
         </div>
       </motion.div>
 
-      {/* Appearance Section */}
+      {/* Appearance */}
       <motion.div
         className="glass-capsule p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -196,23 +401,32 @@ export const SettingsTab = () => {
         </div>
         <div className="flex gap-4">
           {[
-            { icon: Moon, label: "Dark", active: true },
-            { icon: Monitor, label: "System", active: false },
-            { icon: Smartphone, label: "Light", active: false },
-          ].map((theme) => (
-            <button
-              key={theme.label}
-              className={cn(
-                "flex-1 py-3 flex flex-col items-center gap-2 border transition-colors",
-                theme.active
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-foreground/40"
-              )}
-            >
-              <theme.icon className="w-5 h-5" />
-              <span className="text-xs">{theme.label}</span>
-            </button>
-          ))}
+            { icon: Moon, label: "Dark", value: "dark" },
+            { icon: Monitor, label: "System", value: "system" },
+            { icon: Sun, label: "Light", value: "light" },
+          ].map((option) => {
+            const active = activeTheme === option.value;
+            return (
+              <button
+                key={option.value}
+                onClick={() => setTheme(option.value)}
+                className={cn(
+                  "flex-1 py-3 flex flex-col items-center gap-2 border transition-colors",
+                  active
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-foreground/40"
+                )}
+              >
+                <option.icon className="w-5 h-5" />
+                <span className="text-xs">{option.label}</span>
+                {option.value === "system" && mounted && (
+                  <span className="text-[10px] text-muted-foreground">
+                    ({resolvedTheme})
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 
