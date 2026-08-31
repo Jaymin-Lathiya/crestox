@@ -19,8 +19,8 @@ export const ASPECT_RATIOS = {
 interface Artwork {
     artwork_id: number;
     artwork_name?: string;
-    primary_image_url: string;
-    primary_image_orientation: ImageOrientation;
+    primary_image_url: string | null;
+    primary_image_orientation: ImageOrientation | string | null;
     artist_name?: string | null;
     valuation?: string | number | null;
 }
@@ -327,7 +327,7 @@ export default function ScrollImagesReveal({ bgClass = "bg-[#030712]", artworks 
         title: a.artwork_name || "Artwork",
         artistName: a.artist_name?.trim() || null,
         valuation: a.valuation ?? null,
-        aspect: ASPECT_RATIOS[a.primary_image_orientation] || ASPECT_RATIOS[ImageOrientation.SQUARE],
+        aspect: ASPECT_RATIOS[a.primary_image_orientation as ImageOrientation] || ASPECT_RATIOS[ImageOrientation.SQUARE],
     }));
 
     const allImages =
