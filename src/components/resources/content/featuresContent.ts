@@ -59,7 +59,7 @@ export const featuresContent = `
 <h3 id="what-curated-means">What "Curated" Means</h3><p>When Crestox describes itself as curated, this refers specifically to an editorial and compliance review process — not a subjective ranking of artistic merit. Curation means that listed artists and artworks have met the platform's submission requirements and passed internal review. It does not imply endorsement of an artwork's financial potential or future value.</p>
 <hr>
 <h2 id="2-fractional-ownership">2. Fractional Ownership</h2><p><strong>Purchase a fractional stake in a curated artwork — without buying the entire piece.</strong></p>
-<h3 id="what-is-a-fractal">What Is a Fractal?</h3><p>A <strong>fractal</strong> is a fractional participation unit representing your proportional interest in a specific approved artwork on the Crestox platform. When you purchase fractals, you acquire a defined share of that artwork's designated portfolio entry — not physical ownership of the artwork itself.</p>
+<h3 id="what-is-a-fractal">What Is a Fractal?</h3><p>A <strong>fractal</strong> is a fractional participation unit representing your proportional interest in a specific approved artwork on the Crestox platform. When you purchase fractals, you acquire a defined part of that artwork's designated portfolio entry — not physical ownership of the artwork itself.</p>
 <p>Fractals do not confer:</p>
 <ul>
 <li>Physical possession of the artwork</li>

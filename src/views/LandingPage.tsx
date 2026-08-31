@@ -6,6 +6,8 @@ import GradientButton from '@/components/ui/gradiant-button';
 import { ArrowRight, Sparkles, TrendingUp, Users, Shield, Palette, BarChart3 } from 'lucide-react';
 import { UserType } from '@/enums/userType';
 import { useUserStore } from '@/store/useUserStore';
+import { useQuery } from '@tanstack/react-query';
+import { getFeaturedArtworkImages } from '@/apis/artwork/artworkActions';
 
 
 import GallerySection from '@/components/home/GallerySection';
@@ -40,15 +42,6 @@ const FRACTAL_ICON_MAP = {
   Users,
 } as const;
 
-const TRAIL_IMAGES = [
-  "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=400&fit=crop",
-  "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?q=80&w=400&fit=crop",
-  "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&fit=crop",
-  "https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=400&fit=crop",
-  "https://images.unsplash.com/photo-1579783902614-a3fb392796a5?q=80&w=400&fit=crop",
-  "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=400&fit=crop"
-];
-
 export const IMAGES = [
   { src: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=400&fit=crop", alt: "Fashion 1" },
   { src: "https://images.unsplash.com/photo-1488716820095-cbe80883c496?w=600&h=400&fit=crop", alt: "Portrait 1" },
@@ -77,6 +70,12 @@ export default function LandingPage() {
   const { user } = useUserStore();
   const isLoggedIn = !!user;
 
+  const { data: trailImages = [] } = useQuery({
+    queryKey: ['featured-artwork-trail-images'],
+    queryFn: () => getFeaturedArtworkImages()(),
+    staleTime: 5 * 60_000,
+  });
+
   const handleArtistButtonClick = () => {
     // If user is logged in, redirect to artist onboarding form
     // Otherwise, redirect to signup with artist type
@@ -99,7 +98,7 @@ export default function LandingPage() {
       <div className="relative min-h-screen w-full">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-card pointer-events-none z-0" />
         <div className="relative z-10 w-full h-full">
-          <ImageTrail images={TRAIL_IMAGES} renderDistance={60}>
+          <ImageTrail images={trailImages} renderDistance={60}>
             <section className="relative min-h-screen flex items-center justify-center px-6 pt-20">
               <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
               <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px]" />

@@ -10,8 +10,12 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-// ... navItems same as before ...
 interface NavItem {
   id: string;
   label: string;
@@ -110,15 +114,14 @@ export const NavigationIsland = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            return (
+            const button = (
               <motion.button
-                key={item.id}
                 onClick={() => {
                   onTabChange(item.id);
                   if (window.innerWidth < 768) onToggleExpand();
                 }}
                 className={cn(
-                  "nav-item flex items-center gap-4 px-6 py-3 transition-all duration-200",
+                  "nav-item flex items-center gap-4 px-6 py-3 transition-all duration-200 w-full",
                   "md:px-4 md:py-2 md:rounded-md md:gap-2",
                   isActive && "active",
                 )}
@@ -147,6 +150,20 @@ export const NavigationIsland = ({
                   </motion.span>
                 )}
               </motion.button>
+            );
+
+            return (
+              <Tooltip key={item.id}>
+                <TooltipTrigger asChild>{button}</TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  align="center"
+                  className="font-mono text-xs tracking-widest uppercase"
+                  hidden={isExpanded}
+                >
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>

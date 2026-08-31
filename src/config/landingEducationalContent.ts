@@ -4,7 +4,7 @@
  */
 
 export const HERO_TAGLINE =
-  'Own verified shares of curated artworks, starting from a lower entry point.';
+  'Own verified parts of curated artworks, starting from a lower entry point.';
 
 export const HERO_STATS = [
   { value: '\u20B92.5Cr+', label: 'Trading Volume', emphasize: true as const },
@@ -37,7 +37,7 @@ export const FRACTAL_FLIP_CARDS = [
       description: 'The artwork is divided into 5,000 digital "fractals" representing verified ownership.',
     },
     back: {
-      title: 'Own a Share',
+      title: 'Own a Part',
       description: 'Buy a fraction of the artwork through secure digital ownership units.',
     },
   },
@@ -49,14 +49,14 @@ export const FRACTAL_FLIP_CARDS = [
     },
     back: {
       title: 'Trade or Exit',
-      description: 'Track value over time and sell your share when the market allows.',
+      description: 'Track value over time and sell your part when the market allows.',
     },
   },
 ] as const;
 
 export const FOR_COLLECTORS = {
   kicker: 'FOR COLLECTORS',
-  title: 'Own, Track, and Trade Artwork Shares',
+  title: 'Own, Track, and Trade Artwork Parts',
   lead: 'Collect exceptional art with lower entry points, clear provenance, and market-linked visibility.',
   items: [
     {
@@ -151,7 +151,7 @@ export const PROCESS_STEPS = [
     number: '02',
     title: 'Acquire Fractions',
     description:
-      'Purchase fractional ownership tokens representing real shares of authenticated artworks. Start with as little as ₹1,000.',
+      'Purchase fractional ownership tokens representing real parts of authenticated artworks. Start with as little as ₹1,000.',
     href: '/explore',
   },
   {

@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import {
-    Wallet,
     LayoutGrid,
     BookOpen,
     Settings,
@@ -109,10 +108,10 @@ export default function ProfileDropdown({
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
 
-                        <DropdownMenuSeparator />
+                        {/* <DropdownMenuSeparator /> */}
 
-                        {/* Balance */}
-                        <DropdownMenuItem className="flex justify-between items-center rounded-xl px-3 py-2">
+                        {/* Dummy money / hardcoded balance — hidden until real wallet balance is wired */}
+                        {/* <DropdownMenuItem className="flex justify-between items-center rounded-xl px-3 py-2">
                             <div className="flex items-center">
                                 <Wallet className="mr-2 h-4 w-4" />
                                 <span>Balance</span>
@@ -120,7 +119,7 @@ export default function ProfileDropdown({
                             <span className="font-mono text-xs font-bold text-primary">
                                 ₹4,520
                             </span>
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
 
                         <DropdownMenuSeparator />
 

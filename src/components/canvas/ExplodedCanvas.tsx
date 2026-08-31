@@ -274,6 +274,7 @@ interface ExplodedCanvasProps {
   eventSource?: React.RefObject<HTMLDivElement | null>;
   orientation?: any;
   artworkName: string;
+  dimensions?: string | null;
 }
 
 export default function ExplodedCanvas({
@@ -282,7 +283,8 @@ export default function ExplodedCanvas({
   artworkUrl,
   eventSource,
   orientation,
-  artworkName
+  artworkName,
+  dimensions,
 }: ExplodedCanvasProps) {
   const aspect = ASPECT_VALUES[orientation];
   const [shouldReset, setShouldReset] = useState(false);
@@ -369,6 +371,11 @@ export default function ExplodedCanvas({
           <h1 className="font-serif text-2xl md:text-4xl text-white italic drop-shadow-lg drop-shadow-black">
             {artworkName}
           </h1>
+          {dimensions ? (
+            <p className="mt-1.5 text-xs md:text-sm text-white/70 tracking-wide drop-shadow-md drop-shadow-black">
+              {dimensions}
+            </p>
+          ) : null}
         </div>
       )}
     </div>

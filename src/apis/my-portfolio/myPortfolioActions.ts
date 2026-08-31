@@ -126,8 +126,6 @@ export interface UpdateMyArtistProfilePayload {
   university?: string;
   website_portfolio_link?: string;
   avatar_media_id?: number | null;
-  email?: string;
-  phone_number?: string;
   social_links?: { platform: string; url: string }[];
 }
 

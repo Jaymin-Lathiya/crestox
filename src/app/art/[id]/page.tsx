@@ -118,14 +118,21 @@ function ArtDetailSkeleton() {
   );
 }
 
+function formatArtworkDimensions(artwork: ArtworkDetail | null): string | null {
+  if (!artwork) return null;
+  const dims = [artwork.height, artwork.length, artwork.breadth]
+    .filter((n) => n != null && n > 0)
+    .join(" × ");
+  return dims ? `${dims} ${artwork.demensions_unit || ""}`.trim() : null;
+}
+
 function buildDetailsMetadata(artwork: ArtworkDetail | null): { label: string; value: string | null }[] {
   if (!artwork) return [];
-  const dims = [artwork.height, artwork.length, artwork.breadth].filter((n) => n != null && n > 0).join(" × ");
-  const dimensions = dims ? `${dims} ${artwork.demensions_unit || ""}`.trim() : null;
+  const dimensions = formatArtworkDimensions(artwork);
   return [
     { label: "Medium", value: artwork.materials_used || null },
     { label: "Dimensions", value: dimensions || null },
-    { label: "Number of shares", value: String(artwork.number_of_shares) },
+    { label: "Number of parts", value: String(artwork.number_of_shares) },
     { label: "Starting price", value: artwork.starting_price ? `₹${artwork.starting_price}` : null },
     { label: "Valuation", value: artwork.valuation ? `₹${artwork.valuation}` : null },
     { label: "Quality score", value: artwork.quality_score || null },
@@ -384,6 +391,7 @@ const Index = () => {
           eventSource={interactionRef}
           artworkUrl={artworkImageUrl}
           artworkName={artwork.name}
+          dimensions={formatArtworkDimensions(artwork)}
           orientation={artwork.artwork_media?.[0]?.media?.orientation || ImageOrientation.PORTRAIT}
         />
         <div

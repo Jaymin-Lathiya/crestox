@@ -59,7 +59,7 @@ const artworkFormSchema = z.object({
         .number()
         .int()
         .positive({ message: "Artist profile is missing. Open your artist dashboard or sign in again." }),
-    number_of_shares: z.number().int().min(1, { message: "Number of shares must be at least 1." }),
+    number_of_shares: z.number().int().min(1, { message: "Number of parts must be at least 1." }),
     starting_price: z.number().min(0.01, { message: "Starting price must be greater than 0." }),
 })
 
@@ -416,14 +416,14 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
                             />
                         </div>
 
-                        {/* Shares and Pricing */}
+                        {/* Parts and Pricing */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="number_of_shares"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Number of Shares</FormLabel>
+                                        <FormLabel>Number of Parts</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -432,7 +432,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
                                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                             />
                                         </FormControl>
-                                        <FormDescription>Total number of fractional shares available.</FormDescription>
+                                        <FormDescription>Total number of fractional parts available.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -456,7 +456,7 @@ export default function ArtworkForm({ onSubmit }: ArtworkFormProps) {
                                                 />
                                             </div>
                                         </FormControl>
-                                        <FormDescription>Starting price per share.</FormDescription>
+                                        <FormDescription>Starting price per part.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

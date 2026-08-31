@@ -293,7 +293,7 @@ const ArtistSpotlight = () => {
             <span className="text-gradient-gold"> Emerging Artists</span>
           </h2>
           <p className="font-mono text-sm text-muted-foreground max-w-xl mx-auto">
-            Own a share in selected works and help fund artists at an earlier stage.
+            Own a part in selected works and help fund artists at an earlier stage.
           </p>
         </motion.div>
 

@@ -24,6 +24,22 @@ export const getFeaturedArtworksForTicker = () => async (): Promise<FeaturedTick
     }
 };
 
+// Lightweight fetch of just the primary image URLs of featured/curated artworks.
+// Backed by the cached `/artwork/curated-masterpieces` endpoint.
+export const getFeaturedArtworkImages = () => async (): Promise<string[]> => {
+    try {
+        const response = await instance.get(ARTWORK_URLS.GET_CURATED_MASTERPIECES);
+        const data = response.data?.data ?? response.data;
+        if (!Array.isArray(data)) return [];
+        return data
+            .map((item: { primary_image_url?: string | null }) => item?.primary_image_url?.trim() ?? "")
+            .filter((url: string): url is string => url.length > 0);
+    } catch (err: any) {
+        console.log({ err });
+        return [];
+    }
+};
+
 export const createArtwork = (data: any) => async () => {
     try {
         const response = await instance.post(ARTWORK_URLS.CREATE_ARTWORK, data);

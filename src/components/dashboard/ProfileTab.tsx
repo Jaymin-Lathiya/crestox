@@ -122,8 +122,6 @@ export const ProfileTab = () => {
         location: location.trim() || undefined,
         university: university.trim() || undefined,
         website_portfolio_link: website.trim() || undefined,
-        email: email.trim() || undefined,
-        phone_number: phoneNumber.trim() || undefined,
         social_links: mergeSocialLinksForSave(profile, instagram),
       })();
       return (res?.data as { data?: MyArtistProfile })?.data;
@@ -409,14 +407,19 @@ export const ProfileTab = () => {
       >
         <label className="text-label block">Contact & Links</label>
 
+        <p className="text-xs text-muted-foreground -mt-2">
+          Email and phone can only be changed by Crestox support.
+        </p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground">Email</label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-skiper w-full px-4 py-3 text-sm"
+              readOnly
+              disabled
+              className="input-skiper w-full px-4 py-3 text-sm opacity-70 cursor-not-allowed"
             />
           </div>
           <div className="space-y-2">
@@ -424,8 +427,10 @@ export const ProfileTab = () => {
             <input
               type="tel"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="input-skiper w-full px-4 py-3 text-sm"
+              readOnly
+              disabled
+              placeholder="Not set"
+              className="input-skiper w-full px-4 py-3 text-sm opacity-70 cursor-not-allowed"
             />
           </div>
           <div className="space-y-2">

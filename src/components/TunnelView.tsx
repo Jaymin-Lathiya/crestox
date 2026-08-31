@@ -69,7 +69,7 @@ const TunnelCard: React.FC<{
           className="hidden md:block bg-card/80 backdrop-blur-sm p-3 sm:p-4 border-t border-border/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         >
           <div className="font-mono text-[9px] sm:text-[10px] text-muted-foreground">
-            <span className="block tracking-widest uppercase mb-1">Per share</span>
+            <span className="block tracking-widest uppercase mb-1">Per part</span>
             <span className="text-primary text-xs sm:text-sm font-semibold">{formatCurrency(perShare)}</span>
           </div>
         </motion.div>
@@ -80,7 +80,7 @@ const TunnelCard: React.FC<{
           transition={{ duration: 0.3 }}
         >
           <div className="font-mono text-[9px] text-muted-foreground">
-            <span className="block tracking-widest uppercase mb-1 text-[8px]">Per share</span>
+            <span className="block tracking-widest uppercase mb-1 text-[8px]">Per part</span>
             <span className="text-primary text-xs font-semibold">{formatCurrency(perShare)}</span>
           </div>
         </motion.div>

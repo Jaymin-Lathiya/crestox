@@ -168,7 +168,7 @@
 //               <h3 className="font-serif text-2xl mb-2">Your collection is empty</h3>
 //               <p className="text-muted-foreground font-sans text-sm mb-8 max-w-md">
 //                 Start building your portfolio by purchasing fractals from the marketplace.
-//                 Each fractal represents a verified share of authentic artwork.
+//                 Each fractal represents a verified part of authentic artwork.
 //               </p>
 //               <Button onClick={addDummyHoldings} variant="default" size="lg">
 //                 Add Sample Data

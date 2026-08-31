@@ -31,7 +31,7 @@ export default function ImageTrail({
     const imageIdCounter = useRef(0);
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || images.length === 0) return;
 
         // Get relative mouse position inside the container
         const rect = containerRef.current.getBoundingClientRect();
