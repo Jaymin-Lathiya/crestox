@@ -9,7 +9,7 @@
  *   node scripts/sync-routes.mjs
  *
  * Required env vars (set in .env or shell):
- *   NEXT_PUBLIC_BASE_URL  - Backend API base URL
+ *   BACKEND_URL  - Backend API base URL
  *   SYNC_ROUTES_SECRET    - Shared secret matching backend SYNC_ROUTES_SECRET
  */
 
@@ -40,7 +40,7 @@ try {
 // ── Config ───────────────────────────────────────────────────────────────────
 
 const BASE_URL =
-    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.BACKEND_URL ||
     "https://crestox-backend-production-6031.up.railway.app/api";
 
 const SYNC_SECRET = process.env.SYNC_ROUTES_SECRET;
@@ -106,7 +106,7 @@ try {
 } catch (err) {
     console.error("❌  Failed to reach backend:", err.message);
     console.error(
-        "    Make sure the backend is running and NEXT_PUBLIC_BASE_URL is correct."
+        "    Make sure the backend is running and BACKEND_URL is correct."
     );
     process.exit(1);
 }

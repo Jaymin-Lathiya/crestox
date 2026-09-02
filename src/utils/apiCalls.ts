@@ -61,7 +61,7 @@ function isNgrokApiBase(): boolean {
 instance.interceptors.request.use(
     (config: any) => {
         // Ngrok Free shows an HTML warning page to browsers unless this header is set.
-        // Only needed when NEXT_PUBLIC_BASE_URL points at an ngrok tunnel.
+        // Only needed when BACKEND_URL points at an ngrok tunnel.
         if (isNgrokApiBase()) {
             config.headers["ngrok-skip-browser-warning"] = "true";
         }

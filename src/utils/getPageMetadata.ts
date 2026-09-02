@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 const BASE_URL =
-    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.BACKEND_URL ||
     "https://crestox-backend-production-6031.up.railway.app/api";
 
 const DEFAULT_METADATA: Metadata = {

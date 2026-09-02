@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { interpolateTemplate } from "@/utils/getPageMetadata";
 
 const BASE_URL =
-    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.BACKEND_URL ||
     "https://crestox-backend-production-6031.up.railway.app/api";
 
 export async function generateMetadata({
