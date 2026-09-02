@@ -11,3 +11,4 @@ export const strings = {
     apple_client_id: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || "your.apple.service.id",
     apple_redirect_uri: process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI || "https://your-domain.com/auth/apple/callback",
 };
+ 
