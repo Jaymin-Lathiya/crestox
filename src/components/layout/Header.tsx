@@ -20,11 +20,13 @@ import ProfileDropdown from "../ui/profile";
 import { clearCookie, getCookie } from "@/utils/cookieUtils";
 import { useUserStore } from "@/store/useUserStore";
 import { Skeleton } from "../ui/skeleton";
+import { SignupModal } from "../ui/signup-modal";
 
 export function Header() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const [signupOpen, setSignupOpen] = React.useState(false);
   const { toggleTheme } = useThemeToggle({
     variant: "circle",
     start: "top-left",
@@ -205,7 +207,7 @@ export function Header() {
                   label="Sign Up"
                   variant="primary"
                   className="h-10 px-3 md:h-12 md:px-6 text-xs md:text-sm"
-                  onClick={() => router.push("/login")}
+                  onClick={() => setSignupOpen(true)}
                 ></GradientButton>
                 {/* <GradientButton
                                     variant="secondary"
@@ -260,6 +262,7 @@ export function Header() {
         </div>
       </div>
 
+      <SignupModal isOpen={signupOpen} onClose={() => setSignupOpen(false)} />
     </>
   );
 }

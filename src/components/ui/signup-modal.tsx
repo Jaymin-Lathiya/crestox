@@ -48,15 +48,39 @@ export function SignupModal({ isOpen, onClose }: SignupModalProps) {
                         className="flex flex-col space-y-3"
                     >
                         <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">
-                            <RadioGroupItem value={UserType.ARTIST} id="artist" />
-                            <Label htmlFor="artist" className="flex-1 font-medium cursor-pointer">
-                                List art
-                            </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">
                             <RadioGroupItem value={UserType.COLLECTOR} id="collector" />
                             <Label htmlFor="collector" className="flex-1 font-medium cursor-pointer">
                                 Collect art
+                                <span className="block text-xs font-normal text-muted-foreground">
+                                    Buy and hold fractional ownership of artworks
+                                </span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">
+                            <RadioGroupItem value={UserType.ARTIST} id="artist" />
+                            <Label htmlFor="artist" className="flex-1 font-medium cursor-pointer">
+                                Join as an Artist
+                                <span className="block text-xs font-normal text-muted-foreground">
+                                    List your work and grow your collector base
+                                </span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">
+                            <RadioGroupItem value={UserType.CURATOR} id="curator" />
+                            <Label htmlFor="curator" className="flex-1 font-medium cursor-pointer">
+                                Join as a Curator
+                                <span className="block text-xs font-normal text-muted-foreground">
+                                    Curate exhibitions and feature standout work
+                                </span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">
+                            <RadioGroupItem value={UserType.OWNER} id="owner" />
+                            <Label htmlFor="owner" className="flex-1 font-medium cursor-pointer">
+                                Join as an Owner
+                                <span className="block text-xs font-normal text-muted-foreground">
+                                    Showcase and manage your art collection
+                                </span>
                             </Label>
                         </div>
                         <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-border/50 p-4 bg-muted/20 hover:bg-muted/30 transition-colors">

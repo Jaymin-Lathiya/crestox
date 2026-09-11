@@ -151,7 +151,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
           <div className="flex items-center gap-2 relative z-10">
             <Zap size={14} className="text-primary" />
             <span className="font-cyber text-xs md:text-sm text-primary tracking-widest font-bold">
-              LIQUIDATE
+              Sell
             </span>
           </div>
         </motion.button>

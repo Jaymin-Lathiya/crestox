@@ -9,6 +9,8 @@ export interface VerifyResponseData {
     userTypes: UserType[] | string[];
     isNewArtist?: boolean;
     isNewCollector?: boolean;
+    isNewCurator?: boolean;
+    isNewOwner?: boolean;
 }
 
 export type MagicLinkRequestResult =
@@ -131,6 +133,8 @@ export const useAuthStore = create<AuthState>((set) => ({
                 userTypes: Array.isArray(payload?.userTypes) ? payload.userTypes : [],
                 isNewArtist: payload?.isNewArtist === true,
                 isNewCollector: payload?.isNewCollector === true,
+                isNewCurator: payload?.isNewCurator === true,
+                isNewOwner: payload?.isNewOwner === true,
             };
             setCookie('token', accessToken, 30);
             set({ isSuccess: true });
@@ -163,13 +167,15 @@ export const useAuthStore = create<AuthState>((set) => ({
             const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
             const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
             const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+            const isNewCurator = response.data?.isNewCurator || response.data?.data?.isNewCurator;
+            const isNewOwner = response.data?.isNewOwner || response.data?.data?.isNewOwner;
 
             if (accessToken) {
                 setCookie("token", accessToken, 30);
             }
 
             set({ isSuccess: true });
-            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector, isNewCurator, isNewOwner };
         } catch (err: unknown) {
             const notFound = parseUserNotFoundError(err);
             if (notFound) {
@@ -210,13 +216,15 @@ export const useAuthStore = create<AuthState>((set) => ({
             const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
             const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
             const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+            const isNewCurator = response.data?.isNewCurator || response.data?.data?.isNewCurator;
+            const isNewOwner = response.data?.isNewOwner || response.data?.data?.isNewOwner;
 
             if (accessToken) {
                 setCookie("token", accessToken, 30);
             }
 
             set({ isSuccess: true });
-            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector, isNewCurator, isNewOwner };
         } catch (err: unknown) {
             const notFound = parseUserNotFoundError(err);
             if (notFound) {
@@ -257,13 +265,15 @@ export const useAuthStore = create<AuthState>((set) => ({
             const userTypes = response.data?.userTypes || response.data?.data?.userTypes || [];
             const isNewArtist = response.data?.isNewArtist || response.data?.data?.isNewArtist;
             const isNewCollector = response.data?.isNewCollector || response.data?.data?.isNewCollector;
+            const isNewCurator = response.data?.isNewCurator || response.data?.data?.isNewCurator;
+            const isNewOwner = response.data?.isNewOwner || response.data?.data?.isNewOwner;
 
             if (accessToken) {
                 setCookie("token", accessToken, 30);
             }
 
             set({ isSuccess: true });
-            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector };
+            return { accessToken, isNewUser, userTypes, isNewArtist, isNewCollector, isNewCurator, isNewOwner };
         } catch (err: unknown) {
             const notFound = parseUserNotFoundError(err);
             if (notFound) {

@@ -21,6 +21,12 @@ export interface User {
     artist_profile_id?: number | null;
     artist_profile_approved?: boolean;
     artist_onboarding_last_completed_step?: number | null;
+    curator_profile_id?: number | null;
+    curator_profile_approved?: boolean;
+    curator_onboarding_last_completed_step?: number | null;
+    owner_profile_id?: number | null;
+    owner_profile_approved?: boolean;
+    owner_onboarding_last_completed_step?: number | null;
 }
 
 interface UserState {

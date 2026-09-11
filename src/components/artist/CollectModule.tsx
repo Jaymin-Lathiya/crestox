@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Minus, Plus } from 'lucide-react';
 import {
@@ -72,6 +73,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
   className,
   forceLoading = false,
 }) => {
+  const router = useRouter();
   const [quantity, setQuantity] = useState<number | ''>(1);
   const [quote, setQuote] = useState<BufferPriceQuote | null>(null);
   const [marketLoading, setMarketLoading] = useState(true);
@@ -376,7 +378,18 @@ const CollectModule: React.FC<CollectModuleProps> = ({
     };
   }, [firstArtworkId, initiatedOrder?.razorpay_order_id, fetchQuote, onCollectSuccess]);
 
+  const redirectToLogin = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    router.push(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }, [router]);
+
   const openDialog = () => {
+    if (!hasAuthToken()) {
+      toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
+      redirectToLogin();
+      return;
+    }
     if (!canInteract) {
       toast.error('No fractals available to collect for this artwork yet.');
       return;
@@ -399,6 +412,7 @@ const CollectModule: React.FC<CollectModuleProps> = ({
 
     if (!hasAuthToken()) {
       toast.error(NOT_LOGGED_IN_BUY_MESSAGE);
+      redirectToLogin();
       return;
     }
 

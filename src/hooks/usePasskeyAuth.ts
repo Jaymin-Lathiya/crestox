@@ -15,6 +15,8 @@ interface PasskeyAuthResult {
     userTypes: string[];
     isNewArtist?: boolean;
     isNewCollector?: boolean;
+    isNewCurator?: boolean;
+    isNewOwner?: boolean;
 }
 
 /**

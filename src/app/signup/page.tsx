@@ -92,6 +92,10 @@ function SignupFormContent() {
                 toast.success("Successfully signed up with Apple!");
                 if (result.isNewArtist && userType === UserType.ARTIST) {
                     router.push("/onboarding/artist");
+                } else if (result.isNewCurator && userType === UserType.CURATOR) {
+                    router.push("/onboarding/curator");
+                } else if (result.isNewOwner && userType === UserType.OWNER) {
+                    router.push("/onboarding/owner");
                 } else if (result.isNewCollector) {
                     router.push("/explore");
                 } else {
@@ -163,7 +167,13 @@ function SignupFormContent() {
             <Card className="w-full max-w-lg border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="space-y-1 text-center pb-2">
                     <CardTitle className="text-2xl font-serif">
-                        {userType === UserType.ARTIST ? "Join as an Artist" : "Create Your Collector Account"}
+                        {userType === UserType.ARTIST
+                            ? "Join as an Artist"
+                            : userType === UserType.CURATOR
+                                ? "Join as a Curator"
+                                : userType === UserType.OWNER
+                                    ? "Join as an Owner"
+                                    : "Create Your Collector Account"}
                     </CardTitle>
                     <CardDescription className="font-sans">
                         {isSuccess

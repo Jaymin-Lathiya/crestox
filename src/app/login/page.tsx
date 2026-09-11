@@ -75,6 +75,10 @@ function LoginFormContent() {
             toast.success("Successfully logged in with passkey!");
             if (result.isNewArtist) {
                 router.push("/onboarding/artist");
+            } else if (result.isNewCurator) {
+                router.push("/onboarding/curator");
+            } else if (result.isNewOwner) {
+                router.push("/onboarding/owner");
             } else if (result.isNewCollector) {
                 router.push("/explore");
             } else {
@@ -106,6 +110,10 @@ function LoginFormContent() {
                 toast.success("Successfully logged in with Apple!");
                 if (result.isNewArtist) {
                     router.push("/onboarding/artist");
+                } else if (result.isNewCurator) {
+                    router.push("/onboarding/curator");
+                } else if (result.isNewOwner) {
+                    router.push("/onboarding/owner");
                 } else if (result.isNewCollector) {
                     router.push("/explore");
                 } else {

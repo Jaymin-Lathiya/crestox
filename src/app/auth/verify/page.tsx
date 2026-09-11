@@ -29,32 +29,29 @@ function VerifyContent() {
 
                     const types = verifyResult.userTypes as string[];
                     const isArtist = types.includes(UserType.ARTIST) || types.includes("artist");
+                    const isCurator = types.includes(UserType.CURATOR) || types.includes("curator") || types.includes("curators");
+                    const isOwner = types.includes(UserType.OWNER) || types.includes("owner");
                     const isCollector = types.includes(UserType.COLLECTOR) || types.includes("collector");
 
-                    if (verifyResult.isNewUser) {
-                        if (isArtist) {
-                            router.push("/onboarding/artist");
-                        } else if (isCollector) {
+                    // Prioritize the specialized role's onboarding when it hasn't been completed.
+                    if (isArtist && (verifyResult.isNewUser || verifyResult.isNewArtist)) {
+                        router.push("/onboarding/artist");
+                    } else if (isCurator && (verifyResult.isNewUser || verifyResult.isNewCurator)) {
+                        router.push("/onboarding/curator");
+                    } else if (isOwner && (verifyResult.isNewUser || verifyResult.isNewOwner)) {
+                        router.push("/onboarding/owner");
+                    } else if (isArtist) {
+                        router.push("/portfolio");
+                    } else if (isCurator || isOwner) {
+                        router.push("/collection");
+                    } else if (isCollector) {
+                        if (verifyResult.isNewUser || verifyResult.isNewCollector) {
                             router.push("/explore");
                         } else {
-                            router.push("/");
+                            router.push("/collection");
                         }
                     } else {
-                        if (isArtist) {
-                            if (verifyResult.isNewArtist) {
-                                router.push("/onboarding/artist");
-                            } else {
-                                router.push("/portfolio");
-                            }
-                        } else if (isCollector) {
-                            if (verifyResult.isNewCollector) {
-                                router.push("/explore");
-                            } else {
-                                router.push("/collection");
-                            }
-                        } else {
-                            router.push("/");
-                        }
+                        router.push("/");
                     }
                 } else {
                     setTimeout(() => {
