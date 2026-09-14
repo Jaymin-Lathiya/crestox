@@ -6,8 +6,11 @@ import { getAvailableWithdrawalAmount } from '@/apis/withdrawal/withdrawalAction
 interface PortfolioMetric {
   label: string;
   value: number;
-  delta: number;
+  /** Return on invested capital, in %. Omit for cards that have no such rate. */
+  delta?: number;
   isCurrency?: boolean;
+  /** Force a leading +/- so a gain reads differently from a level. */
+  signed?: boolean;
 }
 
 interface PortfolioHUDProps {
@@ -22,11 +25,12 @@ interface PortfolioHUDProps {
   onWithdrawClick?: () => void;
 }
 
-const Counter = ({ value, isCurrency = false }: { value: number; isCurrency?: boolean }) => {
+const Counter = ({ value, isCurrency = false, signed = false }: { value: number; isCurrency?: boolean; signed?: boolean }) => {
   const formatter = new Intl.NumberFormat('en-IN', {
     style: isCurrency ? 'currency' : 'decimal',
     currency: 'INR',
     maximumFractionDigits: 0,
+    ...(signed ? { signDisplay: 'exceptZero' as const } : {}),
   });
 
   return (
@@ -42,21 +46,21 @@ const Counter = ({ value, isCurrency = false }: { value: number; isCurrency?: bo
   );
 };
 
-const MetricCard = ({ label, value, delta, isCurrency = true }: PortfolioMetric) => {
-  const isPositive = delta >= 0;
+const MetricCard = ({ label, value, delta, isCurrency = true, signed = false }: PortfolioMetric) => {
+  const isPositive = (delta ?? 0) >= 0;
 
   return (
     <div className="group/card relative flex flex-col justify-center p-4 transition-all duration-500 ease-out hover:!opacity-100 group-hover/grid:opacity-30 cursor-crosshair">
       <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-sans font-medium mb-1">
         {label}
       </span>
-      <div className="text-3xl font-mono font-medium text-foreground tracking-tight flex items-baseline gap-3">
-        <Counter value={value} isCurrency={isCurrency} />
-        {delta !== 0 && (
+      <div className={`text-3xl font-mono font-medium tracking-tight flex items-baseline gap-3 ${signed ? (isPositive ? 'text-verdigris' : 'text-destructive') : 'text-foreground'}`}>
+        <Counter value={value} isCurrency={isCurrency} signed={signed} />
+        {delta !== undefined && (
           <div className={`flex items-center gap-1 text-xs font-bold tracking-normal ${isPositive ? 'text-verdigris' : 'text-destructive'}`}>
             {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
             <span>{isPositive ? '+' : ''}{delta.toFixed(1)}%</span>
-            {isPositive && (
+            {isPositive && delta !== 0 && (
               <span className="absolute w-2 h-2 rounded-full bg-verdigris/20 blur-md animate-pulse ml-8" />
             )}
           </div>
@@ -95,9 +99,11 @@ const PortfolioHUD: React.FC<PortfolioHUDProps> = ({ metrics, activeTab, onTabCh
 
       <div className="max-w-7xl mx-auto space-y-8 mt-[80px]">
         <div className="group/grid grid grid-cols-1 md:grid-cols-4 gap-4 md:divide-x md:divide-border/50 pt-10">
-          <MetricCard label="Total Portfolio Value" value={metrics.totalValue} delta={metrics.gainLossPercent} />
-          <MetricCard label="Invested Amount" value={metrics.invested} delta={0} />
-          <MetricCard label="Total Gain/Loss" value={metrics.gainLoss} delta={metrics.gainLossPercent} />
+          {/* The return % belongs to Gain/Loss only — repeating it beside Portfolio
+              Value made the same figure read as two different measurements. */}
+          <MetricCard label="Total Portfolio Value" value={metrics.totalValue} />
+          <MetricCard label="Invested Amount" value={metrics.invested} />
+          <MetricCard label="Total Gain/Loss" value={metrics.gainLoss} delta={metrics.gainLossPercent} signed />
           <div className="hidden md:flex flex-col justify-center pl-6 transition-opacity duration-500 group-hover/grid:opacity-30 hover:!opacity-100">
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-sans font-medium mb-1">
               Available to Withdraw

@@ -575,6 +575,10 @@ export interface MyCollectionArtist {
   artist_name: string;
   avatar_url: string;
   total_shares: number;
+  /** Shares already sitting in an ACTIVE sell listing — owned, but not re-listable. */
+  listed_shares: number;
+  /** total_shares - listed_shares; the real cap for a new resale listing. */
+  available_shares: number;
   current_share_price: string;
   total_invested: string;
   current_value: string;
@@ -629,11 +633,14 @@ export default function CollectionPage() {
 
   const portfolio = useMemo(() => {
     if (!myCollection) return { totalValue: 0, totalInvested: 0, gainLossAbs: 0, gainLossPerc: 0 };
-    const totalValue = parseFloat(String(myCollection.total_portfolio_value ?? 0)) || 0;
-    const totalInvested = parseFloat(String(myCollection.total_amount_invested ?? 0)) || 0;
-    const gainLossAbs = parseFloat(String(myCollection.total_gain_loss ?? 0)) || 0;
-    const gainLossPerc = parseFloat(String(myCollection.total_gain_loss_pct ?? 0)) || 0;
-    return { totalValue, totalInvested, gainLossAbs, gainLossPerc: Math.round(gainLossPerc * 10) / 10 };
+    // The HUD renders all three figures at zero decimals, so round first and
+    // derive the gain/loss from the rounded values. Otherwise value - invested
+    // can visibly disagree with the gain/loss card by a rupee.
+    const totalValue = Math.round(parseFloat(String(myCollection.total_portfolio_value ?? 0)) || 0);
+    const totalInvested = Math.round(parseFloat(String(myCollection.total_amount_invested ?? 0)) || 0);
+    const gainLossAbs = totalValue - totalInvested;
+    const gainLossPerc = totalInvested > 0 ? (gainLossAbs / totalInvested) * 100 : 0;
+    return { totalValue, totalInvested, gainLossAbs, gainLossPerc };
   }, [myCollection]);
 
   const fetchMyCollection = React.useCallback(async () => {
@@ -734,9 +741,9 @@ export default function CollectionPage() {
                         artistName={artist.artist_name}
                         artworkUrl={artist.avatar_url}
                         totalFractals={artist.total_shares}
+                        listedFractals={artist.listed_shares ?? 0}
                         investedAmount={parseFloat(artist.total_invested) || 0}
                         currentValue={parseFloat(artist.current_value) || 0}
-                        gainLossPerc={parseFloat(artist.gain_loss_pct) || 0}
                         onSell={() => setResaleTarget(artist)}
                         onCertificate={() => setCertificateTarget(artist)}
                       />
@@ -782,7 +789,7 @@ export default function CollectionPage() {
           onClose={() => setResaleTarget(null)}
           artistName={resaleTarget?.artist_name ?? ''}
           artistProfileId={resaleTarget?.artist_profile_id ?? 0}
-          maxQuantity={resaleTarget?.total_shares ?? 0}
+          maxQuantity={resaleTarget?.available_shares ?? resaleTarget?.total_shares ?? 0}
           onSubmit={async (data) => {
             if (!resaleTarget) return;
             try {

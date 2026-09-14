@@ -7,19 +7,21 @@ interface MonolithCardProps {
   artistName: string;
   artworkUrl: string;
   totalFractals: number;
+  /** Of totalFractals, how many are currently sitting in an active listing. */
+  listedFractals?: number;
   investedAmount: number;
   currentValue: number;
-  gainLossPerc: number;
   onSell: () => void;
   onCertificate: () => void;
   artistId: number;
 }
 
-const formatCurrency = (value: number) =>
+const formatCurrency = (value: number, signed = false) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
+    ...(signed ? { signDisplay: "exceptZero" as const } : {}),
   }).format(value);
 
 const MonolithCard: React.FC<MonolithCardProps> = ({
@@ -27,13 +29,20 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
   artistName,
   artworkUrl,
   totalFractals,
+  listedFractals = 0,
   investedAmount,
   currentValue,
-  gainLossPerc,
   onSell,
   onCertificate,
 }) => {
-  const isPositive = gainLossPerc >= 0;
+  // Round the same way the cells render, then derive the delta from those, so
+  // Current Val - Invested always equals the Gain/Loss shown beside them.
+  const invested = Math.round(investedAmount);
+  const value = Math.round(currentValue);
+  const gainLoss = value - invested;
+  const returnPerc = invested > 0 ? (gainLoss / invested) * 100 : 0;
+  const isPositive = gainLoss >= 0;
+  const availableFractals = Math.max(0, totalFractals - listedFractals);
 
   return (
     <motion.div
@@ -78,6 +87,14 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
             <span className="whitespace-nowrap">
               {totalFractals} Fractals Owned
             </span>
+            {listedFractals > 0 && (
+              <>
+                <span>•</span>
+                <span className="whitespace-nowrap">
+                  {listedFractals} Listed / {availableFractals} Available
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -89,7 +106,7 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
               Invested
             </span>
             <span className="font-cyber text-sm md:text-lg text-foreground/90">
-              {formatCurrency(investedAmount)}
+              {formatCurrency(invested)}
             </span>
           </div>
           <div className="flex flex-col">
@@ -97,12 +114,12 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
               Current Val
             </span>
             <span className="font-cyber text-sm md:text-lg text-primary text-glow-lime">
-              {formatCurrency(currentValue)}
+              {formatCurrency(value)}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="font-cyber text-[10px] uppercase text-muted-foreground mb-1">
-              Return
+              Gain/Loss
             </span>
             <div
               className={`flex items-center gap-1 font-cyber text-sm md:text-lg font-bold ${isPositive ? "text-primary" : "text-destructive"}`}
@@ -110,7 +127,11 @@ const MonolithCard: React.FC<MonolithCardProps> = ({
               {isPositive ?
                 <ArrowUpRight size={16} />
               : <ArrowDownRight size={16} />}
-              <span>{Math.abs(gainLossPerc)}%</span>
+              <span>{formatCurrency(gainLoss, true)}</span>
+              <span className="text-[10px] md:text-xs font-normal opacity-80">
+                ({isPositive ? "+" : ""}
+                {returnPerc.toFixed(1)}%)
+              </span>
             </div>
           </div>
         </div>
