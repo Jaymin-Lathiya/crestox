@@ -1,7 +1,7 @@
 export const strings = {
     // base_url: process.env.BACKEND_URL,
-    // base_url: "https://crestox-backend-git-main-crestox-art-exchange.vercel.app/api",
-    base_url: "http://localhost:8989/api",
+    base_url: "https://crestox-backend-git-main-crestox-art-exchange.vercel.app/api",
+    // base_url: "http://localhost:8989/api",
     // base_url: process.env.BACKEND_URL || "https://crestox-backend-production-6031.up.railway.app/api",
     
     // Google OAuth - Replace with your actual Client ID from Google Cloud Console
